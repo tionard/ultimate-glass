@@ -3,8 +3,7 @@
   "package": "com.github.tionard.ultimateglass.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "BlockItemMixin",
-    "BlockDropsMixin"
+    "BlockItemMixin"
   ],
   "injectors": {
     "defaultRequire": 1
