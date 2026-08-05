@@ -1,0 +1,81 @@
+name: Publish Release JAR
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.5.1"
+
+      - name: Build mod
+        run: gradle build --stacktrace
+
+      - name: Smoke-test dedicated server startup
+        shell: bash
+        run: |
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+
+          set +e
+          timeout 120s gradle runServer --args nogui > server-smoke.log 2>&1
+          status=$?
+          set -e
+
+          cat server-smoke.log
+
+          if ! grep -q 'Done (' server-smoke.log; then
+            echo 'Dedicated server did not reach the ready state.' >&2
+            exit 1
+          fi
+
+          if [ "$status" -ne 0 ] && [ "$status" -ne 124 ]; then
+            echo "Dedicated server exited unexpectedly with status $status." >&2
+            exit "$status"
+          fi
+
+      - name: Find playable mod JAR
+        id: mod_jar
+        shell: bash
+        run: |
+          MOD_JAR=$(find build/libs -maxdepth 1 -type f \
+            -name 'ultimate-glass-*.jar' \
+            ! -name '*-sources.jar' \
+            ! -name '*-dev.jar' \
+            -print -quit)
+
+          if [ -z "$MOD_JAR" ]; then
+            echo 'Could not find the playable Ultimate Glass JAR.' >&2
+            exit 1
+          fi
+
+          echo "path=$MOD_JAR" >> "$GITHUB_OUTPUT"
+          echo "Found release asset: $MOD_JAR"
+
+      - name: Attach JAR to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          MOD_JAR: ${{ steps.mod_jar.outputs.path }}
+        run: gh release upload "$RELEASE_TAG" "$MOD_JAR" --clobber --repo "$GITHUB_REPOSITORY"
