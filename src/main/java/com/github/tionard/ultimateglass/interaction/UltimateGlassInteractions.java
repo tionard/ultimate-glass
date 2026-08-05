@@ -2,13 +2,13 @@ package com.github.tionard.ultimateglass.interaction;
 
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 
-import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-import com.github.tionard.ultimateglass.block.EdgePaneBlock;
-import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
+import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 
 public final class UltimateGlassInteractions {
@@ -25,45 +25,17 @@ public final class UltimateGlassInteractions {
 
             BlockState state = level.getBlockState(pos);
             Block block = state.getBlock();
-            Block vanillaPane = UltimateGlassBlocks.vanillaFor(block);
+            ItemStack collected = GlaziersToolItem.collectedStack(block);
 
-            if (vanillaPane != null) {
-                if (!level.isClientSide()) {
-                    if (player.isShiftKeyDown()) {
-                        level.setBlockAndUpdate(pos, vanillaPane.defaultBlockState());
-                    } else {
-                        level.setBlockAndUpdate(
-                                pos,
-                                state.setValue(
-                                        EdgePaneBlock.FACING,
-                                        EdgePaneBlock.rotateClockwise(state.getValue(EdgePaneBlock.FACING))
-                                )
-                        );
-                    }
-                }
-                return InteractionResult.SUCCESS;
-            }
-
-            EdgePaneBlock edgePane = UltimateGlassBlocks.edgeFor(block);
-            if (edgePane == null) {
+            if (collected.isEmpty()) {
                 return InteractionResult.PASS;
             }
 
-            // A centred pane has no orientation to rotate. Consume a normal
-            // left-click so the tool cannot accidentally break it.
-            if (!player.isShiftKeyDown()) {
-                return InteractionResult.SUCCESS;
-            }
-
-            Direction facing = clickedFace.getAxis().isHorizontal()
-                    ? clickedFace
-                    : player.getDirection().getOpposite();
-
             if (!level.isClientSide()) {
-                level.setBlockAndUpdate(
-                        pos,
-                        edgePane.defaultBlockState().setValue(EdgePaneBlock.FACING, facing)
-                );
+                level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+                if (!player.addItem(collected)) {
+                    player.drop(collected, false);
+                }
             }
 
             return InteractionResult.SUCCESS;
