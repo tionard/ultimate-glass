@@ -2,13 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "pattern": [
-    " IG",
-    " SI",
-    "S  "
+    " I ",
+    "TST",
+    " S "
   ],
   "key": {
-    "G": "minecraft:glass",
-    "I": "minecraft:iron_ingot",
+    "I": "#c:ingots",
+    "T": "minecraft:string",
     "S": "minecraft:stick"
   },
   "result": {
