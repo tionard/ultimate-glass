@@ -15,6 +15,9 @@
     "main": ["com.github.tionard.ultimateglass.UltimateGlass"],
     "client": ["com.github.tionard.ultimateglass.client.UltimateGlassClient"]
   },
+  "mixins": [
+    "ultimateglass.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.19.3",
     "minecraft": "~26.2",
