@@ -17,8 +17,7 @@ public final class UltimateGlassInteractions {
 
     public static void initialize() {
         AttackBlockCallback.EVENT.register((player, level, hand, pos, clickedFace) -> {
-            if (!player.isShiftKeyDown()
-                    || player.isSpectator()
+            if (player.isSpectator()
                     || !player.getAbilities().mayBuild
                     || !player.getItemInHand(hand).is(UltimateGlassItems.GLAZIERS_TOOL)) {
                 return InteractionResult.PASS;
@@ -30,7 +29,17 @@ public final class UltimateGlassInteractions {
 
             if (vanillaPane != null) {
                 if (!level.isClientSide()) {
-                    level.setBlockAndUpdate(pos, vanillaPane.defaultBlockState());
+                    if (player.isShiftKeyDown()) {
+                        level.setBlockAndUpdate(pos, vanillaPane.defaultBlockState());
+                    } else {
+                        level.setBlockAndUpdate(
+                                pos,
+                                state.setValue(
+                                        EdgePaneBlock.FACING,
+                                        EdgePaneBlock.rotateClockwise(state.getValue(EdgePaneBlock.FACING))
+                                )
+                        );
+                    }
                 }
                 return InteractionResult.SUCCESS;
             }
@@ -38,6 +47,12 @@ public final class UltimateGlassInteractions {
             EdgePaneBlock edgePane = UltimateGlassBlocks.edgeFor(block);
             if (edgePane == null) {
                 return InteractionResult.PASS;
+            }
+
+            // A centred pane has no orientation to rotate. Consume a normal
+            // left-click so the tool cannot accidentally break it.
+            if (!player.isShiftKeyDown()) {
+                return InteractionResult.SUCCESS;
             }
 
             Direction facing = clickedFace.getAxis().isHorizontal()
