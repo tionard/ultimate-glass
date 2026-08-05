@@ -21,22 +21,22 @@ public final class UltimateGlassBlocks {
     private static final Map<Block, Block> EDGE_TO_VANILLA = new LinkedHashMap<>();
 
     public static final EdgePaneBlock EDGE_GLASS_PANE = register("edge_glass_pane", Blocks.GLASS_PANE);
-    public static final EdgePaneBlock EDGE_WHITE_STAINED_GLASS_PANE = register("edge_white_stained_glass_pane", Blocks.WHITE_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_ORANGE_STAINED_GLASS_PANE = register("edge_orange_stained_glass_pane", Blocks.ORANGE_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_MAGENTA_STAINED_GLASS_PANE = register("edge_magenta_stained_glass_pane", Blocks.MAGENTA_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_LIGHT_BLUE_STAINED_GLASS_PANE = register("edge_light_blue_stained_glass_pane", Blocks.LIGHT_BLUE_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_YELLOW_STAINED_GLASS_PANE = register("edge_yellow_stained_glass_pane", Blocks.YELLOW_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_LIME_STAINED_GLASS_PANE = register("edge_lime_stained_glass_pane", Blocks.LIME_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_PINK_STAINED_GLASS_PANE = register("edge_pink_stained_glass_pane", Blocks.PINK_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_GRAY_STAINED_GLASS_PANE = register("edge_gray_stained_glass_pane", Blocks.GRAY_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_LIGHT_GRAY_STAINED_GLASS_PANE = register("edge_light_gray_stained_glass_pane", Blocks.LIGHT_GRAY_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_CYAN_STAINED_GLASS_PANE = register("edge_cyan_stained_glass_pane", Blocks.CYAN_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_PURPLE_STAINED_GLASS_PANE = register("edge_purple_stained_glass_pane", Blocks.PURPLE_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_BLUE_STAINED_GLASS_PANE = register("edge_blue_stained_glass_pane", Blocks.BLUE_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_BROWN_STAINED_GLASS_PANE = register("edge_brown_stained_glass_pane", Blocks.BROWN_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_GREEN_STAINED_GLASS_PANE = register("edge_green_stained_glass_pane", Blocks.GREEN_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_RED_STAINED_GLASS_PANE = register("edge_red_stained_glass_pane", Blocks.RED_STAINED_GLASS_PANE);
-    public static final EdgePaneBlock EDGE_BLACK_STAINED_GLASS_PANE = register("edge_black_stained_glass_pane", Blocks.BLACK_STAINED_GLASS_PANE);
+    public static final EdgePaneBlock EDGE_WHITE_STAINED_GLASS_PANE = registerColored("white");
+    public static final EdgePaneBlock EDGE_ORANGE_STAINED_GLASS_PANE = registerColored("orange");
+    public static final EdgePaneBlock EDGE_MAGENTA_STAINED_GLASS_PANE = registerColored("magenta");
+    public static final EdgePaneBlock EDGE_LIGHT_BLUE_STAINED_GLASS_PANE = registerColored("light_blue");
+    public static final EdgePaneBlock EDGE_YELLOW_STAINED_GLASS_PANE = registerColored("yellow");
+    public static final EdgePaneBlock EDGE_LIME_STAINED_GLASS_PANE = registerColored("lime");
+    public static final EdgePaneBlock EDGE_PINK_STAINED_GLASS_PANE = registerColored("pink");
+    public static final EdgePaneBlock EDGE_GRAY_STAINED_GLASS_PANE = registerColored("gray");
+    public static final EdgePaneBlock EDGE_LIGHT_GRAY_STAINED_GLASS_PANE = registerColored("light_gray");
+    public static final EdgePaneBlock EDGE_CYAN_STAINED_GLASS_PANE = registerColored("cyan");
+    public static final EdgePaneBlock EDGE_PURPLE_STAINED_GLASS_PANE = registerColored("purple");
+    public static final EdgePaneBlock EDGE_BLUE_STAINED_GLASS_PANE = registerColored("blue");
+    public static final EdgePaneBlock EDGE_BROWN_STAINED_GLASS_PANE = registerColored("brown");
+    public static final EdgePaneBlock EDGE_GREEN_STAINED_GLASS_PANE = registerColored("green");
+    public static final EdgePaneBlock EDGE_RED_STAINED_GLASS_PANE = registerColored("red");
+    public static final EdgePaneBlock EDGE_BLACK_STAINED_GLASS_PANE = registerColored("black");
 
     private UltimateGlassBlocks() {
     }
@@ -55,6 +55,22 @@ public final class UltimateGlassBlocks {
 
     public static Collection<EdgePaneBlock> edgePanes() {
         return VANILLA_TO_EDGE.values();
+    }
+
+    private static EdgePaneBlock registerColored(String color) {
+        return register(
+                "edge_" + color + "_stained_glass_pane",
+                vanillaBlock(color + "_stained_glass_pane")
+        );
+    }
+
+    private static Block vanillaBlock(String path) {
+        Identifier id = Identifier.fromNamespaceAndPath("minecraft", path);
+        Block block = BuiltInRegistries.BLOCK.getValue(id);
+        if (block == null || block == Blocks.AIR) {
+            throw new IllegalStateException("Missing vanilla block " + id);
+        }
+        return block;
     }
 
     private static EdgePaneBlock register(String name, Block vanillaPane) {
