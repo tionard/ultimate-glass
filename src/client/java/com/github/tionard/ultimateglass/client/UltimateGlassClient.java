@@ -3,14 +3,13 @@ package com.github.tionard.ultimateglass.client;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.KeyMapping;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 
@@ -22,7 +21,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "general")
     );
 
-    private static final KeyMapping TOGGLE_TOOL = KeyBindingHelper.registerKeyBinding(
+    private static final KeyMapping TOGGLE_TOOL = KeyMappingHelper.registerKeyMapping(
             new KeyMapping(
                     "key.ultimateglass.toggle_tool",
                     InputConstants.Type.KEYSYM,
@@ -37,10 +36,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (TOGGLE_TOOL.consumeClick()) {
-                boolean enabled = UltimateGlassClientConfig.toggleToolEnabled();
-                if (client.player != null) {
-                    client.player.displayClientMessage(toolStateMessage(enabled), true);
-                }
+                UltimateGlassClientConfig.toggleToolEnabled();
             }
         });
 
@@ -54,14 +50,6 @@ public final class UltimateGlassClient implements ClientModInitializer {
         ClientPreAttackCallback.EVENT.register((client, player, clickCount) ->
                 !UltimateGlassClientConfig.isToolEnabled()
                         && player.getMainHandItem().is(UltimateGlassItems.GLAZIERS_TOOL)
-        );
-    }
-
-    static Component toolStateMessage(boolean enabled) {
-        return Component.translatable(
-                enabled
-                        ? "message.ultimateglass.tool_enabled"
-                        : "message.ultimateglass.tool_disabled"
         );
     }
 
