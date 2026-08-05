@@ -1,12 +1,13 @@
 package com.github.tionard.ultimateglass.item;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.AbstractGlassBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -67,10 +68,20 @@ public final class GlaziersToolItem extends Item {
             return new ItemStack(vanillaPane.asItem());
         }
 
-        if (UltimateGlassBlocks.edgeFor(block) != null || block instanceof AbstractGlassBlock) {
+        if (UltimateGlassBlocks.edgeFor(block) != null || isVanillaGlassBlock(block)) {
             return new ItemStack(block.asItem());
         }
 
         return ItemStack.EMPTY;
+    }
+
+    private static boolean isVanillaGlassBlock(Block block) {
+        Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+        if (!"minecraft".equals(id.getNamespace())) {
+            return false;
+        }
+
+        String path = id.getPath();
+        return "glass".equals(path) || path.endsWith("_stained_glass");
     }
 }
