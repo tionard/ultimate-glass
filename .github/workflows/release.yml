@@ -1,38 +1,80 @@
-name: Publish Release JAR
+name: Publish Version Release
 
 on:
-  release:
-    types:
-      - published
+  push:
+    branches:
+      - main
+    paths:
+      - gradle.properties
+      - build.gradle
+      - settings.gradle
+      - src/**
+      - .github/workflows/release.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: publish-version-release
+  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout release tag
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(sed -n 's/^mod_version=//p' gradle.properties)
+          if [ -z "$VERSION" ]; then
+            echo 'Could not read mod_version from gradle.properties.' >&2
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether release already exists
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release $RELEASE_TAG already exists; nothing to publish."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Java 25
+        if: steps.existing.outputs.exists != 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "25"
 
       - name: Set up Gradle
+        if: steps.existing.outputs.exists != 'true'
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "9.5.1"
 
       - name: Build mod
+        if: steps.existing.outputs.exists != 'true'
         run: gradle build --stacktrace
 
       - name: Smoke-test dedicated server startup
+        if: steps.existing.outputs.exists != 'true'
         shell: bash
         run: |
           mkdir -p run
@@ -56,6 +98,7 @@ jobs:
           fi
 
       - name: Find playable mod JAR
+        if: steps.existing.outputs.exists != 'true'
         id: mod_jar
         shell: bash
         run: |
@@ -73,9 +116,34 @@ jobs:
           echo "path=$MOD_JAR" >> "$GITHUB_OUTPUT"
           echo "Found release asset: $MOD_JAR"
 
-      - name: Attach JAR to GitHub Release
+      - name: Create version tag
+        if: steps.existing.outputs.exists != 'true'
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          if git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag $RELEASE_TAG already exists while its release does not." >&2
+            echo 'Bump mod_version before publishing another release.' >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" -m "Ultimate Glass $RELEASE_VERSION"
+          git push origin "$RELEASE_TAG"
+
+      - name: Publish GitHub Release with JAR
+        if: steps.existing.outputs.exists != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
           MOD_JAR: ${{ steps.mod_jar.outputs.path }}
-        run: gh release upload "$RELEASE_TAG" "$MOD_JAR" --clobber --repo "$GITHUB_REPOSITORY"
+        run: |
+          gh release create "$RELEASE_TAG" "$MOD_JAR" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Ultimate Glass $RELEASE_VERSION" \
+            --generate-notes \
+            --verify-tag
