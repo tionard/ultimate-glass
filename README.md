@@ -7,9 +7,9 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders more 
 - Normal and stained glass panes place on the nearest block edge instead of the block centre.
 - Existing vanilla panes remain centred when old worlds are loaded.
 - Edge panes have matching outline and collision shapes for north, east, south, and west placement.
-- The Glazier's Tool can collect glass blocks and panes intact.
-- Sneak + right-click rotates an edge pane clockwise.
-- Sneak + left-click toggles a pane between its edge and vanilla centred form.
+- Left-clicking glass with the Glazier's Tool collects the block or pane intact.
+- Right-clicking an edge pane rotates it clockwise.
+- Sneak + right-click toggles a pane between its edge and vanilla centred form.
 - A client keybind enables or disables Glazier's Tool interactions. The default key is `G`.
 - The setting is persisted in `config/ultimate-glass-client.json`.
 - Mod Menu 20.0.1 integration provides the same enable/disable option through a settings screen.
