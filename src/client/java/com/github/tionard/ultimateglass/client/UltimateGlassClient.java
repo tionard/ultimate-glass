@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
@@ -51,12 +51,10 @@ public final class UltimateGlassClient implements ClientModInitializer {
             return InteractionResult.PASS;
         });
 
-        AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {
-            if (!UltimateGlassClientConfig.isToolEnabled() && isHoldingTool(player, hand)) {
-                return InteractionResult.FAIL;
-            }
-            return InteractionResult.PASS;
-        });
+        ClientPreAttackCallback.EVENT.register((client, player, clickCount) ->
+                !UltimateGlassClientConfig.isToolEnabled()
+                        && player.getMainHandItem().is(UltimateGlassItems.GLAZIERS_TOOL)
+        );
     }
 
     static Component toolStateMessage(boolean enabled) {
