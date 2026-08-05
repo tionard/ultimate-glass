@@ -1,0 +1,6 @@
+{
+  "parent": "ultimateglass:block/edge_pane_base",
+  "textures": {
+    "pane": "minecraft:block/light_blue_stained_glass"
+  }
+}

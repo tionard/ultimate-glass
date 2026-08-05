@@ -1,0 +1,10 @@
+{
+  "item.ultimateglass.glaziers_tool": "Glazier's Tool",
+  "key.category.ultimateglass.general": "Ultimate Glass",
+  "key.ultimateglass.toggle_tool": "Toggle Glazier's Tool",
+  "message.ultimateglass.tool_enabled": "Glazier's Tool enabled",
+  "message.ultimateglass.tool_disabled": "Glazier's Tool disabled",
+  "config.ultimateglass.title": "Ultimate Glass Settings",
+  "config.ultimateglass.tool_enabled": "Glazier's Tool: Enabled",
+  "config.ultimateglass.tool_disabled": "Glazier's Tool: Disabled"
+}

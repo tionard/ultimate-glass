@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "ultimateglass:block/edge_blue_stained_glass_pane"
+    },
+    "facing=east": {
+      "model": "ultimateglass:block/edge_blue_stained_glass_pane",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "ultimateglass:block/edge_blue_stained_glass_pane",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "ultimateglass:block/edge_blue_stained_glass_pane",
+      "y": 270
+    }
+  }
+}
