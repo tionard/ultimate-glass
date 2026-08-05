@@ -1,6 +1,7 @@
 {
   "parent": "ultimateglass:block/edge_pane_base",
   "textures": {
-    "pane": "minecraft:block/magenta_stained_glass"
+    "pane": "minecraft:block/magenta_stained_glass",
+    "edge": "minecraft:block/magenta_stained_glass_pane_top"
   }
 }
