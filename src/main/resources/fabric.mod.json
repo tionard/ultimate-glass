@@ -10,6 +10,7 @@
     "issues": "https://github.com/tionard/ultimate-glass/issues"
   },
   "license": "MIT",
+  "icon": "assets/ultimateglass/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": ["com.github.tionard.ultimateglass.UltimateGlass"],
