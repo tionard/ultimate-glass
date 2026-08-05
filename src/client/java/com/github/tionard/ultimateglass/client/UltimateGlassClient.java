@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -54,6 +55,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
 
                 selectedAxis = RotationAxisState.next(selectedAxis);
                 ClientPlayNetworking.send(new RotationAxisPayload(RotationAxisState.ordinal(selectedAxis)));
+                client.player.sendSystemMessage(Component.translatable(axisMessageKey(selectedAxis)));
             }
         });
 
@@ -68,6 +70,14 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 !UltimateGlassClientConfig.isToolEnabled()
                         && player.getMainHandItem().is(UltimateGlassItems.GLAZIERS_TOOL)
         );
+    }
+
+    private static String axisMessageKey(Direction.Axis axis) {
+        return switch (axis) {
+            case X -> "message.ultimateglass.rotation_axis_x";
+            case Y -> "message.ultimateglass.rotation_axis_y";
+            case Z -> "message.ultimateglass.rotation_axis_z";
+        };
     }
 
     private static boolean isHoldingTool(Player player, net.minecraft.world.InteractionHand hand) {
