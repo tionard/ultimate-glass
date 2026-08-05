@@ -19,13 +19,14 @@ Run one dedicated server and one Fabric client with the same Ultimate Glass JAR.
 ## Glazier's Tool
 
 1. Craft or obtain the Glazier's Tool.
-2. Right-click clear glass, stained glass, centred panes, and edge panes.
+2. Left-click clear glass, stained glass, centred panes, and edge panes.
 3. Verify the correct vanilla item enters the inventory and the world block is removed.
 4. Fill the inventory and verify the collected item drops safely.
-5. Sneak + right-click each edge orientation and verify clockwise rotation.
-6. Sneak + left-click an edge pane and verify conversion to a centred vanilla pane.
-7. Sneak + left-click a centred pane and verify conversion to an edge pane.
-8. Repeat all transformations from a multiplayer client and verify the server and other clients stay synchronized.
+5. Right-click each edge orientation and verify clockwise rotation.
+6. Sneak + right-click an edge pane and verify conversion to a centred vanilla pane.
+7. Sneak + right-click a centred pane and verify conversion to an edge pane.
+8. Verify right-clicking a centred pane without sneaking does not remove or convert it.
+9. Repeat all transformations from a multiplayer client and verify the server and other clients stay synchronized.
 
 ## Client toggle and Mod Menu
 
