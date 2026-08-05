@@ -25,9 +25,9 @@ This design avoids changing the serialized state definition of vanilla blocks an
 
 Working interaction design:
 
-- Use on glass: collect the glass block or pane intact.
-- Sneak + attack pane: toggle between center and edge placement.
-- Sneak + use an edge pane: rotate the edge position clockwise.
+- Left-click glass: collect the glass block or pane intact.
+- Right-click an edge pane: rotate the edge position clockwise.
+- Sneak + right-click a pane: toggle between center and edge placement.
 
 All world mutations are server-authoritative. Client code is limited to input handling, feedback, previews, rendering setup, and configuration UI.
 
