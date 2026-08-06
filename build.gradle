@@ -218,4 +218,5 @@ java {
 
 tasks.named("sourcesJar") {
     dependsOn tasks.named("generatePaneResources")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
