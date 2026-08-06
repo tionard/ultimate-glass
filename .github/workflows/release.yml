@@ -18,7 +18,7 @@ permissions:
 
 concurrency:
   group: publish-version-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   release:
@@ -199,3 +199,28 @@ jobs:
             -f state='success' \
             -f context="release/${RELEASE_TAG}" \
             -f description="Published ${RELEASE_ASSET}"
+
+      - name: Record verified release in main
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_ASSET: ${{ steps.version.outputs.asset }}
+        run: |
+          VERIFY_FILE=".github/release-verification/${RELEASE_TAG}.txt"
+          mkdir -p "$(dirname "$VERIFY_FILE")"
+          {
+            echo "tag=${RELEASE_TAG}"
+            echo "asset=${RELEASE_ASSET}"
+            echo "verified_commit=${GITHUB_SHA}"
+          } > "$VERIFY_FILE"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$VERIFY_FILE"
+
+          if git diff --cached --quiet; then
+            echo 'Release verification file is already current.'
+          else
+            git commit -m "Record verified ${RELEASE_TAG} release"
+            git push origin HEAD:main
+          fi
