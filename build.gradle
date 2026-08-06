@@ -141,13 +141,40 @@ tasks.register("generatePaneResources") {
         ]
 
         def orientations = [
-                [facing: "north", rotation: [:]],
-                [facing: "east", rotation: [y: 90]],
-                [facing: "south", rotation: [y: 180]],
-                [facing: "west", rotation: [y: 270]],
-                [facing: "up", rotation: [x: 270]],
-                [facing: "down", rotation: [x: 90]]
+                [
+                        facing: "north",
+                        rotation: [:],
+                        wings: [top: "up", bottom: "down", left: "west", right: "east"]
+                ],
+                [
+                        facing: "east",
+                        rotation: [y: 90],
+                        wings: [top: "up", bottom: "down", left: "north", right: "south"]
+                ],
+                [
+                        facing: "south",
+                        rotation: [y: 180],
+                        wings: [top: "up", bottom: "down", left: "east", right: "west"]
+                ],
+                [
+                        facing: "west",
+                        rotation: [y: 270],
+                        wings: [top: "up", bottom: "down", left: "south", right: "north"]
+                ],
+                [
+                        facing: "up",
+                        rotation: [x: 270],
+                        wings: [top: "south", bottom: "north", left: "west", right: "east"]
+                ],
+                [
+                        facing: "down",
+                        rotation: [x: 90],
+                        wings: [top: "north", bottom: "south", left: "west", right: "east"]
+                ]
         ]
+        def orientationByFacing = orientations.collectEntries { orientation ->
+            [(orientation.facing): orientation]
+        }
 
         colors.each { color ->
             String blockName = color.suffix.isEmpty()
@@ -172,20 +199,40 @@ tasks.register("generatePaneResources") {
 
             def multipart = []
             orientations.each { orientation ->
-                def plateApply = [model: "ultimateglass:block/${blockName}"] + orientation.rotation
-                multipart << [when: [facing: orientation.facing], apply: plateApply]
+                def mainWhen = [facing: orientation.facing]
+                multipart << [
+                        when: mainWhen,
+                        apply: [model: "ultimateglass:block/${blockName}"] + orientation.rotation
+                ]
 
-                borderBases.keySet().each { side ->
-                    def borderApply = [
-                            model: "ultimateglass:block/${blockName}_border_${side}"
-                    ] + orientation.rotation
+                borderBases.keySet().each { borderSide ->
                     multipart << [
-                            when: [
-                                    facing: orientation.facing,
-                                    ("connect_${side}"): "false"
-                            ],
-                            apply: borderApply
+                            when: mainWhen,
+                            apply: [
+                                    model: "ultimateglass:block/${blockName}_border_${borderSide}"
+                            ] + orientation.rotation
                     ]
+                }
+
+                orientation.wings.each { connectionSide, wingFacing ->
+                    def wingOrientation = orientationByFacing[wingFacing]
+                    def connectionWhen = [
+                            facing: orientation.facing,
+                            ("connect_${connectionSide}"): "true"
+                    ]
+
+                    multipart << [
+                            when: connectionWhen,
+                            apply: [model: "ultimateglass:block/${blockName}"] + wingOrientation.rotation
+                    ]
+                    borderBases.keySet().each { borderSide ->
+                        multipart << [
+                                when: connectionWhen,
+                                apply: [
+                                        model: "ultimateglass:block/${blockName}_border_${borderSide}"
+                                ] + wingOrientation.rotation
+                        ]
+                    }
                 }
             }
 
