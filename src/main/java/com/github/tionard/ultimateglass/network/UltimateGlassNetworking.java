@@ -41,7 +41,11 @@ public final class UltimateGlassNetworking {
         ServerPlayNetworking.registerGlobalReceiver(
                 ToolCraftingConfigPayload.TYPE,
                 (payload, context) -> {
-                    if (!context.player().permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+                    MinecraftServer server = context.player().level().getServer();
+                    boolean canEdit = context.player().permissions()
+                            .hasPermission(Permissions.COMMANDS_GAMEMASTER)
+                            || server.isSingleplayerOwner(context.player().getGameProfile());
+                    if (!canEdit) {
                         ServerPlayNetworking.send(context.player(), ToolCraftingConfigPayload.current());
                         return;
                     }
@@ -52,7 +56,6 @@ public final class UltimateGlassNetworking {
                             payload.diamondEnabled(),
                             true
                     );
-                    MinecraftServer server = context.player().level().getServer();
                     ToolCraftingConfigPayload current = ToolCraftingConfigPayload.current();
                     server.getPlayerList().getPlayers().forEach(
                             player -> ServerPlayNetworking.send(player, current)
