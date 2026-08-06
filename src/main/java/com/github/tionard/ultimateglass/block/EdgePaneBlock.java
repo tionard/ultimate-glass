@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import com.github.tionard.ultimateglass.placement.PanePlacementResolver;
@@ -62,22 +63,22 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
 
     @Override
     protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return shapeFor(state.getValue(FACING));
+        return shapeForState(state);
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shapeFor(state.getValue(FACING));
+        return shapeForState(state);
     }
 
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shapeFor(state.getValue(FACING));
+        return shapeForState(state);
     }
 
     @Override
     protected VoxelShape getOcclusionShape(BlockState state) {
-        return shapeFor(state.getValue(FACING));
+        return shapeForState(state);
     }
 
     @Override
@@ -202,16 +203,21 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
                 .setValue(CONNECT_RIGHT, hasOuterConnection(level, pos, facing, right));
     }
 
+    /**
+     * An outer corner is formed when a perpendicular pane sits in the block directly behind
+     * this pane's outside face. This block then gains a second pane plane matching that
+     * neighbour, bridging the adjacent blocks into one L-shaped corner.
+     */
     private static boolean hasOuterConnection(
             BlockGetter level,
             BlockPos pos,
             Direction facing,
-            Direction edge
+            Direction wingFacing
     ) {
-        BlockPos diagonal = pos.relative(facing).relative(edge);
-        BlockState other = level.getBlockState(diagonal);
+        BlockPos adjacent = pos.relative(facing.getOpposite());
+        BlockState other = level.getBlockState(adjacent);
         return other.getBlock() instanceof EdgePaneBlock
-                && other.getValue(FACING) == edge.getOpposite();
+                && other.getValue(FACING) == wingFacing;
     }
 
     private static Direction localTop(Direction facing) {
@@ -230,6 +236,26 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
             case WEST -> Direction.SOUTH;
             case UP, DOWN -> Direction.WEST;
         };
+    }
+
+    private static VoxelShape shapeForState(BlockState state) {
+        Direction facing = state.getValue(FACING);
+        VoxelShape shape = shapeFor(facing);
+
+        if (state.getValue(CONNECT_TOP)) {
+            shape = Shapes.or(shape, shapeFor(localTop(facing)));
+        }
+        if (state.getValue(CONNECT_BOTTOM)) {
+            shape = Shapes.or(shape, shapeFor(localTop(facing).getOpposite()));
+        }
+        if (state.getValue(CONNECT_LEFT)) {
+            shape = Shapes.or(shape, shapeFor(localLeft(facing)));
+        }
+        if (state.getValue(CONNECT_RIGHT)) {
+            shape = Shapes.or(shape, shapeFor(localLeft(facing).getOpposite()));
+        }
+
+        return shape;
     }
 
     private static VoxelShape shapeFor(Direction direction) {
