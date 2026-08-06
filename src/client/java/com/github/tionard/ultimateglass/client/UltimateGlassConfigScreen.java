@@ -1,5 +1,8 @@
 package com.github.tionard.ultimateglass.client;
 
+import java.util.EnumMap;
+import java.util.Map;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -11,6 +14,8 @@ import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
 
 public final class UltimateGlassConfigScreen extends Screen {
     private final Screen parent;
+    private final Map<GlaziersToolTier, Button> craftingButtons = new EnumMap<>(GlaziersToolTier.class);
+    private Button shiftModeButton;
 
     public UltimateGlassConfigScreen(Screen parent) {
         super(Component.translatable("config.ultimateglass.title"));
@@ -19,11 +24,13 @@ public final class UltimateGlassConfigScreen extends Screen {
 
     @Override
     protected void init() {
+        craftingButtons.clear();
+
         int buttonWidth = 260;
         int left = this.width / 2 - buttonWidth / 2;
         int top = this.height / 2 - 54;
 
-        this.addRenderableWidget(
+        shiftModeButton = this.addRenderableWidget(
                 Button.builder(shiftModeButtonText(), button -> {
                     UltimateGlassClientConfig.toggleShiftPlacementMode();
                     UltimateGlassClient.syncShiftPlacementMode();
@@ -47,6 +54,15 @@ public final class UltimateGlassConfigScreen extends Screen {
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        if (shiftModeButton != null) {
+            shiftModeButton.setMessage(shiftModeButtonText());
+        }
+        craftingButtons.forEach((tier, button) -> button.setMessage(craftingButtonText(tier)));
+    }
+
+    @Override
     public void onClose() {
         returnToParent();
     }
@@ -58,15 +74,15 @@ public final class UltimateGlassConfigScreen extends Screen {
     }
 
     private void addCraftingButton(int left, int top, int width, GlaziersToolTier tier) {
-        this.addRenderableWidget(
-                Button.builder(craftingButtonText(tier), button -> {
-                    UltimateGlassClient.requestCraftingToggle(tier);
-                    button.setMessage(craftingButtonText(tier));
-                })
+        Button button = this.addRenderableWidget(
+                Button.builder(craftingButtonText(tier), clicked ->
+                        UltimateGlassClient.requestCraftingToggle(tier)
+                )
                         .pos(left, top)
                         .size(width, 20)
                         .build()
         );
+        craftingButtons.put(tier, button);
     }
 
     private Component shiftModeButtonText() {
