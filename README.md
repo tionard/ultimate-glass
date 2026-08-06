@@ -56,4 +56,4 @@ The remapped mod JAR is created in `build/libs`.
 
 ## Status
 
-The project builds in GitHub Actions and passes its dedicated-server startup smoke test. Version 0.1.3 is still a draft test build until the placement and merged corner geometry are confirmed in game.
+The project builds in GitHub Actions and passes its dedicated-server startup smoke test. Version 0.1.3 remains a draft test build until the placement and merged two-/three-plane corner geometry are confirmed in game.
