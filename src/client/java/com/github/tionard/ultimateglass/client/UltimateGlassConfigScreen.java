@@ -6,6 +6,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 
+import com.github.tionard.ultimateglass.item.GlaziersToolTier;
+import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
+
 public final class UltimateGlassConfigScreen extends Screen {
     private final Screen parent;
 
@@ -16,18 +19,24 @@ public final class UltimateGlassConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        int buttonWidth = 220;
+        int buttonWidth = 260;
         int left = this.width / 2 - buttonWidth / 2;
+        int top = this.height / 2 - 54;
 
         this.addRenderableWidget(
-                Button.builder(toolButtonText(), button -> {
-                    UltimateGlassClientConfig.toggleToolEnabled();
-                    button.setMessage(toolButtonText());
+                Button.builder(shiftModeButtonText(), button -> {
+                    UltimateGlassClientConfig.toggleShiftPlacementMode();
+                    UltimateGlassClient.syncShiftPlacementMode();
+                    button.setMessage(shiftModeButtonText());
                 })
-                .pos(left, this.height / 2 - 20)
-                .size(buttonWidth, 20)
-                .build()
+                        .pos(left, top)
+                        .size(buttonWidth, 20)
+                        .build()
         );
+
+        addCraftingButton(left, top + 24, buttonWidth, GlaziersToolTier.COPPER);
+        addCraftingButton(left, top + 48, buttonWidth, GlaziersToolTier.IRON);
+        addCraftingButton(left, top + 72, buttonWidth, GlaziersToolTier.DIAMOND);
 
         this.addRenderableWidget(
                 Button.builder(CommonComponents.GUI_DONE, button -> returnToParent())
@@ -48,12 +57,30 @@ public final class UltimateGlassConfigScreen extends Screen {
         graphics.centeredText(this.font, this.title, this.width / 2, 20, 0xFFFFFFFF);
     }
 
-    private Component toolButtonText() {
-        return Component.translatable(
-                UltimateGlassClientConfig.isToolEnabled()
-                        ? "config.ultimateglass.tool_enabled"
-                        : "config.ultimateglass.tool_disabled"
+    private void addCraftingButton(int left, int top, int width, GlaziersToolTier tier) {
+        this.addRenderableWidget(
+                Button.builder(craftingButtonText(tier), button -> {
+                    UltimateGlassClient.requestCraftingToggle(tier);
+                    button.setMessage(craftingButtonText(tier));
+                })
+                        .pos(left, top)
+                        .size(width, 20)
+                        .build()
         );
+    }
+
+    private Component shiftModeButtonText() {
+        return Component.translatable(
+                UltimateGlassClientConfig.shiftPlacementMode() == ShiftPlacementMode.FACE
+                        ? "config.ultimateglass.shift_mode_face"
+                        : "config.ultimateglass.shift_mode_near"
+        );
+    }
+
+    private Component craftingButtonText(GlaziersToolTier tier) {
+        String tierName = tier.name().toLowerCase();
+        String state = UltimateGlassClientConfig.isCraftingEnabled(tier) ? "enabled" : "disabled";
+        return Component.translatable("config.ultimateglass.crafting_" + tierName + "_" + state);
     }
 
     private void returnToParent() {
