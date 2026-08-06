@@ -49,6 +49,7 @@ public final class GlaziersToolItem extends Item {
                         context.getClickedPos(),
                         state.setValue(EdgePaneBlock.FACING, rotated)
                 );
+                EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
         }
@@ -82,6 +83,7 @@ public final class GlaziersToolItem extends Item {
                     centered = centered.setValue(BlockStateProperties.WATERLOGGED, true);
                 }
                 level.setBlockAndUpdate(context.getClickedPos(), centered);
+                EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
         }
@@ -101,6 +103,7 @@ public final class GlaziersToolItem extends Item {
                             .setValue(EdgePaneBlock.FACING, context.getClickedFace())
                             .setValue(EdgePaneBlock.WATERLOGGED, waterlogged)
             );
+            EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
         }
 
         return InteractionResult.SUCCESS;

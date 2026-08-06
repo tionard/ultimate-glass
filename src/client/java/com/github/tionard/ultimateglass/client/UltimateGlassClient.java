@@ -1,6 +1,7 @@
 package com.github.tionard.ultimateglass.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.core.Direction;
@@ -30,7 +31,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
             new KeyMapping(
                     "key.ultimateglass.change_rotation_axis",
                     InputConstants.Type.KEYSYM,
-                    -1,
+                    GLFW.GLFW_KEY_V,
                     CATEGORY
             )
     );
