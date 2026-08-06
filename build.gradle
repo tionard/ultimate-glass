@@ -206,6 +206,10 @@ processResources {
     }
 }
 
+tasks.named("sourcesJar") {
+    dependsOn tasks.named("generatePaneResources")
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
 }
