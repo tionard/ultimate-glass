@@ -103,20 +103,6 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
     }
 
     @Override
-    protected void onRemove(
-            BlockState state,
-            Level level,
-            BlockPos pos,
-            BlockState newState,
-            boolean movedByPiston
-    ) {
-        super.onRemove(state, level, pos, newState, movedByPiston);
-        if (state.getBlock() != newState.getBlock()) {
-            refreshConnectionsAround(level, pos);
-        }
-    }
-
-    @Override
     protected BlockState updateShape(
             BlockState state,
             LevelReader level,
@@ -231,8 +217,8 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
     private static Direction localTop(Direction facing) {
         return switch (facing) {
             case NORTH, EAST, SOUTH, WEST -> Direction.UP;
-            case UP -> Direction.NORTH;
-            case DOWN -> Direction.SOUTH;
+            case UP -> Direction.SOUTH;
+            case DOWN -> Direction.NORTH;
         };
     }
 
