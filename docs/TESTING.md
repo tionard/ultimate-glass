@@ -48,10 +48,13 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 2. Verify both horizontal mirror layouts work and no old two-string recipe remains.
 3. Disable each tier independently in Mod Menu and verify its recipe stops producing a result.
 4. Verify disabled tools remain available through `/give` and Creative mode.
-5. Verify non-operator multiplayer clients cannot change server crafting settings.
-6. Verify an operator/integrated-server owner can change them and connected clients receive the new state.
-7. Restart the server and verify settings persist in `ultimate-glass-server.json`.
-8. Verify the old global tool-interactions option is absent.
+5. From the title screen, change the local crafting settings, create a singleplayer world with cheats disabled, and verify those settings apply.
+6. Verify the integrated-server owner can change settings from the pause-menu Mod Menu even when cheats are disabled.
+7. Verify non-operator dedicated-server clients cannot change settings and their buttons revert to the server values.
+8. Verify an operator can change dedicated-server settings and connected clients receive the new state.
+9. Disconnect from a remote server and verify Mod Menu restores the local singleplayer settings rather than keeping the remote server's values.
+10. Restart the client/server and verify settings persist in `ultimate-glass-server.json`.
+11. Verify the old global tool-interactions option is absent.
 
 ## Connected geometry
 
