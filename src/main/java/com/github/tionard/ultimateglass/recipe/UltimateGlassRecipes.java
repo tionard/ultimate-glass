@@ -1,7 +1,11 @@
 package com.github.tionard.ultimateglass.recipe;
 
+import com.mojang.serialization.MapCodec;
+
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -42,8 +46,10 @@ public final class UltimateGlassRecipes {
             String name,
             GlaziersToolTier tier
     ) {
-        RecipeSerializer<GlaziersToolRecipe> serializer = new CustomRecipe.Serializer<>(
-                category -> new GlaziersToolRecipe(category, tier)
+        GlaziersToolRecipe recipe = new GlaziersToolRecipe(tier);
+        RecipeSerializer<GlaziersToolRecipe> serializer = new RecipeSerializer<>(
+                MapCodec.unit(recipe),
+                StreamCodec.unit(recipe)
         );
         return Registry.register(
                 BuiltInRegistries.RECIPE_SERIALIZER,
