@@ -4,7 +4,7 @@
     { "when": { "facing": "east" }, "apply": { "model": "ultimateglass:block/edge_yellow_stained_glass_pane", "y": 90 } },
     { "when": { "facing": "south" }, "apply": { "model": "ultimateglass:block/edge_yellow_stained_glass_pane", "y": 180 } },
     { "when": { "facing": "west" }, "apply": { "model": "ultimateglass:block/edge_yellow_stained_glass_pane", "y": 270 } },
-    { "when": { "facing": "up" }, "apply": { "model": "ultimateglass:block/edge_yellow_stained_glass_pane", "x": 90 } },
-    { "when": { "facing": "down" }, "apply": { "model": "ultimateglass:block/edge_yellow_stained_glass_pane", "x": 270 } }
+    { "when": { "facing": "up" }, "apply": { "model": "ultimateglass:block/edge_yellow_stained_glass_pane", "x": 270 } },
+    { "when": { "facing": "down" }, "apply": { "model": "ultimateglass:block/edge_yellow_stained_glass_pane", "x": 90 } }
   ]
 }
