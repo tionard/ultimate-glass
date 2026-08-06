@@ -171,9 +171,9 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
             return;
         }
 
-        for (int x = -1; x <= 1; x++) {
-            for (int y = -1; y <= 1; y++) {
-                for (int z = -1; z <= 1; z++) {
+        for (int x = -2; x <= 2; x++) {
+            for (int y = -2; y <= 2; y++) {
+                for (int z = -2; z <= 2; z++) {
                     BlockPos candidatePos = changedPos.offset(x, y, z);
                     BlockState candidate = level.getBlockState(candidatePos);
                     if (!(candidate.getBlock() instanceof EdgePaneBlock pane)) {
@@ -204,9 +204,9 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
     }
 
     /**
-     * An outer corner is formed when a perpendicular pane sits in the block directly behind
-     * this pane's outside face. This block then gains a second pane plane matching that
-     * neighbour, bridging the adjacent blocks into one L-shaped corner.
+     * Follows the convex outside corner away from this pane. The first adjacent pane creates
+     * the ordinary L shape. A second pane one step farther around the same corner can add the
+     * third orthogonal plane needed for a cube corner.
      */
     private static boolean hasOuterConnection(
             BlockGetter level,
@@ -214,10 +214,27 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
             Direction facing,
             Direction wingFacing
     ) {
-        BlockPos adjacent = pos.relative(facing.getOpposite());
-        BlockState other = level.getBlockState(adjacent);
-        return other.getBlock() instanceof EdgePaneBlock
-                && other.getValue(FACING) == wingFacing;
+        BlockPos firstPos = pos.relative(facing.getOpposite());
+        BlockState firstState = level.getBlockState(firstPos);
+        if (!(firstState.getBlock() instanceof EdgePaneBlock)) {
+            return false;
+        }
+
+        Direction firstFacing = firstState.getValue(FACING);
+        if (firstFacing == wingFacing) {
+            return true;
+        }
+
+        if (firstFacing.getAxis() == facing.getAxis()
+                || wingFacing.getAxis() == facing.getAxis()
+                || firstFacing.getAxis() == wingFacing.getAxis()) {
+            return false;
+        }
+
+        BlockPos secondPos = firstPos.relative(firstFacing.getOpposite());
+        BlockState secondState = level.getBlockState(secondPos);
+        return secondState.getBlock() instanceof EdgePaneBlock
+                && secondState.getValue(FACING) == wingFacing;
     }
 
     private static Direction localTop(Direction facing) {
