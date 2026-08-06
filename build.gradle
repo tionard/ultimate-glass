@@ -109,6 +109,59 @@ tasks.register("generatePaneResources") {
                 ]
         ]
 
+        def createWingBase = { String touchingSide ->
+            int minX = touchingSide == "left" ? 2 : 0
+            int maxX = touchingSide == "right" ? 14 : 16
+            int minY = touchingSide == "bottom" ? 2 : 0
+            int maxY = touchingSide == "top" ? 14 : 16
+            int width = maxX - minX
+            int height = maxY - minY
+
+            def elements = [[
+                    from: [minX, minY, 0],
+                    to: [maxX, maxY, 2],
+                    faces: [
+                            north: [uv: [0, 0, width, height], texture: "#pane"],
+                            south: [uv: [0, 0, width, height], texture: "#pane"]
+                    ]
+            ]]
+
+            if (touchingSide != "top") {
+                elements << [
+                        from: [minX, 14, 0],
+                        to: [maxX, 16, 2],
+                        faces: [up: [uv: [0, 0, width, 2], texture: "#edge"]]
+                ]
+            }
+            if (touchingSide != "bottom") {
+                elements << [
+                        from: [minX, 0, 0],
+                        to: [maxX, 2, 2],
+                        faces: [down: [uv: [0, 0, width, 2], texture: "#edge"]]
+                ]
+            }
+            if (touchingSide != "left") {
+                elements << [
+                        from: [0, minY, 0],
+                        to: [2, maxY, 2],
+                        faces: [west: [uv: [0, 0, 2, height], texture: "#edge"]]
+                ]
+            }
+            if (touchingSide != "right") {
+                elements << [
+                        from: [14, minY, 0],
+                        to: [16, maxY, 2],
+                        faces: [east: [uv: [0, 0, 2, height], texture: "#edge"]]
+                ]
+            }
+
+            return [
+                    render_type: "minecraft:translucent",
+                    textures: [particle: "#pane"],
+                    elements: elements
+            ]
+        }
+
         writeJson(
                 "assets/ultimateglass/models/block/edge_pane_plate_base.json",
                 plateBase
@@ -117,6 +170,12 @@ tasks.register("generatePaneResources") {
             writeJson(
                     "assets/ultimateglass/models/block/edge_pane_border_${side}_base.json",
                     model
+            )
+        }
+        borderBases.keySet().each { touchingSide ->
+            writeJson(
+                    "assets/ultimateglass/models/block/edge_pane_wing_${touchingSide}_base.json",
+                    createWingBase(touchingSide)
             )
         }
 
@@ -195,6 +254,13 @@ tasks.register("generatePaneResources") {
                                 textures: textures
                         ]
                 )
+                writeJson(
+                        "assets/ultimateglass/models/block/${blockName}_wing_${side}.json",
+                        [
+                                parent: "ultimateglass:block/edge_pane_wing_${side}_base",
+                                textures: textures
+                        ]
+                )
             }
 
             def multipart = []
@@ -216,6 +282,9 @@ tasks.register("generatePaneResources") {
 
                 orientation.wings.each { connectionSide, wingFacing ->
                     def wingOrientation = orientationByFacing[wingFacing]
+                    String touchingWingSide = wingOrientation.wings.find { side, worldDirection ->
+                        worldDirection == orientation.facing
+                    }.key
                     def connectionWhen = [
                             facing: orientation.facing,
                             ("connect_${connectionSide}"): "true"
@@ -223,16 +292,10 @@ tasks.register("generatePaneResources") {
 
                     multipart << [
                             when: connectionWhen,
-                            apply: [model: "ultimateglass:block/${blockName}"] + wingOrientation.rotation
+                            apply: [
+                                    model: "ultimateglass:block/${blockName}_wing_${touchingWingSide}"
+                            ] + wingOrientation.rotation
                     ]
-                    borderBases.keySet().each { borderSide ->
-                        multipart << [
-                                when: connectionWhen,
-                                apply: [
-                                        model: "ultimateglass:block/${blockName}_border_${borderSide}"
-                                ] + wingOrientation.rotation
-                        ]
-                    }
                 }
             }
 
