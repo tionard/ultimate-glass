@@ -36,7 +36,16 @@ public final class PanePlacementResolver {
         }
 
         Direction towardPlayer = directionTowardPlayerOnClickedFace(context);
-        return shifted ? towardPlayer : towardPlayer.getOpposite();
+        if (!shifted) {
+            return towardPlayer.getOpposite();
+        }
+
+        ShiftPlacementMode mode = player == null
+                ? ShiftPlacementModeState.DEFAULT_MODE
+                : ShiftPlacementModeState.get(player);
+        return mode == ShiftPlacementMode.FACE
+                ? context.getClickedFace().getOpposite()
+                : towardPlayer;
     }
 
     @Nullable
