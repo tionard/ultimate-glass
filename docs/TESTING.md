@@ -6,20 +6,56 @@ Test with Minecraft Java 26.2, Fabric Loader 0.19.3, Fabric API, Ultimate Glass,
 
 Run one dedicated server and at least one Fabric client with the same Ultimate Glass JAR.
 
-## Placement and shapes
+## Normal placement
 
-1. Place clear and every stained glass pane against the north, east, south, west, top, and bottom faces of full blocks.
-2. Verify each pane occupies the expected outside face of its own block space.
-3. Verify top and bottom panes render horizontally at the correct height.
-4. Verify selection outlines and collision match the visible pane in all six orientations.
-5. Verify pane item stacks decrement normally in survival.
-6. Load a world containing pre-existing vanilla panes and confirm they remain centred.
+1. Stand south of a block and click its top face. Verify the pane is vertical on the north side, away from the player.
+2. Repeat from north, east, and west and verify the pane moves to the opposite side.
+3. Stand below a block and click a vertical side. Verify the pane is horizontal at the top edge, away from the player.
+4. Stand above a block and click a vertical side. Verify the pane is horizontal at the bottom edge.
+5. Repeat against every clicked face while varying the player's dominant projected direction.
+6. Verify the pane is always perpendicular to the clicked face.
+7. Verify visual geometry, outline, and collision occupy the same face.
+
+## Shift placement
+
+1. Shift-click a non-oriented full block from every side and verify placement remains perpendicular but chooses the side closer to the player.
+2. Shift-click an existing custom pane and verify the new pane copies the clicked pane's orientation.
+3. Test orientation copying from top/bottom slabs, stairs, trapdoors, doors, and horizontal/vertical facing blocks.
+4. Verify logs, pillars, and other AXIS-only blocks do not act as orientation references.
+5. Verify Shift placement against ignored blocks uses the closer-to-player fallback.
+6. Verify placement remains server-authoritative in multiplayer.
+
+## Outer-corner connections
+
+1. Place directly adjacent perpendicular panes in the convex outer-corner arrangement.
+2. Verify the outside pane gains a complete second pane plane, forming a continuous L shape with no block-sized gap.
+3. Inspect the joint from inside and outside. Verify there is exactly one shared frame line and no cap passes through the other pane.
+4. Verify the transparent sections stop at the shared line and do not darken from overlapping surfaces.
+5. Verify the selection and collision shape include both planes.
+6. Place the concave inner-corner arrangement and verify it does not connect.
+7. Break either source pane and verify the added plane disappears and the normal outside frame returns.
+8. Rotate either source pane and verify the corner recalculates.
+9. Convert either source pane to a centred pane and verify the corner recalculates.
+10. Repeat with horizontal/vertical combinations and all stained variants.
+
+## Three-plane cube corners
+
+1. Build three mutually perpendicular outside panes around one cube corner.
+2. Verify the generated corner block contains three visible pane planes rather than only an L shape.
+3. Verify each pair of panes has exactly one shared inner frame line.
+4. Verify the three frame lines meet in one small corner block without one line passing through another plane.
+5. Inspect the corner from all eight viewing directions and verify there are no overlapping transparent surfaces or missing inner lines.
+6. Verify the outline and collision shape contain all three planes.
+7. Remove each of the three source panes in turn and verify the generated geometry falls back from three planes to the correct L shape or single pane.
+8. Rotate each source pane in turn and verify all affected corners recalculate.
+9. Repeat with a combination containing one horizontal and two vertical panes.
+10. Repeat while waterlogged and from a multiplayer client.
 
 ## Rotation axes
 
-1. Assign the `Change Rotation Axis` key under Controls → Key Binds → Ultimate Glass.
+1. Verify `Change Rotation Axis` is assigned to V by default under Controls → Key Binds → Ultimate Glass.
 2. Join a world and verify the default selected axis behaves as Y.
-3. Press the key repeatedly and verify the cycle is Y → Z → X → Y.
+3. Press V repeatedly and verify the cycle is Y → Z → X → Y.
 4. For each selected axis, right-click panes in all six orientations.
 5. Verify each click rotates the pane 90° around the selected axis.
 6. Verify panes parallel to the selected axis remain unchanged.
@@ -66,4 +102,4 @@ Run one dedicated server and at least one Fabric client with the same Ultimate G
 
 ## Failure cases to record
 
-For every issue, record the Minecraft log, exact pane colour, orientation, selected axis, clicked face, player direction, whether the pane was waterlogged, singleplayer or multiplayer, and whether Mod Menu was installed.
+For every issue, record the Minecraft log, exact pane colour, orientation, selected axis, clicked face, player direction, connection arrangement, whether the pane was waterlogged, singleplayer or multiplayer, and whether Mod Menu was installed.

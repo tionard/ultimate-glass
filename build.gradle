@@ -1,3 +1,5 @@
+import groovy.json.JsonOutput
+
 plugins {
     id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
@@ -36,7 +38,285 @@ dependencies {
     implementation "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
+def generatedPaneResourcesDir = layout.buildDirectory.dir("generated/ultimateGlassPaneResources").get().asFile
+
+sourceSets.main.resources.setSrcDirs([
+        generatedPaneResourcesDir,
+        file("src/main/resources")
+])
+
+tasks.register("generatePaneResources") {
+    outputs.dir generatedPaneResourcesDir
+
+    doLast {
+        delete generatedPaneResourcesDir
+
+        def writeJson = { String relativePath, Object value ->
+            File output = new File(generatedPaneResourcesDir, relativePath)
+            output.parentFile.mkdirs()
+            output.text = JsonOutput.prettyPrint(JsonOutput.toJson(value)) + System.lineSeparator()
+        }
+
+        def directions = [
+                north: [axis: 2, minimum: true, opposite: "south"],
+                south: [axis: 2, minimum: false, opposite: "north"],
+                west : [axis: 0, minimum: true, opposite: "east"],
+                east : [axis: 0, minimum: false, opposite: "west"],
+                down : [axis: 1, minimum: true, opposite: "up"],
+                up   : [axis: 1, minimum: false, opposite: "down"]
+        ]
+        def connectionSides = ["top", "bottom", "left", "right"]
+        def localWingDirections = [
+                top: "up",
+                bottom: "down",
+                left: "west",
+                right: "east"
+        ]
+
+        def setThinSide = { List<Integer> from, List<Integer> to, String direction ->
+            def data = directions[direction]
+            if (data.minimum) {
+                to[data.axis] = 2
+            } else {
+                from[data.axis] = 14
+            }
+        }
+
+        def trimAtSide = { List<Integer> from, List<Integer> to, String direction ->
+            def data = directions[direction]
+            if (data.minimum) {
+                from[data.axis] = 2
+            } else {
+                to[data.axis] = 14
+            }
+        }
+
+        def allFaces = { String texture ->
+            def faces = [:]
+            directions.keySet().each { direction ->
+                faces[direction] = [texture: texture]
+            }
+            return faces
+        }
+
+        def createMergedShape = { int mask ->
+            def planes = ["north"]
+            connectionSides.eachWithIndex { side, index ->
+                if ((mask & (1 << index)) != 0) {
+                    planes << localWingDirections[side]
+                }
+            }
+
+            def elements = []
+
+            // Transparent panes are trimmed at every shared edge, preventing overlapping glass.
+            planes.each { plane ->
+                def from = [0, 0, 0]
+                def to = [16, 16, 16]
+                setThinSide(from, to, plane)
+
+                planes.findAll { other -> other != plane }.each { other ->
+                    trimAtSide(from, to, other)
+                }
+
+                if ((0..2).every { axis -> to[axis] > from[axis] }) {
+                    def faces = [:]
+                    faces[plane] = [texture: "#pane"]
+                    faces[directions[plane].opposite] = [texture: "#pane"]
+                    elements << [from: from, to: to, faces: faces]
+                }
+            }
+
+            // Keep the normal outside frame wherever no perpendicular pane occupies that edge.
+            planes.each { plane ->
+                def planeData = directions[plane]
+                directions.each { edgeDirection, edgeData ->
+                    if (edgeData.axis == planeData.axis || planes.contains(edgeDirection)) {
+                        return
+                    }
+
+                    def from = [0, 0, 0]
+                    def to = [16, 16, 16]
+                    setThinSide(from, to, plane)
+                    setThinSide(from, to, edgeDirection)
+
+                    int lineAxis = -1
+                    for (int axis = 0; axis < 3; axis++) {
+                        if (axis != planeData.axis && axis != edgeData.axis) {
+                            lineAxis = axis
+                            break
+                        }
+                    }
+
+                    planes.findAll { other ->
+                        other != plane && directions[other].axis == lineAxis
+                    }.each { other ->
+                        trimAtSide(from, to, other)
+                    }
+
+                    def faces = [:]
+                    faces[edgeDirection] = [texture: "#edge"]
+                    elements << [from: from, to: to, faces: faces]
+                }
+            }
+
+            // Each pair of perpendicular panes receives exactly one solid shared frame line.
+            for (int firstIndex = 0; firstIndex < planes.size(); firstIndex++) {
+                for (int secondIndex = firstIndex + 1; secondIndex < planes.size(); secondIndex++) {
+                    String first = planes[firstIndex]
+                    String second = planes[secondIndex]
+                    int firstAxis = directions[first].axis
+                    int secondAxis = directions[second].axis
+                    if (firstAxis == secondAxis) {
+                        continue
+                    }
+
+                    int lineAxis = -1
+                    for (int axis = 0; axis < 3; axis++) {
+                        if (axis != firstAxis && axis != secondAxis) {
+                            lineAxis = axis
+                            break
+                        }
+                    }
+
+                    def from = [0, 0, 0]
+                    def to = [16, 16, 16]
+                    setThinSide(from, to, first)
+                    setThinSide(from, to, second)
+
+                    planes.findAll { third ->
+                        third != first && third != second && directions[third].axis == lineAxis
+                    }.each { third ->
+                        trimAtSide(from, to, third)
+                    }
+
+                    if (to[lineAxis] > from[lineAxis]) {
+                        elements << [
+                                from: from,
+                                to: to,
+                                faces: allFaces("#edge")
+                        ]
+                    }
+                }
+            }
+
+            // Three mutually perpendicular panes meet in one opaque 2x2x2 corner block.
+            for (int firstIndex = 0; firstIndex < planes.size(); firstIndex++) {
+                for (int secondIndex = firstIndex + 1; secondIndex < planes.size(); secondIndex++) {
+                    for (int thirdIndex = secondIndex + 1; thirdIndex < planes.size(); thirdIndex++) {
+                        String first = planes[firstIndex]
+                        String second = planes[secondIndex]
+                        String third = planes[thirdIndex]
+                        def axes = [
+                                directions[first].axis,
+                                directions[second].axis,
+                                directions[third].axis
+                        ] as Set
+                        if (axes.size() != 3) {
+                            continue
+                        }
+
+                        def from = [0, 0, 0]
+                        def to = [16, 16, 16]
+                        setThinSide(from, to, first)
+                        setThinSide(from, to, second)
+                        setThinSide(from, to, third)
+                        elements << [
+                                from: from,
+                                to: to,
+                                faces: allFaces("#edge")
+                        ]
+                    }
+                }
+            }
+
+            return [
+                    render_type: "minecraft:translucent",
+                    textures: [particle: "#pane"],
+                    elements: elements
+            ]
+        }
+
+        for (int mask = 0; mask < 16; mask++) {
+            writeJson(
+                    "assets/ultimateglass/models/block/edge_pane_shape_${mask}_base.json",
+                    createMergedShape(mask)
+            )
+        }
+
+        def colors = [
+                [suffix: "", pane: "minecraft:block/glass", edge: "minecraft:block/white_concrete"],
+                [suffix: "white", pane: "minecraft:block/white_stained_glass", edge: "minecraft:block/white_concrete"],
+                [suffix: "orange", pane: "minecraft:block/orange_stained_glass", edge: "minecraft:block/orange_concrete"],
+                [suffix: "magenta", pane: "minecraft:block/magenta_stained_glass", edge: "minecraft:block/magenta_concrete"],
+                [suffix: "light_blue", pane: "minecraft:block/light_blue_stained_glass", edge: "minecraft:block/light_blue_concrete"],
+                [suffix: "yellow", pane: "minecraft:block/yellow_stained_glass", edge: "minecraft:block/yellow_concrete"],
+                [suffix: "lime", pane: "minecraft:block/lime_stained_glass", edge: "minecraft:block/lime_concrete"],
+                [suffix: "pink", pane: "minecraft:block/pink_stained_glass", edge: "minecraft:block/pink_concrete"],
+                [suffix: "gray", pane: "minecraft:block/gray_stained_glass", edge: "minecraft:block/gray_concrete"],
+                [suffix: "light_gray", pane: "minecraft:block/light_gray_stained_glass", edge: "minecraft:block/light_gray_concrete"],
+                [suffix: "cyan", pane: "minecraft:block/cyan_stained_glass", edge: "minecraft:block/cyan_concrete"],
+                [suffix: "purple", pane: "minecraft:block/purple_stained_glass", edge: "minecraft:block/purple_concrete"],
+                [suffix: "blue", pane: "minecraft:block/blue_stained_glass", edge: "minecraft:block/blue_concrete"],
+                [suffix: "brown", pane: "minecraft:block/brown_stained_glass", edge: "minecraft:block/brown_concrete"],
+                [suffix: "green", pane: "minecraft:block/green_stained_glass", edge: "minecraft:block/green_concrete"],
+                [suffix: "red", pane: "minecraft:block/red_stained_glass", edge: "minecraft:block/red_concrete"],
+                [suffix: "black", pane: "minecraft:block/black_stained_glass", edge: "minecraft:block/black_concrete"]
+        ]
+
+        def orientations = [
+                [facing: "north", rotation: [:]],
+                [facing: "east", rotation: [y: 90]],
+                [facing: "south", rotation: [y: 180]],
+                [facing: "west", rotation: [y: 270]],
+                [facing: "up", rotation: [x: 270]],
+                [facing: "down", rotation: [x: 90]]
+        ]
+
+        colors.each { color ->
+            String blockName = color.suffix.isEmpty()
+                    ? "edge_glass_pane"
+                    : "edge_${color.suffix}_stained_glass_pane"
+            def textures = [pane: color.pane, edge: color.edge]
+
+            for (int mask = 0; mask < 16; mask++) {
+                writeJson(
+                        "assets/ultimateglass/models/block/${blockName}_shape_${mask}.json",
+                        [
+                                parent: "ultimateglass:block/edge_pane_shape_${mask}_base",
+                                textures: textures
+                        ]
+                )
+            }
+
+            def multipart = []
+            orientations.each { orientation ->
+                for (int mask = 0; mask < 16; mask++) {
+                    def condition = [facing: orientation.facing]
+                    connectionSides.eachWithIndex { side, index ->
+                        condition["connect_${side}"] = ((mask & (1 << index)) != 0).toString()
+                    }
+
+                    multipart << [
+                            when: condition,
+                            apply: [
+                                    model: "ultimateglass:block/${blockName}_shape_${mask}"
+                            ] + orientation.rotation
+                    ]
+                }
+            }
+
+            writeJson(
+                    "assets/ultimateglass/blockstates/${blockName}.json",
+                    [multipart: multipart]
+            )
+        }
+    }
+}
+
 processResources {
+    dependsOn tasks.named("generatePaneResources")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     inputs.property "version", project.version
     filesMatching("fabric.mod.json") {
         expand "version": project.version
@@ -51,4 +331,9 @@ java {
     withSourcesJar()
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
+}
+
+tasks.named("sourcesJar") {
+    dependsOn tasks.named("generatePaneResources")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
