@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -96,6 +97,11 @@ public final class UltimateGlassClient implements ClientModInitializer {
     }
 
     public static void syncShiftPlacementMode() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null) {
+            return;
+        }
+
         ClientPlayNetworking.send(new ShiftPlacementModePayload(
                 UltimateGlassClientConfig.shiftPlacementMode().ordinal()
         ));
@@ -104,6 +110,18 @@ public final class UltimateGlassClient implements ClientModInitializer {
     public static void requestCraftingToggle(GlaziersToolTier tier) {
         boolean enabled = !UltimateGlassClientConfig.isCraftingEnabled(tier);
         UltimateGlassClientConfig.setCraftingEnabledLocally(tier, enabled);
+
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null || client.player == null) {
+            UltimateGlassServerConfig.apply(
+                    UltimateGlassServerConfig.copperCraftingEnabled(),
+                    UltimateGlassServerConfig.ironCraftingEnabled(),
+                    UltimateGlassServerConfig.diamondCraftingEnabled(),
+                    true
+            );
+            return;
+        }
+
         ClientPlayNetworking.send(new ToolCraftingConfigPayload(
                 UltimateGlassServerConfig.copperCraftingEnabled(),
                 UltimateGlassServerConfig.ironCraftingEnabled(),
