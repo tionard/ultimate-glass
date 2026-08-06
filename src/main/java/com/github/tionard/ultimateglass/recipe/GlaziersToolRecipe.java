@@ -1,10 +1,8 @@
 package com.github.tionard.ultimateglass.recipe;
 
-import net.minecraft.core.HolderLookup;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.CustomRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -17,8 +15,7 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 public final class GlaziersToolRecipe extends CustomRecipe {
     private final GlaziersToolTier tier;
 
-    public GlaziersToolRecipe(CraftingBookCategory category, GlaziersToolTier tier) {
-        super(category);
+    public GlaziersToolRecipe(GlaziersToolTier tier) {
         this.tier = tier;
     }
 
@@ -43,7 +40,7 @@ public final class GlaziersToolRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
+    public ItemStack assemble(CraftingInput input) {
         return new ItemStack(resultItem());
     }
 
