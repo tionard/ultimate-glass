@@ -5,6 +5,10 @@
   "mixins": [
     "BlockItemMixin"
   ],
+  "client": [
+    "FabricFluidRenderingMixin",
+    "FluidRendererMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },

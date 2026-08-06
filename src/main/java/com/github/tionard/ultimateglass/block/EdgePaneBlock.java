@@ -198,6 +198,27 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
                 .setValue(CONNECT_RIGHT, hasOuterConnection(level, pos, facing, right));
     }
 
+    /** Returns whether this state contains a pane plane on the requested block face. */
+    public static boolean hasPaneOnFace(BlockState state, Direction direction) {
+        Direction facing = state.getValue(FACING);
+        if (direction == facing) {
+            return true;
+        }
+        if (direction == localTop(facing)) {
+            return state.getValue(CONNECT_TOP);
+        }
+        if (direction == localTop(facing).getOpposite()) {
+            return state.getValue(CONNECT_BOTTOM);
+        }
+        if (direction == localLeft(facing)) {
+            return state.getValue(CONNECT_LEFT);
+        }
+        if (direction == localLeft(facing).getOpposite()) {
+            return state.getValue(CONNECT_RIGHT);
+        }
+        return false;
+    }
+
     /**
      * Follows the convex outside corner away from this pane. The first adjacent pane creates
      * the ordinary L shape. A second pane one step farther around the same corner can add the

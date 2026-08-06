@@ -2,7 +2,7 @@
 
 Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise six-direction glass-pane placement, connected corners, waterlogging, and tiered glassworking tools.
 
-## Version 0.1.4 test features
+## Version 0.1.5 features
 
 - Normal placement creates a pane perpendicular to the clicked face on the side farthest from the player.
 - Shift placement copies panes and other clearly oriented blocks.
@@ -10,6 +10,7 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders preci
 - The previous near-player Shift placement remains available in Mod Menu and through an unassigned keybind.
 - Adjacent perpendicular panes create merged L-shaped and three-plane cube corners.
 - Clear and all stained outside-face panes are waterloggable.
+- Waterlogged corners render level source water clipped inside their pane walls, including with Sodium.
 
 ## Glazier's Tool tiers
 
