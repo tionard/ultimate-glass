@@ -44,7 +44,7 @@ public final class UltimateGlassNetworking {
                     MinecraftServer server = context.player().level().getServer();
                     boolean canEdit = context.player().permissions()
                             .hasPermission(Permissions.COMMANDS_GAMEMASTER)
-                            || server.isSingleplayerOwner(context.player().getGameProfile());
+                            || server.isSingleplayerOwner(context.player().nameAndId());
                     if (!canEdit) {
                         ServerPlayNetworking.send(context.player(), ToolCraftingConfigPayload.current());
                         return;
