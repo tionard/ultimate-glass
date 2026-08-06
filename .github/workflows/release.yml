@@ -22,14 +22,19 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - name: Checkout main without marketplace actions
+        shell: bash
+        run: |
+          git init .
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --no-tags --depth=1 origin "${GITHUB_SHA}"
+          git checkout --detach FETCH_HEAD
 
-      - name: Read version
+      - name: Read version and inspect existing release
         id: version
         shell: bash
         run: |
@@ -39,49 +44,70 @@ jobs:
             exit 1
           fi
 
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          TAG="v${VERSION}"
+          ASSET="ultimate-glass-${VERSION}.jar"
 
-      - name: Check whether release already exists
-        id: existing
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        shell: bash
-        run: |
-          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Release $RELEASE_TAG already exists; nothing to publish."
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "asset=${ASSET}" >> "$GITHUB_OUTPUT"
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets \
+              --jq '.assets[].name' | grep -Fxq "$ASSET"; then
+              echo "complete=true" >> "$GITHUB_OUTPUT"
+              echo "Release ${TAG} already contains ${ASSET}; nothing to publish."
+            else
+              echo "complete=false" >> "$GITHUB_OUTPUT"
+              echo "Release ${TAG} exists but its playable JAR is missing; rebuilding it."
+            fi
           else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "complete=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Set up Java 25
-        if: steps.existing.outputs.exists != 'true'
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "25"
+      - name: Prepare Java 25
+        if: steps.version.outputs.complete != 'true'
+        shell: bash
+        run: |
+          JAVA_HOME="$(find /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk \
+            -mindepth 2 -maxdepth 2 -type d -path '*/25*/x64' | sort -V | tail -n 1)"
 
-      - name: Set up Gradle
-        if: steps.existing.outputs.exists != 'true'
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.5.1"
+          if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
+            mkdir -p /tmp/jdk25
+            curl --fail --location --retry 4 --retry-all-errors \
+              'https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse' \
+              --output /tmp/jdk25.tar.gz
+            tar -xzf /tmp/jdk25.tar.gz --strip-components=1 -C /tmp/jdk25
+            JAVA_HOME=/tmp/jdk25
+          fi
+
+          test -x "$JAVA_HOME/bin/java"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
+          "$JAVA_HOME/bin/java" -version
+
+      - name: Prepare Gradle 9.5.1
+        if: steps.version.outputs.complete != 'true'
+        shell: bash
+        run: |
+          curl --fail --location --retry 4 --retry-all-errors \
+            https://downloads.gradle.org/distributions/gradle-9.5.1-bin.zip \
+            --output /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "/tmp/gradle-9.5.1/bin" >> "$GITHUB_PATH"
 
       - name: Build mod
-        if: steps.existing.outputs.exists != 'true'
-        run: gradle build --stacktrace
+        if: steps.version.outputs.complete != 'true'
+        run: /tmp/gradle-9.5.1/bin/gradle build --stacktrace
 
       - name: Smoke-test dedicated server startup
-        if: steps.existing.outputs.exists != 'true'
+        if: steps.version.outputs.complete != 'true'
         shell: bash
         run: |
           mkdir -p run
           printf 'eula=true\n' > run/eula.txt
 
           set +e
-          timeout 120s gradle runServer --args nogui > server-smoke.log 2>&1
+          timeout 120s /tmp/gradle-9.5.1/bin/gradle runServer --args nogui > server-smoke.log 2>&1
           status=$?
           set -e
 
@@ -98,52 +124,62 @@ jobs:
           fi
 
       - name: Find playable mod JAR
-        if: steps.existing.outputs.exists != 'true'
+        if: steps.version.outputs.complete != 'true'
         id: mod_jar
         shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          MOD_JAR=$(find build/libs -maxdepth 1 -type f \
-            -name 'ultimate-glass-*.jar' \
-            ! -name '*-sources.jar' \
-            ! -name '*-dev.jar' \
-            -print -quit)
+          MOD_JAR="build/libs/ultimate-glass-${RELEASE_VERSION}.jar"
 
-          if [ -z "$MOD_JAR" ]; then
+          if [ ! -f "$MOD_JAR" ]; then
+            MOD_JAR=$(find build/libs -maxdepth 1 -type f \
+              -name 'ultimate-glass-*.jar' \
+              ! -name '*-sources.jar' \
+              ! -name '*-dev.jar' \
+              -print -quit)
+          fi
+
+          if [ -z "$MOD_JAR" ] || [ ! -f "$MOD_JAR" ]; then
             echo 'Could not find the playable Ultimate Glass JAR.' >&2
             exit 1
           fi
 
           echo "path=$MOD_JAR" >> "$GITHUB_OUTPUT"
-          echo "Found release asset: $MOD_JAR"
+          sha256sum "$MOD_JAR"
 
-      - name: Create version tag
-        if: steps.existing.outputs.exists != 'true'
+      - name: Ensure version tag exists
+        if: steps.version.outputs.complete != 'true'
+        shell: bash
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
-        shell: bash
         run: |
-          if git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "Tag $RELEASE_TAG already exists while its release does not." >&2
-            echo 'Bump mod_version before publishing another release.' >&2
-            exit 1
+          if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Tag ${RELEASE_TAG} already exists; reusing it."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RELEASE_TAG" -m "Ultimate Glass $RELEASE_VERSION"
+            git push origin "$RELEASE_TAG"
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$RELEASE_TAG" -m "Ultimate Glass $RELEASE_VERSION"
-          git push origin "$RELEASE_TAG"
-
-      - name: Publish GitHub Release with JAR
-        if: steps.existing.outputs.exists != 'true'
+      - name: Publish or repair GitHub Release
+        if: steps.version.outputs.complete != 'true'
+        shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
           MOD_JAR: ${{ steps.mod_jar.outputs.path }}
         run: |
-          gh release create "$RELEASE_TAG" "$MOD_JAR" \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Ultimate Glass $RELEASE_VERSION" \
-            --generate-notes \
-            --verify-tag
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$MOD_JAR" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
+          else
+            gh release create "$RELEASE_TAG" "$MOD_JAR" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Ultimate Glass $RELEASE_VERSION" \
+              --generate-notes \
+              --verify-tag
+          fi
