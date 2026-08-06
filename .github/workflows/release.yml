@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  statuses: write
 
 concurrency:
   group: publish-version-release
@@ -183,3 +184,18 @@ jobs:
               --generate-notes \
               --verify-tag
           fi
+
+      - name: Verify release asset and publish status
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_ASSET: ${{ steps.version.outputs.asset }}
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets \
+            --jq '.assets[].name' | grep -Fxq "$RELEASE_ASSET"
+
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state='success' \
+            -f context="release/${RELEASE_TAG}" \
+            -f description="Published ${RELEASE_ASSET}"
