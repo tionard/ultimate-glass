@@ -57,102 +57,177 @@ tasks.register("generatePaneResources") {
             output.text = JsonOutput.prettyPrint(JsonOutput.toJson(value)) + System.lineSeparator()
         }
 
-        def plateBase = [
-                render_type: "minecraft:translucent",
-                textures: [particle: "#pane"],
-                elements: [[
-                        from: [0, 0, 0],
-                        to: [16, 16, 2],
-                        faces: [
-                                north: [uv: [0, 0, 16, 16], texture: "#pane"],
-                                south: [uv: [0, 0, 16, 16], texture: "#pane"]
+        def directions = [
+                north: [axis: 2, minimum: true, opposite: "south"],
+                south: [axis: 2, minimum: false, opposite: "north"],
+                west : [axis: 0, minimum: true, opposite: "east"],
+                east : [axis: 0, minimum: false, opposite: "west"],
+                down : [axis: 1, minimum: true, opposite: "up"],
+                up   : [axis: 1, minimum: false, opposite: "down"]
+        ]
+        def connectionSides = ["top", "bottom", "left", "right"]
+        def localWingDirections = [
+                top: "up",
+                bottom: "down",
+                left: "west",
+                right: "east"
+        ]
+
+        def setThinSide = { List<Integer> from, List<Integer> to, String direction ->
+            def data = directions[direction]
+            if (data.minimum) {
+                to[data.axis] = 2
+            } else {
+                from[data.axis] = 14
+            }
+        }
+
+        def trimAtSide = { List<Integer> from, List<Integer> to, String direction ->
+            def data = directions[direction]
+            if (data.minimum) {
+                from[data.axis] = 2
+            } else {
+                to[data.axis] = 14
+            }
+        }
+
+        def allFaces = { String texture ->
+            def faces = [:]
+            directions.keySet().each { direction ->
+                faces[direction] = [texture: texture]
+            }
+            return faces
+        }
+
+        def createMergedShape = { int mask ->
+            def planes = ["north"]
+            connectionSides.eachWithIndex { side, index ->
+                if ((mask & (1 << index)) != 0) {
+                    planes << localWingDirections[side]
+                }
+            }
+
+            def elements = []
+
+            // Transparent panes are trimmed at every shared edge, preventing overlapping glass.
+            planes.each { plane ->
+                def from = [0, 0, 0]
+                def to = [16, 16, 16]
+                setThinSide(from, to, plane)
+
+                planes.findAll { other -> other != plane }.each { other ->
+                    trimAtSide(from, to, other)
+                }
+
+                if ((0..2).every { axis -> to[axis] > from[axis] }) {
+                    def faces = [:]
+                    faces[plane] = [texture: "#pane"]
+                    faces[directions[plane].opposite] = [texture: "#pane"]
+                    elements << [from: from, to: to, faces: faces]
+                }
+            }
+
+            // Keep the normal outside frame wherever no perpendicular pane occupies that edge.
+            planes.each { plane ->
+                def planeData = directions[plane]
+                directions.each { edgeDirection, edgeData ->
+                    if (edgeData.axis == planeData.axis || planes.contains(edgeDirection)) {
+                        return
+                    }
+
+                    def from = [0, 0, 0]
+                    def to = [16, 16, 16]
+                    setThinSide(from, to, plane)
+                    setThinSide(from, to, edgeDirection)
+
+                    int lineAxis = -1
+                    for (int axis = 0; axis < 3; axis++) {
+                        if (axis != planeData.axis && axis != edgeData.axis) {
+                            lineAxis = axis
+                            break
+                        }
+                    }
+
+                    planes.findAll { other ->
+                        other != plane && directions[other].axis == lineAxis
+                    }.each { other ->
+                        trimAtSide(from, to, other)
+                    }
+
+                    def faces = [:]
+                    faces[edgeDirection] = [texture: "#edge"]
+                    elements << [from: from, to: to, faces: faces]
+                }
+            }
+
+            // Each pair of perpendicular panes receives exactly one solid shared frame line.
+            for (int firstIndex = 0; firstIndex < planes.size(); firstIndex++) {
+                for (int secondIndex = firstIndex + 1; secondIndex < planes.size(); secondIndex++) {
+                    String first = planes[firstIndex]
+                    String second = planes[secondIndex]
+                    int firstAxis = directions[first].axis
+                    int secondAxis = directions[second].axis
+                    if (firstAxis == secondAxis) {
+                        continue
+                    }
+
+                    int lineAxis = -1
+                    for (int axis = 0; axis < 3; axis++) {
+                        if (axis != firstAxis && axis != secondAxis) {
+                            lineAxis = axis
+                            break
+                        }
+                    }
+
+                    def from = [0, 0, 0]
+                    def to = [16, 16, 16]
+                    setThinSide(from, to, first)
+                    setThinSide(from, to, second)
+
+                    planes.findAll { third ->
+                        third != first && third != second && directions[third].axis == lineAxis
+                    }.each { third ->
+                        trimAtSide(from, to, third)
+                    }
+
+                    if (to[lineAxis] > from[lineAxis]) {
+                        elements << [
+                                from: from,
+                                to: to,
+                                faces: allFaces("#edge")
                         ]
-                ]]
-        ]
-
-        def borderBases = [
-                top: [
-                        render_type: "minecraft:translucent",
-                        textures: [particle: "#edge"],
-                        elements: [[
-                                from: [0, 14, 0],
-                                to: [16, 16, 2],
-                                faces: [up: [uv: [0, 0, 16, 2], texture: "#edge"]]
-                        ]]
-                ],
-                bottom: [
-                        render_type: "minecraft:translucent",
-                        textures: [particle: "#edge"],
-                        elements: [[
-                                from: [0, 0, 0],
-                                to: [16, 2, 2],
-                                faces: [down: [uv: [0, 0, 16, 2], texture: "#edge"]]
-                        ]]
-                ],
-                left: [
-                        render_type: "minecraft:translucent",
-                        textures: [particle: "#edge"],
-                        elements: [[
-                                from: [0, 0, 0],
-                                to: [2, 16, 2],
-                                faces: [west: [uv: [0, 0, 2, 16], texture: "#edge"]]
-                        ]]
-                ],
-                right: [
-                        render_type: "minecraft:translucent",
-                        textures: [particle: "#edge"],
-                        elements: [[
-                                from: [14, 0, 0],
-                                to: [16, 16, 2],
-                                faces: [east: [uv: [0, 0, 2, 16], texture: "#edge"]]
-                        ]]
-                ]
-        ]
-
-        def createWingBase = { String touchingSide ->
-            int minX = touchingSide == "left" ? 2 : 0
-            int maxX = touchingSide == "right" ? 14 : 16
-            int minY = touchingSide == "bottom" ? 2 : 0
-            int maxY = touchingSide == "top" ? 14 : 16
-            int width = maxX - minX
-            int height = maxY - minY
-
-            def elements = [[
-                    from: [minX, minY, 0],
-                    to: [maxX, maxY, 2],
-                    faces: [
-                            north: [uv: [0, 0, width, height], texture: "#pane"],
-                            south: [uv: [0, 0, width, height], texture: "#pane"]
-                    ]
-            ]]
-
-            if (touchingSide != "top") {
-                elements << [
-                        from: [minX, 14, 0],
-                        to: [maxX, 16, 2],
-                        faces: [up: [uv: [0, 0, width, 2], texture: "#edge"]]
-                ]
+                    }
+                }
             }
-            if (touchingSide != "bottom") {
-                elements << [
-                        from: [minX, 0, 0],
-                        to: [maxX, 2, 2],
-                        faces: [down: [uv: [0, 0, width, 2], texture: "#edge"]]
-                ]
-            }
-            if (touchingSide != "left") {
-                elements << [
-                        from: [0, minY, 0],
-                        to: [2, maxY, 2],
-                        faces: [west: [uv: [0, 0, 2, height], texture: "#edge"]]
-                ]
-            }
-            if (touchingSide != "right") {
-                elements << [
-                        from: [14, minY, 0],
-                        to: [16, maxY, 2],
-                        faces: [east: [uv: [0, 0, 2, height], texture: "#edge"]]
-                ]
+
+            // Three mutually perpendicular panes meet in one opaque 2x2x2 corner block.
+            for (int firstIndex = 0; firstIndex < planes.size(); firstIndex++) {
+                for (int secondIndex = firstIndex + 1; secondIndex < planes.size(); secondIndex++) {
+                    for (int thirdIndex = secondIndex + 1; thirdIndex < planes.size(); thirdIndex++) {
+                        String first = planes[firstIndex]
+                        String second = planes[secondIndex]
+                        String third = planes[thirdIndex]
+                        def axes = [
+                                directions[first].axis,
+                                directions[second].axis,
+                                directions[third].axis
+                        ] as Set
+                        if (axes.size() != 3) {
+                            continue
+                        }
+
+                        def from = [0, 0, 0]
+                        def to = [16, 16, 16]
+                        setThinSide(from, to, first)
+                        setThinSide(from, to, second)
+                        setThinSide(from, to, third)
+                        elements << [
+                                from: from,
+                                to: to,
+                                faces: allFaces("#edge")
+                        ]
+                    }
+                }
             }
 
             return [
@@ -162,20 +237,10 @@ tasks.register("generatePaneResources") {
             ]
         }
 
-        writeJson(
-                "assets/ultimateglass/models/block/edge_pane_plate_base.json",
-                plateBase
-        )
-        borderBases.each { side, model ->
+        for (int mask = 0; mask < 16; mask++) {
             writeJson(
-                    "assets/ultimateglass/models/block/edge_pane_border_${side}_base.json",
-                    model
-            )
-        }
-        borderBases.keySet().each { touchingSide ->
-            writeJson(
-                    "assets/ultimateglass/models/block/edge_pane_wing_${touchingSide}_base.json",
-                    createWingBase(touchingSide)
+                    "assets/ultimateglass/models/block/edge_pane_shape_${mask}_base.json",
+                    createMergedShape(mask)
             )
         }
 
@@ -200,40 +265,13 @@ tasks.register("generatePaneResources") {
         ]
 
         def orientations = [
-                [
-                        facing: "north",
-                        rotation: [:],
-                        wings: [top: "up", bottom: "down", left: "west", right: "east"]
-                ],
-                [
-                        facing: "east",
-                        rotation: [y: 90],
-                        wings: [top: "up", bottom: "down", left: "north", right: "south"]
-                ],
-                [
-                        facing: "south",
-                        rotation: [y: 180],
-                        wings: [top: "up", bottom: "down", left: "east", right: "west"]
-                ],
-                [
-                        facing: "west",
-                        rotation: [y: 270],
-                        wings: [top: "up", bottom: "down", left: "south", right: "north"]
-                ],
-                [
-                        facing: "up",
-                        rotation: [x: 270],
-                        wings: [top: "south", bottom: "north", left: "west", right: "east"]
-                ],
-                [
-                        facing: "down",
-                        rotation: [x: 90],
-                        wings: [top: "north", bottom: "south", left: "west", right: "east"]
-                ]
+                [facing: "north", rotation: [:]],
+                [facing: "east", rotation: [y: 90]],
+                [facing: "south", rotation: [y: 180]],
+                [facing: "west", rotation: [y: 270]],
+                [facing: "up", rotation: [x: 270]],
+                [facing: "down", rotation: [x: 90]]
         ]
-        def orientationByFacing = orientations.collectEntries { orientation ->
-            [(orientation.facing): orientation]
-        }
 
         colors.each { color ->
             String blockName = color.suffix.isEmpty()
@@ -241,23 +279,11 @@ tasks.register("generatePaneResources") {
                     : "edge_${color.suffix}_stained_glass_pane"
             def textures = [pane: color.pane, edge: color.edge]
 
-            writeJson(
-                    "assets/ultimateglass/models/block/${blockName}.json",
-                    [parent: "ultimateglass:block/edge_pane_plate_base", textures: textures]
-            )
-
-            borderBases.keySet().each { side ->
+            for (int mask = 0; mask < 16; mask++) {
                 writeJson(
-                        "assets/ultimateglass/models/block/${blockName}_border_${side}.json",
+                        "assets/ultimateglass/models/block/${blockName}_shape_${mask}.json",
                         [
-                                parent: "ultimateglass:block/edge_pane_border_${side}_base",
-                                textures: textures
-                        ]
-                )
-                writeJson(
-                        "assets/ultimateglass/models/block/${blockName}_wing_${side}.json",
-                        [
-                                parent: "ultimateglass:block/edge_pane_wing_${side}_base",
+                                parent: "ultimateglass:block/edge_pane_shape_${mask}_base",
                                 textures: textures
                         ]
                 )
@@ -265,36 +291,17 @@ tasks.register("generatePaneResources") {
 
             def multipart = []
             orientations.each { orientation ->
-                def mainWhen = [facing: orientation.facing]
-                multipart << [
-                        when: mainWhen,
-                        apply: [model: "ultimateglass:block/${blockName}"] + orientation.rotation
-                ]
+                for (int mask = 0; mask < 16; mask++) {
+                    def condition = [facing: orientation.facing]
+                    connectionSides.eachWithIndex { side, index ->
+                        condition["connect_${side}"] = ((mask & (1 << index)) != 0).toString()
+                    }
 
-                borderBases.keySet().each { borderSide ->
                     multipart << [
-                            when: mainWhen,
+                            when: condition,
                             apply: [
-                                    model: "ultimateglass:block/${blockName}_border_${borderSide}"
+                                    model: "ultimateglass:block/${blockName}_shape_${mask}"
                             ] + orientation.rotation
-                    ]
-                }
-
-                orientation.wings.each { connectionSide, wingFacing ->
-                    def wingOrientation = orientationByFacing[wingFacing]
-                    String touchingWingSide = wingOrientation.wings.find { side, worldDirection ->
-                        worldDirection == orientation.facing
-                    }.key
-                    def connectionWhen = [
-                            facing: orientation.facing,
-                            ("connect_${connectionSide}"): "true"
-                    ]
-
-                    multipart << [
-                            when: connectionWhen,
-                            apply: [
-                                    model: "ultimateglass:block/${blockName}_wing_${touchingWingSide}"
-                            ] + wingOrientation.rotation
                     ]
                 }
             }
