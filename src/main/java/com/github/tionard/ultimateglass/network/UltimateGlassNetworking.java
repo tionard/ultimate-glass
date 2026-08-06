@@ -52,13 +52,11 @@ public final class UltimateGlassNetworking {
                             payload.diamondEnabled(),
                             true
                     );
-                    MinecraftServer server = context.player().getServer();
-                    if (server != null) {
-                        ToolCraftingConfigPayload current = ToolCraftingConfigPayload.current();
-                        server.getPlayerList().getPlayers().forEach(
-                                player -> ServerPlayNetworking.send(player, current)
-                        );
-                    }
+                    MinecraftServer server = context.player().level().getServer();
+                    ToolCraftingConfigPayload current = ToolCraftingConfigPayload.current();
+                    server.getPlayerList().getPlayers().forEach(
+                            player -> ServerPlayNetworking.send(player, current)
+                    );
                 }
         );
 
