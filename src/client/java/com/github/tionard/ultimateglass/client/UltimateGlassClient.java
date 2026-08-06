@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
@@ -63,6 +64,10 @@ public final class UltimateGlassClient implements ClientModInitializer {
                                 payload.diamondEnabled()
                         )
                 )
+        );
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                UltimateGlassServerConfig.load()
         );
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
