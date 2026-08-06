@@ -18,10 +18,17 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
 public final class GlaziersToolItem extends Item {
-    private static final float GLASS_MINING_SPEED = 6.0F;
+    private static final float DIAMOND_GLASS_MINING_SPEED = 6.0F;
 
-    public GlaziersToolItem(Properties properties) {
+    private final GlaziersToolTier tier;
+
+    public GlaziersToolItem(Properties properties, GlaziersToolTier tier) {
         super(properties);
+        this.tier = tier;
+    }
+
+    public GlaziersToolTier tier() {
+        return tier;
     }
 
     @Override
@@ -35,8 +42,11 @@ public final class GlaziersToolItem extends Item {
         BlockState state = level.getBlockState(context.getClickedPos());
         Block block = state.getBlock();
 
-        if (player.isShiftKeyDown()) {
-            return togglePanePosition(context, state, block);
+        if (player.isShiftKeyDown() && tier.canTogglePanePosition()) {
+            InteractionResult toggleResult = togglePanePosition(context, state, block);
+            if (toggleResult != InteractionResult.PASS) {
+                return toggleResult;
+            }
         }
 
         if (block instanceof EdgePaneBlock) {
@@ -59,12 +69,15 @@ public final class GlaziersToolItem extends Item {
 
     @Override
     public float getDestroySpeed(ItemStack stack, BlockState state) {
-        return collectedStack(state.getBlock()).isEmpty() ? 1.0F : GLASS_MINING_SPEED;
+        if (!tier.silkTouchesGlass() || collectedStack(state.getBlock()).isEmpty()) {
+            return 1.0F;
+        }
+        return DIAMOND_GLASS_MINING_SPEED;
     }
 
     @Override
     public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
-        return !collectedStack(state.getBlock()).isEmpty() || super.isCorrectToolForDrops(stack, state);
+        return tier.silkTouchesGlass() && !collectedStack(state.getBlock()).isEmpty();
     }
 
     private static InteractionResult togglePanePosition(

@@ -12,6 +12,9 @@ import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
+import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
+import com.github.tionard.ultimateglass.item.GlaziersToolTier;
+import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
 
 public final class UltimateGlassClientConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -19,7 +22,7 @@ public final class UltimateGlassClientConfig {
             .getConfigDir()
             .resolve("ultimate-glass-client.json");
 
-    private static boolean toolEnabled = true;
+    private static ShiftPlacementMode shiftPlacementMode = ShiftPlacementMode.FACE;
 
     private UltimateGlassClientConfig() {
     }
@@ -32,34 +35,50 @@ public final class UltimateGlassClientConfig {
 
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             ConfigData data = GSON.fromJson(reader, ConfigData.class);
-            if (data != null) {
-                toolEnabled = data.toolEnabled;
+            if (data != null && data.shiftPlacementMode != null) {
+                shiftPlacementMode = data.shiftPlacementMode;
             }
         } catch (IOException | RuntimeException exception) {
             UltimateGlass.LOGGER.warn("Could not read client configuration; using defaults", exception);
-            toolEnabled = true;
+            shiftPlacementMode = ShiftPlacementMode.FACE;
         }
     }
 
-    public static boolean isToolEnabled() {
-        return toolEnabled;
+    public static ShiftPlacementMode shiftPlacementMode() {
+        return shiftPlacementMode;
     }
 
-    public static void setToolEnabled(boolean enabled) {
-        toolEnabled = enabled;
+    public static ShiftPlacementMode toggleShiftPlacementMode() {
+        shiftPlacementMode = shiftPlacementMode.next();
         save();
+        return shiftPlacementMode;
     }
 
-    public static boolean toggleToolEnabled() {
-        setToolEnabled(!toolEnabled);
-        return toolEnabled;
+    public static boolean isCraftingEnabled(GlaziersToolTier tier) {
+        return UltimateGlassServerConfig.isCraftingEnabled(tier);
+    }
+
+    public static void applyServerCraftingConfig(boolean copper, boolean iron, boolean diamond) {
+        UltimateGlassServerConfig.apply(copper, iron, diamond, false);
+    }
+
+    public static void setCraftingEnabledLocally(GlaziersToolTier tier, boolean enabled) {
+        boolean copper = UltimateGlassServerConfig.copperCraftingEnabled();
+        boolean iron = UltimateGlassServerConfig.ironCraftingEnabled();
+        boolean diamond = UltimateGlassServerConfig.diamondCraftingEnabled();
+        switch (tier) {
+            case COPPER -> copper = enabled;
+            case IRON -> iron = enabled;
+            case DIAMOND -> diamond = enabled;
+        }
+        UltimateGlassServerConfig.apply(copper, iron, diamond, false);
     }
 
     private static void save() {
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
-                GSON.toJson(new ConfigData(toolEnabled), writer);
+                GSON.toJson(new ConfigData(shiftPlacementMode), writer);
             }
         } catch (IOException exception) {
             UltimateGlass.LOGGER.warn("Could not save client configuration", exception);
@@ -67,13 +86,13 @@ public final class UltimateGlassClientConfig {
     }
 
     private static final class ConfigData {
-        private boolean toolEnabled = true;
+        private ShiftPlacementMode shiftPlacementMode = ShiftPlacementMode.FACE;
 
         private ConfigData() {
         }
 
-        private ConfigData(boolean toolEnabled) {
-            this.toolEnabled = toolEnabled;
+        private ConfigData(ShiftPlacementMode shiftPlacementMode) {
+            this.shiftPlacementMode = shiftPlacementMode;
         }
     }
 }

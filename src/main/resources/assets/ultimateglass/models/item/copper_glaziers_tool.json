@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "ultimateglass:item/copper_glaziers_tool"
+  }
+}

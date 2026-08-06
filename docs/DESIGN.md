@@ -1,108 +1,67 @@
 # Ultimate Glass — Design
 
-## Placement model
+## Placement
 
-Glass panes support vanilla centred placement plus six custom outside-face placements: north, east, south, west, top, and bottom.
+Glass panes support vanilla centred placement plus six custom outside-face placements.
 
-### Normal placement
+Normal placement projects the player's position onto the clicked face and selects a perpendicular outside edge on the far side.
 
-- The pane is perpendicular to the clicked face.
-- The player's position is projected onto that face.
-- The outside-face position farthest from the player is selected.
-- Example: standing south and clicking a top face creates a vertical pane on the north edge.
-- Example: standing below and clicking a vertical face creates a horizontal pane on the top edge.
+Shift placement first attempts to copy a clear orientation from a pane, slab, stair, trapdoor, door, or facing/half block. AXIS-only logs and pillars remain ignored. When no orientation is available, the player-selected fallback is used:
 
-### Shift placement
+- **Clicked face:** place the pane flush against the clicked surface. This is the 0.1.4 default.
+- **Near player:** preserve the previous 0.1.3 perpendicular near-edge behavior.
 
-- A clearly oriented clicked block supplies the pane orientation without using the player's position.
-- Supported references include custom panes, slabs, stairs, trapdoors, doors, and blocks exposing a clear facing or half.
-- AXIS-only logs and pillars are intentionally ignored because an axis does not identify one unambiguous face.
-- When no supported orientation is available, placement remains perpendicular but selects the side closest to the player.
+The client persists the selected mode, sends it to the logical server, and may toggle it through Mod Menu or an unassigned keybind.
 
-## Outer-corner connections
+## Connected corners
 
-Custom panes may add generated geometry when source panes form a convex outside corner.
+Convex outside corners use generated merged geometry:
 
-### Two-plane corner
+- two perpendicular source panes create an L-shaped corner;
+- three mutually perpendicular panes create a complete cube corner;
+- transparent planes are trimmed at intersections;
+- each pane pair has one shared frame line;
+- three frame lines meet in one 2×2×2 corner block;
+- outline and collision geometry include every active plane.
 
-- The first perpendicular pane is found in the next block around the outside face.
-- The receiving block renders its original pane and one perpendicular wing.
-- The result is one continuous L-shaped corner spanning the adjacent blocks.
+Concave inner arrangements remain unconnected.
 
-### Three-plane cube corner
+## Rotation
 
-- After finding the first perpendicular pane, the resolver may continue one step farther around that pane's outside face.
-- A second perpendicular pane on the third axis activates a second wing.
-- The receiving block then contains three mutually perpendicular pane planes.
-- The connection refresh radius is two blocks so placement, breaking, rotation, and conversion update the complete chain.
+`Change Rotation Axis` is assigned to V by default and cycles X → Y → Z. Right-clicking with any Glazier's Tool rotates a custom pane 90° around the selected axis. Rotation and conversion refresh nearby corner states.
 
-Concave inner arrangements do not use this outside chain and therefore remain unconnected.
+## Tool tiers
 
-## Merged corner models
+- **Copper:** rotation only.
+- **Iron:** rotation plus centred/outside-face conversion.
+- **Diamond:** iron abilities plus progressive, intact glass harvesting.
 
-Connection geometry is generated as one complete model for each of the 16 local connection masks rather than layering independent full panes.
+The legacy 0.1.3 item ID remains registered with diamond-tier behavior to protect existing worlds, but is not newly craftable or shown in Creative tabs.
 
-- Every transparent pane plane is shortened by two pixels at each shared edge.
-- Every pair of perpendicular panes receives exactly one opaque shared frame line.
-- When three panes meet, their three frame lines terminate at one opaque 2×2×2 corner block.
-- Normal outside frame surfaces remain on edges without a connection.
-- This prevents overlapping transparent surfaces, doubled caps, missing inner lines, and frame pieces passing through another pane.
-- Outline, support, occlusion, and collision shapes use the same active pane planes.
-
-The 16 base models are shared by all clear and stained variants through texture-substituting child models. Each six-way blockstate selects one exact model based on `connect_top`, `connect_bottom`, `connect_left`, and `connect_right`.
-
-## Rotation model
-
-The client exposes `Change Rotation Axis`, assigned to V by default.
-
-- The selected axis is synchronized to the server for the current player.
-- The axis cycles X → Y → Z.
-- Y is selected when a player first joins.
-- Right-clicking a custom pane rotates its facing direction 90° around the selected axis.
-- A pane parallel to the selected axis remains unchanged for that click.
-- Rotation refreshes nearby two- and three-plane connections.
-
-## World compatibility
-
-Ultimate Glass does not inject additional properties into vanilla pane block states.
-
-- A centred pane remains the original vanilla pane block.
-- A custom pane is represented by a hidden Ultimate Glass block variant containing facing, waterlogged, and connection properties.
-- Each clear or stained custom variant maps back to the corresponding vanilla pane item.
-- Removing the mod therefore requires converting custom panes back to centred panes first; existing vanilla panes and unrelated world data are not rewritten.
-
-## Waterlogging
-
-Every custom pane implements the standard waterlogged block contract.
-
-- A pane placed into water stores a source-water fluid state.
-- Rotation and centred/custom conversion preserve waterlogging.
-- Active pane planes contribute to the block's collision and occlusion geometry.
-- Directional flow behavior still requires gameplay validation because Minecraft fluid propagation depends on neighbouring shapes and fluid ticks.
-
-## Glazier's Tool
-
-- Mine glass normally: progressive breaking speed with an intact Silk Touch-like drop.
-- Right-click a custom pane: rotate it 90° around the selected axis.
-- Sneak + right-click a pane: toggle between centred and outside-face placement.
-
-All world mutations are server-authoritative. Client code is limited to key handling, configuration, rendering, and sending the selected rotation axis.
+Each tier uses a custom server-checked recipe with one tier material, one string, and two sticks. Mirrored patterns are accepted.
 
 ## Configuration
 
-Client:
+The old global tool-interaction switch is removed.
 
-- Enable/disable Glazier's Tool interactions through Mod Menu.
-- Persist the setting in `ultimate-glass-client.json`.
-- Configure the rotation-axis key through Minecraft's normal keybind screen.
+Client setting:
 
-There is no gameplay keybind for enabling or disabling the tool.
+- Shift placement mode.
 
-## Validation stages
+Server-authoritative settings:
 
-1. Validate normal and Shift placement from all six clicked faces.
-2. Validate supported orientation references and AXIS-only exclusions.
-3. Validate two-plane L corners and three-plane cube corners.
-4. Validate merged frame lines and transparent geometry from every viewing direction.
-5. Validate connection recalculation after placement, breaking, rotation, and conversion.
-6. Validate waterlogging, multiplayer synchronization, and every stained variant.
+- copper recipe enabled;
+- iron recipe enabled;
+- diamond recipe enabled.
+
+Disabled recipes still leave their items available through commands and Creative mode.
+
+## Waterlogging
+
+Every custom pane stores a source-water fluid state when waterlogged. Rotation and centred/outside conversion preserve it.
+
+Connected pane collision still contains all active planes. The custom connected occlusion override is removed so L-shaped and three-plane states do not cause the fluid renderer to treat their internal source water as lowered or flowing. Gameplay validation must confirm both a flat source surface and directional blocking across every active pane plane.
+
+## World compatibility
+
+Vanilla panes remain vanilla blocks. Custom outside-face panes use hidden Ultimate Glass blocks with facing, waterlogged, and connection properties. Removing the mod safely requires converting custom panes back to centred panes first.

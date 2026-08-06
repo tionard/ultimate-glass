@@ -1,11 +1,23 @@
 {
-  "item.ultimateglass.glaziers_tool": "Glazier's Tool",
+  "item.ultimateglass.copper_glaziers_tool": "Copper Glazier's Tool",
+  "item.ultimateglass.iron_glaziers_tool": "Iron Glazier's Tool",
+  "item.ultimateglass.diamond_glaziers_tool": "Diamond Glazier's Tool",
+  "item.ultimateglass.glaziers_tool": "Diamond Glazier's Tool (Legacy)",
   "key.category.ultimateglass.general": "Ultimate Glass",
   "key.ultimateglass.change_rotation_axis": "Change Rotation Axis",
+  "key.ultimateglass.toggle_shift_placement_mode": "Toggle Shift Placement Mode",
   "message.ultimateglass.rotation_axis_x": "Rotation axis: X",
   "message.ultimateglass.rotation_axis_y": "Rotation axis: Y",
   "message.ultimateglass.rotation_axis_z": "Rotation axis: Z",
+  "message.ultimateglass.shift_mode_face": "Shift placement: clicked face",
+  "message.ultimateglass.shift_mode_near": "Shift placement: near edge",
   "config.ultimateglass.title": "Ultimate Glass Settings",
-  "config.ultimateglass.tool_enabled": "Glazier's Tool: Enabled",
-  "config.ultimateglass.tool_disabled": "Glazier's Tool: Disabled"
+  "config.ultimateglass.shift_mode_face": "Shift placement: Clicked face",
+  "config.ultimateglass.shift_mode_near": "Shift placement: Near player",
+  "config.ultimateglass.crafting_copper_enabled": "Copper tool crafting: Enabled",
+  "config.ultimateglass.crafting_copper_disabled": "Copper tool crafting: Disabled",
+  "config.ultimateglass.crafting_iron_enabled": "Iron tool crafting: Enabled",
+  "config.ultimateglass.crafting_iron_disabled": "Iron tool crafting: Disabled",
+  "config.ultimateglass.crafting_diamond_enabled": "Diamond tool crafting: Enabled",
+  "config.ultimateglass.crafting_diamond_disabled": "Diamond tool crafting: Disabled"
 }

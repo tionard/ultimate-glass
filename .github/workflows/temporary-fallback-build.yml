@@ -1,0 +1,92 @@
+name: Temporary Fallback Build
+
+on:
+  pull_request:
+
+concurrency:
+  group: ultimate-glass-fallback-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout without marketplace actions
+        shell: bash
+        run: |
+          git init .
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch --no-tags --depth=1 origin "${GITHUB_REF}"
+          git checkout --detach FETCH_HEAD
+
+      - name: Prepare Java 25
+        shell: bash
+        run: |
+          JAVA_HOME="$(find /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk \
+            -mindepth 2 -maxdepth 2 -type d -path '*/25*/x64' | sort -V | tail -n 1)"
+
+          if [ -z "${JAVA_HOME}" ] || [ ! -x "${JAVA_HOME}/bin/java" ]; then
+            mkdir -p /tmp/jdk25
+            curl --fail --location --retry 4 --retry-all-errors \
+              'https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse' \
+              --output /tmp/jdk25.tar.gz
+            tar -xzf /tmp/jdk25.tar.gz --strip-components=1 -C /tmp/jdk25
+            JAVA_HOME=/tmp/jdk25
+          fi
+
+          test -n "${JAVA_HOME}"
+          test -x "${JAVA_HOME}/bin/java"
+          echo "JAVA_HOME=${JAVA_HOME}" >> "${GITHUB_ENV}"
+          echo "${JAVA_HOME}/bin" >> "${GITHUB_PATH}"
+          "${JAVA_HOME}/bin/java" -version
+
+      - name: Download Gradle 9.5.1
+        shell: bash
+        run: |
+          curl --fail --location --retry 4 --retry-all-errors \
+            https://downloads.gradle.org/distributions/gradle-9.5.1-bin.zip \
+            --output /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /tmp
+          echo "/tmp/gradle-9.5.1/bin" >> "${GITHUB_PATH}"
+
+      - name: Build
+        shell: bash
+        run: /tmp/gradle-9.5.1/bin/gradle build --stacktrace
+
+      - name: Smoke-test dedicated server startup
+        shell: bash
+        run: |
+          mkdir -p run
+          printf 'eula=true\n' > run/eula.txt
+
+          set +e
+          timeout 120s /tmp/gradle-9.5.1/bin/gradle runServer --args nogui > server-smoke.log 2>&1
+          status=$?
+          set -e
+
+          cat server-smoke.log
+
+          if ! grep -q 'Done (' server-smoke.log; then
+            echo 'Dedicated server did not reach the ready state.' >&2
+            exit 1
+          fi
+
+          if [ "${status}" -ne 0 ] && [ "${status}" -ne 124 ]; then
+            echo "Dedicated server exited unexpectedly with status ${status}." >&2
+            exit "${status}"
+          fi
+
+      - name: Emit test JAR
+        shell: bash
+        run: |
+          JAR="build/libs/ultimate-glass-0.1.4.jar"
+          test -f "${JAR}"
+          sha256sum "${JAR}"
+          echo 'ULTIMATE_GLASS_JAR_BASE64_BEGIN'
+          base64 --wrap=76 "${JAR}"
+          echo 'ULTIMATE_GLASS_JAR_BASE64_END'

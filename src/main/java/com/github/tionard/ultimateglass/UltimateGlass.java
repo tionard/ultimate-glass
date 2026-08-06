@@ -4,8 +4,10 @@ import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.interaction.UltimateGlassInteractions;
 import com.github.tionard.ultimateglass.network.UltimateGlassNetworking;
+import com.github.tionard.ultimateglass.recipe.UltimateGlassRecipes;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 
@@ -15,8 +17,10 @@ public final class UltimateGlass implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        UltimateGlassServerConfig.load();
         UltimateGlassBlocks.initialize();
         UltimateGlassItems.initialize();
+        UltimateGlassRecipes.initialize();
         UltimateGlassNetworking.initialize();
         UltimateGlassInteractions.initialize();
         LOGGER.info("Initialized Ultimate Glass");

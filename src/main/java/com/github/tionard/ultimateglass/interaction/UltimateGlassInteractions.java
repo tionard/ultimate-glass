@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.Block;
 
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
-import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 
 public final class UltimateGlassInteractions {
     private UltimateGlassInteractions() {
@@ -20,7 +19,8 @@ public final class UltimateGlassInteractions {
             }
 
             if (player.getAbilities().instabuild
-                    || !player.getMainHandItem().is(UltimateGlassItems.GLAZIERS_TOOL)) {
+                    || !(player.getMainHandItem().getItem() instanceof GlaziersToolItem tool)
+                    || !tool.tier().silkTouchesGlass()) {
                 return;
             }
 

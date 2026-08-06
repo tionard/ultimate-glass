@@ -77,11 +77,6 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
     }
 
     @Override
-    protected VoxelShape getOcclusionShape(BlockState state) {
-        return shapeForState(state);
-    }
-
-    @Override
     @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         FluidState fluid = context.getLevel().getFluidState(context.getClickedPos());

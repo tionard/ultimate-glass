@@ -4,22 +4,25 @@ import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
+import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
+import com.github.tionard.ultimateglass.item.GlaziersToolTier;
 import com.github.tionard.ultimateglass.network.RotationAxisPayload;
-import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.network.ShiftPlacementModePayload;
+import com.github.tionard.ultimateglass.network.ToolCraftingConfigPayload;
+import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
 public final class UltimateGlassClient implements ClientModInitializer {
@@ -36,6 +39,15 @@ public final class UltimateGlassClient implements ClientModInitializer {
             )
     );
 
+    private static final KeyMapping TOGGLE_SHIFT_PLACEMENT_MODE = KeyMappingHelper.registerKeyMapping(
+            new KeyMapping(
+                    "key.ultimateglass.toggle_shift_placement_mode",
+                    InputConstants.Type.KEYSYM,
+                    -1,
+                    CATEGORY
+            )
+    );
+
     private static Direction.Axis selectedAxis = RotationAxisState.DEFAULT_AXIS;
     private static Player currentPlayer;
 
@@ -43,10 +55,28 @@ public final class UltimateGlassClient implements ClientModInitializer {
     public void onInitializeClient() {
         UltimateGlassClientConfig.load();
 
+        ClientPlayNetworking.registerGlobalReceiver(
+                ToolCraftingConfigPayload.TYPE,
+                (payload, context) -> context.client().execute(() ->
+                        UltimateGlassClientConfig.applyServerCraftingConfig(
+                                payload.copperEnabled(),
+                                payload.ironEnabled(),
+                                payload.diamondEnabled()
+                        )
+                )
+        );
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) ->
+                UltimateGlassServerConfig.load()
+        );
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player != currentPlayer) {
                 currentPlayer = client.player;
                 selectedAxis = RotationAxisState.DEFAULT_AXIS;
+                if (currentPlayer != null && client.getConnection() != null) {
+                    syncShiftPlacementMode();
+                }
             }
 
             while (CHANGE_ROTATION_AXIS.consumeClick()) {
@@ -58,19 +88,50 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 ClientPlayNetworking.send(new RotationAxisPayload(RotationAxisState.ordinal(selectedAxis)));
                 client.player.sendSystemMessage(Component.translatable(axisMessageKey(selectedAxis)));
             }
-        });
 
-        UseBlockCallback.EVENT.register((player, level, hand, hitResult) -> {
-            if (!UltimateGlassClientConfig.isToolEnabled() && isHoldingTool(player, hand)) {
-                return InteractionResult.FAIL;
+            while (TOGGLE_SHIFT_PLACEMENT_MODE.consumeClick()) {
+                if (client.player == null || client.getConnection() == null) {
+                    continue;
+                }
+
+                ShiftPlacementMode mode = UltimateGlassClientConfig.toggleShiftPlacementMode();
+                syncShiftPlacementMode();
+                client.player.sendSystemMessage(Component.translatable(shiftModeMessageKey(mode)));
             }
-            return InteractionResult.PASS;
         });
+    }
 
-        ClientPreAttackCallback.EVENT.register((client, player, clickCount) ->
-                !UltimateGlassClientConfig.isToolEnabled()
-                        && player.getMainHandItem().is(UltimateGlassItems.GLAZIERS_TOOL)
-        );
+    public static void syncShiftPlacementMode() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null) {
+            return;
+        }
+
+        ClientPlayNetworking.send(new ShiftPlacementModePayload(
+                UltimateGlassClientConfig.shiftPlacementMode().ordinal()
+        ));
+    }
+
+    public static void requestCraftingToggle(GlaziersToolTier tier) {
+        boolean enabled = !UltimateGlassClientConfig.isCraftingEnabled(tier);
+        UltimateGlassClientConfig.setCraftingEnabledLocally(tier, enabled);
+
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null || client.player == null) {
+            UltimateGlassServerConfig.apply(
+                    UltimateGlassServerConfig.copperCraftingEnabled(),
+                    UltimateGlassServerConfig.ironCraftingEnabled(),
+                    UltimateGlassServerConfig.diamondCraftingEnabled(),
+                    true
+            );
+            return;
+        }
+
+        ClientPlayNetworking.send(new ToolCraftingConfigPayload(
+                UltimateGlassServerConfig.copperCraftingEnabled(),
+                UltimateGlassServerConfig.ironCraftingEnabled(),
+                UltimateGlassServerConfig.diamondCraftingEnabled()
+        ));
     }
 
     private static String axisMessageKey(Direction.Axis axis) {
@@ -81,7 +142,10 @@ public final class UltimateGlassClient implements ClientModInitializer {
         };
     }
 
-    private static boolean isHoldingTool(Player player, net.minecraft.world.InteractionHand hand) {
-        return player.getItemInHand(hand).is(UltimateGlassItems.GLAZIERS_TOOL);
+    private static String shiftModeMessageKey(ShiftPlacementMode mode) {
+        return switch (mode) {
+            case FACE -> "message.ultimateglass.shift_mode_face";
+            case NEAR -> "message.ultimateglass.shift_mode_near";
+        };
     }
 }

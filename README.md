@@ -1,41 +1,50 @@
 # Ultimate Glass
 
-Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders more control over glass panes and adds a dedicated glassworking tool.
+Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise six-direction glass-pane placement, connected corners, waterlogging, and tiered glassworking tools.
 
-## Version 0.1.3 test features
+## Version 0.1.4 test features
 
-- Normal pane placement is perpendicular to the clicked face and chooses the outside edge farthest from the player.
-- Shift placement copies a supported clicked block orientation; without one, it chooses the perpendicular edge closest to the player.
-- Logs and pillars with only an axis are intentionally ignored as orientation references.
-- Adjacent perpendicular outside panes form a continuous L-shaped corner.
-- Three mutually perpendicular outside panes can form a complete cube corner with three generated pane planes.
-- Connection models trim transparent panes at shared edges, use one shared frame line per pane pair, and use one small frame block where three planes meet.
-- The Glazier's Tool mines glass progressively and drops it intact.
-- Right-click rotates custom panes 90° around the selected X, Y, or Z axis.
-- `Change Rotation Axis` is assigned to V by default.
-- Sneak + right-click with the tool toggles outside-face and centred panes while preserving waterlogging.
-- Glazier's Tool interactions can be enabled or disabled only through Mod Menu.
+- Normal placement creates a pane perpendicular to the clicked face on the side farthest from the player.
+- Shift placement copies panes and other clearly oriented blocks.
+- When no orientation can be copied, the default Shift mode lays the pane directly against the clicked face.
+- The previous near-player Shift placement remains available in Mod Menu and through an unassigned keybind.
+- Adjacent perpendicular panes create merged L-shaped and three-plane cube corners.
+- Clear and all stained outside-face panes are waterloggable.
 
-All world changes are performed by the logical server. Ultimate Glass is required on both the server and every connecting client.
+## Glazier's Tool tiers
 
-## Placement examples
+- **Copper:** rotates custom panes with right-click.
+- **Iron:** also switches panes between centred and outside-face placement with Shift + right-click.
+- **Diamond:** also mines supported glass progressively and drops it intact.
 
-- Stand south and click a block's top face: a vertical pane appears on the north edge.
-- Stand below and click a block's side: a horizontal pane appears on the top edge.
-- Shift-click a pane, stair, slab, trapdoor, door, or clearly facing block: the new pane copies the relevant orientation.
-- Shift-click an ordinary block: the same perpendicular rule is used, but the near edge is selected.
+All three recipes use one material, one string, and two sticks. They may be mirrored horizontally.
+
+Existing 0.1.3 Glazier's Tools retain diamond-tier behavior for world compatibility but are hidden from new recipes and Creative tabs.
 
 ## Controls
 
-- **Mine glass:** break it normally while holding the Glazier's Tool.
-- **Rotate pane:** right-click a custom pane.
-- **Change rotation axis:** V by default under Controls → Key Binds → Ultimate Glass.
-- **Switch outside face ↔ centred:** sneak + right-click a pane with the tool.
-- **Enable/disable tool interactions:** use Ultimate Glass settings in Mod Menu.
+- **Rotate pane:** right-click with any Glazier's Tool.
+- **Change rotation axis:** V by default.
+- **Switch outside face ↔ centred:** Shift + right-click with the iron or diamond tool.
+- **Toggle Shift Placement Mode:** unassigned by default.
+- **Mine glass intact:** break it normally with the diamond tool.
+
+## Configuration
+
+Mod Menu exposes:
+
+- Shift placement mode: clicked face or near player
+- Copper tool crafting enabled/disabled
+- Iron tool crafting enabled/disabled
+- Diamond tool crafting enabled/disabled
+
+Crafting settings are server-authoritative. Disabling a recipe does not remove the item from commands or Creative mode.
+
+All world changes are performed by the logical server. Ultimate Glass is required on both the server and every connecting client. Fabric API is required; Mod Menu is optional.
 
 ## Compatibility strategy
 
-Ultimate Glass does not add properties to vanilla pane block states. Vanilla panes represent the centred form, while hidden mod-owned blocks represent outside-face panes and their generated corner state. Existing vanilla panes therefore remain unchanged when the mod is installed.
+Ultimate Glass does not add properties to vanilla pane block states. Vanilla panes remain centred, while hidden mod-owned blocks represent outside-face panes and connected corner states. Existing vanilla panes therefore remain unchanged when the mod is installed.
 
 ## Development baseline
 
@@ -54,6 +63,6 @@ gradle build
 
 The remapped mod JAR is created in `build/libs`.
 
-## Status
+## License
 
-The project builds in GitHub Actions and passes its dedicated-server startup smoke test. Version 0.1.3 remains in draft gameplay testing.
+Ultimate Glass is available under the MIT License. See `LICENSE`.
