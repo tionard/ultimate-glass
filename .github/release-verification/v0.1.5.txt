@@ -1,0 +1,3 @@
+tag=v0.1.5
+asset=ultimate-glass-0.1.5.jar
+verified_commit=77d8603ec0bf485157d17422f2e6d041ea4a191b
