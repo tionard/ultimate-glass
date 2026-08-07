@@ -69,10 +69,18 @@ jobs:
         if: steps.version.outputs.complete != 'true'
         shell: bash
         run: |
-          JAVA_HOME="$(find /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk \
-            -mindepth 2 -maxdepth 2 -type d -path '*/25*/x64' | sort -V | tail -n 1)"
+          JAVA_CACHE_ROOT=/opt/hostedtoolcache/Java_Temurin-Hotspot_jdk
+          JAVA_HOME=""
+
+          if [ -d "$JAVA_CACHE_ROOT" ]; then
+            JAVA_HOME="$(find "$JAVA_CACHE_ROOT" \
+              -mindepth 2 -maxdepth 2 -type d -path '*/25*/x64' \
+              2>/dev/null | sort -V | tail -n 1 || true)"
+          fi
 
           if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
+            echo 'Java 25 is not preinstalled; downloading Temurin 25.'
+            rm -rf /tmp/jdk25 /tmp/jdk25.tar.gz
             mkdir -p /tmp/jdk25
             curl --fail --location --retry 4 --retry-all-errors \
               'https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse' \
