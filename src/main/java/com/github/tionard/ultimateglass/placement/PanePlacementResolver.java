@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.phys.Vec3;
 
+import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 
 /** Resolves edge-pane placement from the clicked face, player position, and Shift modifier. */
@@ -57,6 +58,13 @@ public final class PanePlacementResolver {
 
         if (source.getBlock() instanceof EdgePaneBlock) {
             return source.getValue(EdgePaneBlock.FACING);
+        }
+
+        if (source.getBlock() instanceof CenteredPaneBlock) {
+            return directionTowardPlayerAlongAxis(
+                    context,
+                    source.getValue(CenteredPaneBlock.AXIS)
+            ).getOpposite();
         }
 
         if (source.getBlock() instanceof SlabBlock && source.hasProperty(BlockStateProperties.SLAB_TYPE)) {
@@ -128,6 +136,25 @@ public final class PanePlacementResolver {
         }
 
         return direction(chosen, component > 0.0);
+    }
+
+    private static Direction directionTowardPlayerAlongAxis(
+            BlockPlaceContext context,
+            Direction.Axis axis
+    ) {
+        Vec3 center = Vec3.atCenterOf(context.getClickedPos());
+        Player player = context.getPlayer();
+        Vec3 reference = player != null ? player.getEyePosition() : context.getClickLocation();
+        double component = component(reference.subtract(center), axis);
+
+        if (Math.abs(component) < EPSILON) {
+            component = component(context.getClickLocation().subtract(center), axis);
+        }
+        if (Math.abs(component) < EPSILON) {
+            component = 1.0;
+        }
+
+        return direction(axis, component > 0.0);
     }
 
     private static Direction.Axis strongestPerpendicularAxis(Vec3 delta, Direction.Axis excluded) {

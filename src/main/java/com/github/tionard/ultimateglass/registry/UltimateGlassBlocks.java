@@ -14,11 +14,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
+import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 
 public final class UltimateGlassBlocks {
-    private static final Map<Block, EdgePaneBlock> VANILLA_TO_EDGE = new LinkedHashMap<>();
-    private static final Map<Block, Block> EDGE_TO_VANILLA = new LinkedHashMap<>();
+    private static final Map<Block, PaneFamily> FAMILIES_BY_VANILLA = new LinkedHashMap<>();
+    private static final Map<Block, PaneFamily> FAMILIES_BY_BLOCK = new LinkedHashMap<>();
 
     public static final EdgePaneBlock EDGE_GLASS_PANE = register("edge_glass_pane", Blocks.GLASS_PANE);
     public static final EdgePaneBlock EDGE_WHITE_STAINED_GLASS_PANE = registerColored("white");
@@ -46,15 +47,40 @@ public final class UltimateGlassBlocks {
     }
 
     public static EdgePaneBlock edgeFor(Block vanillaPane) {
-        return VANILLA_TO_EDGE.get(vanillaPane);
+        PaneFamily family = FAMILIES_BY_VANILLA.get(vanillaPane);
+        return family == null ? null : family.edgePane();
     }
 
-    public static Block vanillaFor(Block edgePane) {
-        return EDGE_TO_VANILLA.get(edgePane);
+    public static CenteredPaneBlock centeredFor(Block vanillaPane) {
+        PaneFamily family = FAMILIES_BY_VANILLA.get(vanillaPane);
+        return family == null ? null : family.centeredPane();
+    }
+
+    public static PaneFamily familyFor(Block block) {
+        return FAMILIES_BY_BLOCK.get(block);
+    }
+
+    public static Block vanillaFor(Block customPane) {
+        PaneFamily family = FAMILIES_BY_BLOCK.get(customPane);
+        return family == null || customPane == family.vanillaPane()
+                ? null
+                : family.vanillaPane();
     }
 
     public static Collection<EdgePaneBlock> edgePanes() {
-        return VANILLA_TO_EDGE.values();
+        return FAMILIES_BY_VANILLA.values().stream()
+                .map(PaneFamily::edgePane)
+                .toList();
+    }
+
+    public static Collection<CenteredPaneBlock> centeredPanes() {
+        return FAMILIES_BY_VANILLA.values().stream()
+                .map(PaneFamily::centeredPane)
+                .toList();
+    }
+
+    public static Collection<PaneFamily> paneFamilies() {
+        return FAMILIES_BY_VANILLA.values();
     }
 
     private static EdgePaneBlock registerColored(String color) {
@@ -74,16 +100,38 @@ public final class UltimateGlassBlocks {
     }
 
     private static EdgePaneBlock register(String name, Block vanillaPane) {
-        Identifier id = Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, name);
-        ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, id);
-        EdgePaneBlock block = new EdgePaneBlock(
+        String centeredName = "centered_" + name.substring("edge_".length());
+        ResourceKey<Block> centeredKey = blockKey(centeredName);
+        CenteredPaneBlock centeredPane = new CenteredPaneBlock(
                 vanillaPane,
-                BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(key)
+                BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(centeredKey)
         );
+        Registry.register(BuiltInRegistries.BLOCK, centeredKey, centeredPane);
 
-        Registry.register(BuiltInRegistries.BLOCK, key, block);
-        VANILLA_TO_EDGE.put(vanillaPane, block);
-        EDGE_TO_VANILLA.put(block, vanillaPane);
-        return block;
+        ResourceKey<Block> edgeKey = blockKey(name);
+        EdgePaneBlock edgePane = new EdgePaneBlock(
+                vanillaPane,
+                BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(edgeKey)
+        );
+        Registry.register(BuiltInRegistries.BLOCK, edgeKey, edgePane);
+
+        PaneFamily family = new PaneFamily(vanillaPane, centeredPane, edgePane);
+        FAMILIES_BY_VANILLA.put(vanillaPane, family);
+        FAMILIES_BY_BLOCK.put(vanillaPane, family);
+        FAMILIES_BY_BLOCK.put(centeredPane, family);
+        FAMILIES_BY_BLOCK.put(edgePane, family);
+        return edgePane;
+    }
+
+    private static ResourceKey<Block> blockKey(String name) {
+        Identifier id = Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, name);
+        return ResourceKey.create(Registries.BLOCK, id);
+    }
+
+    public record PaneFamily(
+            Block vanillaPane,
+            CenteredPaneBlock centeredPane,
+            EdgePaneBlock edgePane
+    ) {
     }
 }

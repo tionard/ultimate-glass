@@ -12,9 +12,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.Vec3;
 
+import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
+import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
+import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
 public final class GlaziersToolItem extends Item {
@@ -64,6 +68,21 @@ public final class GlaziersToolItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
+        if (block instanceof CenteredPaneBlock) {
+            if (!level.isClientSide()) {
+                Direction.Axis rotated = CenteredPaneBlock.rotateAround(
+                        state.getValue(CenteredPaneBlock.AXIS),
+                        RotationAxisState.get(player)
+                );
+                level.setBlockAndUpdate(
+                        context.getClickedPos(),
+                        state.setValue(CenteredPaneBlock.AXIS, rotated)
+                );
+                EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
+            }
+            return InteractionResult.SUCCESS;
+        }
+
         return InteractionResult.PASS;
     }
 
@@ -86,53 +105,79 @@ public final class GlaziersToolItem extends Item {
             Block block
     ) {
         Level level = context.getLevel();
-        Block vanillaPane = UltimateGlassBlocks.vanillaFor(block);
+        PaneFamily family = UltimateGlassBlocks.familyFor(block);
+        if (family == null || block == family.vanillaPane()) {
+            return InteractionResult.PASS;
+        }
 
-        if (vanillaPane != null) {
+        boolean waterlogged = state.getValue(BlockStateProperties.WATERLOGGED);
+
+        if (block == family.edgePane()) {
+            Direction facing = state.getValue(EdgePaneBlock.FACING);
             if (!level.isClientSide()) {
-                BlockState centered = vanillaPane.defaultBlockState();
-                if (centered.hasProperty(BlockStateProperties.WATERLOGGED)
-                        && state.getValue(EdgePaneBlock.WATERLOGGED)) {
-                    centered = centered.setValue(BlockStateProperties.WATERLOGGED, true);
-                }
-                level.setBlockAndUpdate(context.getClickedPos(), centered);
+                BlockState target = family.centeredPane().defaultBlockState()
+                        .setValue(CenteredPaneBlock.AXIS, facing.getAxis())
+                        .setValue(CenteredPaneBlock.WATERLOGGED, waterlogged);
+                level.setBlockAndUpdate(context.getClickedPos(), target);
                 EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
         }
 
-        EdgePaneBlock edgePane = UltimateGlassBlocks.edgeFor(block);
-        if (edgePane == null) {
-            return InteractionResult.PASS;
+        if (block == family.centeredPane()) {
+            if (!level.isClientSide()) {
+                Direction.Axis axis = state.getValue(CenteredPaneBlock.AXIS);
+                level.setBlockAndUpdate(
+                        context.getClickedPos(),
+                        family.edgePane().defaultBlockState()
+                                .setValue(EdgePaneBlock.FACING, edgeFacing(context, axis))
+                                .setValue(EdgePaneBlock.WATERLOGGED, waterlogged)
+                );
+                EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
+            }
+            return InteractionResult.SUCCESS;
         }
 
-        boolean waterlogged = state.hasProperty(BlockStateProperties.WATERLOGGED)
-                && state.getValue(BlockStateProperties.WATERLOGGED);
-
-        if (!level.isClientSide()) {
-            level.setBlockAndUpdate(
-                    context.getClickedPos(),
-                    edgePane.defaultBlockState()
-                            .setValue(EdgePaneBlock.FACING, context.getClickedFace())
-                            .setValue(EdgePaneBlock.WATERLOGGED, waterlogged)
-            );
-            EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
-        }
-
-        return InteractionResult.SUCCESS;
+        return InteractionResult.PASS;
     }
 
     public static ItemStack collectedStack(Block block) {
-        Block vanillaPane = UltimateGlassBlocks.vanillaFor(block);
-        if (vanillaPane != null) {
-            return new ItemStack(vanillaPane.asItem());
+        PaneFamily family = UltimateGlassBlocks.familyFor(block);
+        if (family != null) {
+            Item customPaneItem = UltimateGlassItems.paneItemFor(block);
+            if (customPaneItem != null) {
+                return new ItemStack(customPaneItem);
+            }
+            return new ItemStack(family.vanillaPane().asItem());
         }
 
-        if (UltimateGlassBlocks.edgeFor(block) != null || isVanillaGlassBlock(block)) {
+        if (isVanillaGlassBlock(block)) {
             return new ItemStack(block.asItem());
         }
 
         return ItemStack.EMPTY;
+    }
+
+    private static Direction edgeFacing(UseOnContext context, Direction.Axis axis) {
+        Direction clickedFace = context.getClickedFace();
+        if (clickedFace.getAxis() == axis) {
+            return clickedFace;
+        }
+
+        Vec3 center = Vec3.atCenterOf(context.getClickedPos());
+        Player player = context.getPlayer();
+        Vec3 reference = player == null ? context.getClickLocation() : player.getEyePosition();
+        double component = switch (axis) {
+            case X -> reference.x - center.x;
+            case Y -> reference.y - center.y;
+            case Z -> reference.z - center.z;
+        };
+
+        return switch (axis) {
+            case X -> component >= 0.0 ? Direction.EAST : Direction.WEST;
+            case Y -> component >= 0.0 ? Direction.UP : Direction.DOWN;
+            case Z -> component >= 0.0 ? Direction.SOUTH : Direction.NORTH;
+        };
     }
 
     private static boolean isVanillaGlassBlock(Block block) {

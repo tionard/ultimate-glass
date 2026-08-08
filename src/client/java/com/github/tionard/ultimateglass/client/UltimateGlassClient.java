@@ -15,6 +15,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
@@ -23,6 +24,7 @@ import com.github.tionard.ultimateglass.network.RotationAxisPayload;
 import com.github.tionard.ultimateglass.network.ShiftPlacementModePayload;
 import com.github.tionard.ultimateglass.network.ToolCraftingConfigPayload;
 import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
+import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
 public final class UltimateGlassClient implements ClientModInitializer {
@@ -54,6 +56,10 @@ public final class UltimateGlassClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         UltimateGlassClientConfig.load();
+        UltimateGlassBlocks.edgePanes().forEach(block ->
+                FluidRenderingRegistry.setBlockTransparency(block, true));
+        UltimateGlassBlocks.centeredPanes().forEach(block ->
+                FluidRenderingRegistry.setBlockTransparency(block, true));
 
         ClientPlayNetworking.registerGlobalReceiver(
                 ToolCraftingConfigPayload.TYPE,

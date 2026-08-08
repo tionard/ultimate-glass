@@ -244,6 +244,29 @@ tasks.register("generatePaneResources") {
             )
         }
 
+        def centeredElements = [
+                [
+                        from: [0, 0, 7],
+                        to: [16, 16, 9],
+                        faces: [
+                                north: [texture: "#pane"],
+                                south: [texture: "#pane"]
+                        ]
+                ],
+                [from: [0, 0, 7], to: [2, 16, 9], faces: [west: [texture: "#edge"]]],
+                [from: [14, 0, 7], to: [16, 16, 9], faces: [east: [texture: "#edge"]]],
+                [from: [0, 0, 7], to: [16, 2, 9], faces: [down: [texture: "#edge"]]],
+                [from: [0, 14, 7], to: [16, 16, 9], faces: [up: [texture: "#edge"]]]
+        ]
+        writeJson(
+                "assets/ultimateglass/models/block/centered_pane_base.json",
+                [
+                        render_type: "minecraft:translucent",
+                        textures: [particle: "#pane"],
+                        elements: centeredElements
+                ]
+        )
+
         def colors = [
                 [suffix: "", pane: "minecraft:block/glass", edge: "minecraft:block/white_concrete"],
                 [suffix: "white", pane: "minecraft:block/white_stained_glass", edge: "minecraft:block/white_concrete"],
@@ -277,7 +300,109 @@ tasks.register("generatePaneResources") {
             String blockName = color.suffix.isEmpty()
                     ? "edge_glass_pane"
                     : "edge_${color.suffix}_stained_glass_pane"
+            String centeredBlockName = color.suffix.isEmpty()
+                    ? "centered_glass_pane"
+                    : "centered_${color.suffix}_stained_glass_pane"
+            String vanillaPaneName = color.suffix.isEmpty()
+                    ? "glass_pane"
+                    : "${color.suffix}_stained_glass_pane"
+            String customItemName = "ultimate_${vanillaPaneName}"
             def textures = [pane: color.pane, edge: color.edge]
+
+            writeJson(
+                    "assets/ultimateglass/models/item/${customItemName}.json",
+                    [
+                            parent: "minecraft:item/generated",
+                            textures: [layer0: color.pane]
+                    ]
+            )
+
+            writeJson(
+                    "assets/ultimateglass/items/${customItemName}.json",
+                    [
+                            model: [
+                                    type: "minecraft:model",
+                                    model: "ultimateglass:item/${customItemName}"
+                            ]
+                    ]
+            )
+
+            writeJson(
+                    "data/ultimateglass/recipe/${customItemName}.json",
+                    [
+                            type: "minecraft:crafting_shapeless",
+                            category: "building",
+                            group: "ultimate_glass_panes",
+                            ingredients: ["minecraft:${vanillaPaneName}"],
+                            result: [id: "ultimateglass:${customItemName}"]
+                    ]
+            )
+
+            writeJson(
+                    "data/ultimateglass/recipe/${vanillaPaneName}_from_${customItemName}.json",
+                    [
+                            type: "minecraft:crafting_shapeless",
+                            category: "building",
+                            group: "vanilla_glass_panes",
+                            ingredients: ["ultimateglass:${customItemName}"],
+                            result: [id: "minecraft:${vanillaPaneName}"]
+                    ]
+            )
+
+            [blockName, centeredBlockName].each { customBlockName ->
+                writeJson(
+                        "data/ultimateglass/loot_table/blocks/${customBlockName}.json",
+                        [
+                                type: "minecraft:block",
+                                pools: [[
+                                        conditions: [[
+                                                condition: "minecraft:match_tool",
+                                                predicate: [
+                                                        predicates: [
+                                                                "minecraft:enchantments": [[
+                                                                        enchantments: "minecraft:silk_touch",
+                                                                        levels: [min: 1]
+                                                                ]]
+                                                        ]
+                                                ]
+                                        ]],
+                                        entries: [[
+                                                type: "minecraft:item",
+                                                name: "ultimateglass:${customItemName}"
+                                        ]],
+                                        rolls: 1.0
+                                ]],
+                                random_sequence: "ultimateglass:blocks/${customBlockName}"
+                        ]
+                )
+            }
+
+            writeJson(
+                    "assets/ultimateglass/models/block/${centeredBlockName}.json",
+                    [
+                            parent: "ultimateglass:block/centered_pane_base",
+                            textures: textures
+                    ]
+            )
+
+            writeJson(
+                    "assets/ultimateglass/blockstates/${centeredBlockName}.json",
+                    [
+                            variants: [
+                                    "axis=x": [
+                                            model: "ultimateglass:block/${centeredBlockName}",
+                                            y: 90
+                                    ],
+                                    "axis=y": [
+                                            model: "ultimateglass:block/${centeredBlockName}",
+                                            x: 90
+                                    ],
+                                    "axis=z": [
+                                            model: "ultimateglass:block/${centeredBlockName}"
+                                    ]
+                            ]
+                    ]
+            )
 
             for (int mask = 0; mask < 16; mask++) {
                 writeJson(

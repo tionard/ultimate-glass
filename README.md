@@ -1,21 +1,25 @@
 # Ultimate Glass
 
-Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise six-direction glass-pane placement, connected corners, waterlogging, and tiered glassworking tools.
+Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise edge-aligned glass panes, rotatable centred full sheets, connected corners, and tiered glassworking tools.
 
-## Version 0.1.5 features
+## Version 0.1.6 features
 
-- Normal placement creates a pane perpendicular to the clicked face on the side farthest from the player.
-- Shift placement copies panes and other clearly oriented blocks.
-- When no orientation can be copied, the default Shift mode lays the pane directly against the clicked face.
-- The previous near-player Shift placement remains available in Mod Menu and through an unassigned keybind.
-- Adjacent perpendicular panes create merged L-shaped and three-plane cube corners.
-- Clear and all stained outside-face panes are waterloggable.
-- Waterlogged corners render level source water clipped inside their pane walls, including with Sodium.
+- Vanilla glass panes remain fully vanilla and place with their normal connected geometry.
+- Clear and all 16 stained variants have separate Ultimate Glass Pane items.
+- One vanilla pane converts to one matching Ultimate Glass Pane in any crafting grid, and the recipe works in reverse.
+- Ultimate Glass Panes initially place against an outside face of the block space.
+- Normal placement selects the side farthest from the player; Shift placement can copy an existing orientation or use the configured clicked-face/near-player fallback.
+- Adjacent perpendicular edge panes create merged L-shaped and three-plane cube corners.
+- Iron and diamond Glazier's Tools toggle custom panes between outside-face and centred full-sheet geometry without involving vanilla panes.
+- Centred panes are complete sheets rather than vanilla's single-pane rod and support X, Y, and Z orientations.
+- Both custom geometries support native source-water waterlogging and preserve it through rotation and toggling.
+
+Waterlogging uses Minecraft's standard block contract and the active renderer's normal water path. Ultimate Glass does not replace water tessellation or call Sodium internals. On the client, its panes are registered through Fabric's supported transparent-block fluid-overlay API.
 
 ## Glazier's Tool tiers
 
 - **Copper:** rotates custom panes with right-click.
-- **Iron:** also switches panes between centred and outside-face placement with Shift + right-click.
+- **Iron:** also toggles custom panes between edge and centred geometry with Shift + right-click.
 - **Diamond:** also mines supported glass progressively and drops it intact.
 
 All three recipes use one material, one string, and two sticks. They may be mirrored horizontally.
@@ -24,9 +28,9 @@ Existing 0.1.3 Glazier's Tools retain diamond-tier behavior for world compatibil
 
 ## Controls
 
-- **Rotate pane:** right-click with any Glazier's Tool.
+- **Rotate custom pane:** right-click with any Glazier's Tool.
 - **Change rotation axis:** V by default.
-- **Switch outside face ↔ centred:** Shift + right-click with the iron or diamond tool.
+- **Toggle edge/centred geometry:** Shift + right-click with the iron or diamond tool.
 - **Toggle Shift Placement Mode:** unassigned by default.
 - **Mine glass intact:** break it normally with the diamond tool.
 
@@ -39,13 +43,13 @@ Mod Menu exposes:
 - Iron tool crafting enabled/disabled
 - Diamond tool crafting enabled/disabled
 
-Crafting settings are server-authoritative. Disabling a recipe does not remove the item from commands or Creative mode.
+Crafting settings are server-authoritative. Disabling a tool recipe does not remove the item from commands or Creative mode.
 
 All world changes are performed by the logical server. Ultimate Glass is required on both the server and every connecting client. Fabric API is required; Mod Menu is optional.
 
 ## Compatibility strategy
 
-Ultimate Glass does not add properties to vanilla pane block states. Vanilla panes remain centred, while hidden mod-owned blocks represent outside-face panes and connected corner states. Existing vanilla panes therefore remain unchanged when the mod is installed.
+Ultimate Glass does not add properties to vanilla pane block states or intercept vanilla pane placement. Mod-owned blocks represent centred and outside-face geometry, and mod-owned items place those blocks. Convert custom panes back to vanilla before removing the mod from a world.
 
 ## Development baseline
 

@@ -1,15 +1,25 @@
-# Ultimate Glass — Design
+# Ultimate Glass - Design
+
+## Pane families and items
+
+Each clear/stained family contains three blocks:
+
+- the untouched vanilla pane;
+- a mod-owned centred full-sheet block whose normal is stored as X, Y, or Z;
+- a mod-owned outside-face block whose position is stored as one of six directions.
+
+Only the two mod-owned geometries belong to the tool toggle. A separate Ultimate Glass Pane item places the outside-face block. Vanilla pane items place vanilla blocks and never enter the toggle cycle.
+
+Every vanilla pane has a reversible shapeless conversion recipe at a one-to-one ratio. Both custom block geometries map back to the same Ultimate Glass Pane item when harvested intact.
 
 ## Placement
 
-Glass panes support vanilla centred placement plus six custom outside-face placements.
+Normal Ultimate Glass Pane placement projects the player's position onto the clicked face and selects a perpendicular outside edge on the far side.
 
-Normal placement projects the player's position onto the clicked face and selects a perpendicular outside edge on the far side.
+Shift placement first attempts to copy a clear orientation from a custom pane, slab, stair, trapdoor, door, or facing/half block. AXIS-only logs and pillars remain ignored. When no orientation is available, the player-selected fallback is used:
 
-Shift placement first attempts to copy a clear orientation from a pane, slab, stair, trapdoor, door, or facing/half block. AXIS-only logs and pillars remain ignored. When no orientation is available, the player-selected fallback is used:
-
-- **Clicked face:** place the pane flush against the clicked surface. This is the 0.1.4 default.
-- **Near player:** preserve the previous 0.1.3 perpendicular near-edge behavior.
+- **Clicked face:** place the pane flush against the clicked surface. This is the default.
+- **Near player:** use the perpendicular near-edge behavior.
 
 The client persists the selected mode, sends it to the logical server, and may toggle it through Mod Menu or an unassigned keybind.
 
@@ -21,47 +31,39 @@ Convex outside corners use generated merged geometry:
 - three mutually perpendicular panes create a complete cube corner;
 - transparent planes are trimmed at intersections;
 - each pane pair has one shared frame line;
-- three frame lines meet in one 2×2×2 corner block;
+- three frame lines meet in one 2x2x2 corner block;
 - outline and collision geometry include every active plane.
 
 Concave inner arrangements remain unconnected.
 
-## Rotation
+## Rotation and geometry toggle
 
-`Change Rotation Axis` is assigned to V by default and cycles X → Y → Z. Right-clicking with any Glazier's Tool rotates a custom pane 90° around the selected axis. Rotation and conversion refresh nearby corner states.
+`Change Rotation Axis` is assigned to V by default and cycles X, Y, and Z. Right-clicking with any Glazier's Tool rotates either custom geometry 90 degrees around the selected axis. Rotation and conversion refresh nearby corner states.
+
+Shift + right-click with an iron or diamond tool toggles `outside-face <-> centred full-sheet`. Edge-to-centred conversion preserves the pane normal. Centred-to-edge conversion preserves that axis and selects the clicked or player-facing side of it. The operation works identically for horizontal and vertical panes because no vanilla state is involved.
+
+The centred model mirrors the edge model's face layout: the full glass texture draws both broad faces, while concrete is limited to the four thin outward-facing sides. The frame elements have no broad coplanar faces, preventing texture flicker while keeping edge and centred panes visually identical.
 
 ## Tool tiers
 
 - **Copper:** rotation only.
-- **Iron:** rotation plus centred/outside-face conversion.
+- **Iron:** rotation plus two-state custom pane conversion.
 - **Diamond:** iron abilities plus progressive, intact glass harvesting.
 
 The legacy 0.1.3 item ID remains registered with diamond-tier behavior to protect existing worlds, but is not newly craftable or shown in Creative tabs.
 
 Each tier uses a custom server-checked recipe with one tier material, one string, and two sticks. Mirrored patterns are accepted.
 
-## Configuration
+## Native waterlogging
 
-The old global tool-interaction switch is removed.
+Both custom blocks implement Minecraft's `SimpleWaterloggedBlock` contract in the same way as vanilla panes. Placement detects existing water, buckets can insert or remove a source, neighbour updates schedule water ticks, and `waterlogged=true` exposes a native source-water `FluidState`.
 
-Client setting:
+Rotation retains the complete block state. Edge/centred toggling explicitly copies the waterlogged value, including when loading states created by earlier 0.1.6 development builds.
 
-- Shift placement mode.
+Ultimate Glass registers its custom blocks as transparent through Fabric's supported fluid-overlay API. This selects the normal overlay used beside glass instead of the falling-water side texture. It does not register a custom handler for water: Fabric's handler registry is fluid-wide, so overriding it would affect every water block and compete with Sodium/Iris. There are no Ultimate Glass fluid-rendering mixins or renderer-internal calls.
 
-Server-authoritative settings:
-
-- copper recipe enabled;
-- iron recipe enabled;
-- diamond recipe enabled.
-
-Disabled recipes still leave their items available through commands and Creative mode.
-
-## Waterlogging
-
-Every custom pane stores a source-water fluid state when waterlogged. Rotation and centred/outside conversion preserve it.
-
-Connected pane collision still contains all active planes. The custom connected occlusion override is removed so L-shaped and three-plane states do not cause the fluid renderer to treat their internal source water as lowered or flowing. Gameplay validation must confirm both a flat source surface and directional blocking across every active pane plane.
+Native waterlogging models fluid as a source occupying the block cell; it does not provide a block-specific API for arbitrary clipped fluid volumes. Visual validation therefore covers edge panes, centred sheets, connected corners, adjacent flow, vanilla rendering, Sodium, Iris, and shaders before any additional rendering work is considered.
 
 ## World compatibility
 
-Vanilla panes remain vanilla blocks. Custom outside-face panes use hidden Ultimate Glass blocks with facing, waterlogged, and connection properties. Removing the mod safely requires converting custom panes back to centred panes first.
+Vanilla panes remain vanilla blocks. Centred and outside-face panes are mod-owned blocks and require Ultimate Glass to remain installed. Convert both custom geometries back to vanilla panes through the reversible item recipe before removing the mod. Back up worlds before moving between development builds.

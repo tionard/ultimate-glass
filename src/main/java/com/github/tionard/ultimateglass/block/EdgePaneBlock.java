@@ -82,7 +82,7 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
         FluidState fluid = context.getLevel().getFluidState(context.getClickedPos());
         BlockState state = defaultBlockState()
                 .setValue(FACING, PanePlacementResolver.resolve(context))
-                .setValue(WATERLOGGED, fluid.getType() == Fluids.WATER);
+                .setValue(WATERLOGGED, fluid.is(Fluids.WATER));
         return withConnections(state, context.getLevel(), context.getClickedPos());
     }
 
@@ -121,6 +121,11 @@ public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock
         return state.getValue(WATERLOGGED)
                 ? Fluids.WATER.getSource(false)
                 : super.getFluidState(state);
+    }
+
+    @Override
+    protected VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return Shapes.empty();
     }
 
     @Override
