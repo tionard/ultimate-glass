@@ -1,4 +1,4 @@
-# Ultimate Glass 0.1.6 manual test checklist
+# Ultimate Glass 0.1.7 manual test checklist
 
 ## Environment
 
@@ -81,13 +81,17 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 4. Rotate every waterlogged edge and centred orientation; verify waterlogging is preserved.
 5. Toggle waterlogged panes repeatedly between edge and centred geometry; verify the axis and source-water state are both preserved.
 6. Save/reload and chunk-reload waterlogged panes, including states created by earlier 0.1.6 development builds.
-7. Build isolated 2x2 and 3x3 pools from waterlogged panes and verify their top surfaces are level and remain visible.
-8. Test L-shaped and three-plane cube corners; verify water does not appear lowered, diagonal, or falling down grounded sides.
-9. Compare a normal source-water pool surrounded by panes with a pool made from waterlogged panes.
-10. Run flowing water beside a waterlogged pane and verify it does not visually appear to originate from or cross a blocked pane face.
-11. Verify gameplay flow cannot cross any active pane plane and can still use genuinely open directions.
-12. Repeat all visual cases with vanilla/Fabric rendering and with Sodium/Iris, both shaders disabled and enabled.
-13. Toggle shaders and reload chunks repeatedly; confirm the water remains visible, receives the active renderer's shading, and causes no crashes.
+7. Inspect a single waterlogged edge pane from above and both sides; verify the water surface ends at the pane's inner face and does not reach the outside block edge.
+8. Repeat the clipping check for north, south, east, west, up, and down panes, including panes crossing chunk-section boundaries.
+9. Build isolated 2x2 and 3x3 pools from waterlogged panes and verify their top surfaces are level, visible, and clipped consistently around the perimeter.
+10. Test L-shaped and three-plane cube corners in multiple rotations; verify the water is clipped by every active pane face and does not appear lowered, diagonal, or falling down grounded sides.
+11. Create states with panes on opposite faces where possible; verify both limits are applied and the remaining centre volume renders normally.
+12. Compare a normal source-water pool surrounded by panes with a pool made from waterlogged edge panes.
+13. Inspect waterlogged centred panes and confirm their water still uses the normal full-cell render with no edge clipping.
+14. Run flowing water beside a waterlogged pane and verify it does not visually appear to originate from or cross a blocked pane face.
+15. Verify gameplay flow cannot cross any active pane plane and can still use genuinely open directions.
+16. Repeat all visual cases with vanilla/Fabric rendering and with Sodium/Iris, both shaders disabled and enabled.
+17. Toggle shaders and reload chunks repeatedly; confirm the water remains visible, receives the active renderer's shading, and causes no crashes.
 
 ## Tool recipes and configuration
 

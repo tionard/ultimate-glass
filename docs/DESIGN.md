@@ -60,9 +60,11 @@ Both custom blocks implement Minecraft's `SimpleWaterloggedBlock` contract in th
 
 Rotation retains the complete block state. Edge/centred toggling explicitly copies the waterlogged value, including when loading states created by earlier 0.1.6 development builds.
 
-Ultimate Glass registers its custom blocks as transparent through Fabric's supported fluid-overlay API. This selects the normal overlay used beside glass instead of the falling-water side texture. It does not register a custom handler for water: Fabric's handler registry is fluid-wide, so overriding it would affect every water block and compete with Sodium/Iris. There are no Ultimate Glass fluid-rendering mixins or renderer-internal calls.
+Ultimate Glass registers its custom blocks as transparent through Fabric's supported fluid-overlay API. This selects the normal overlay used beside glass instead of the falling-water side texture.
 
-Native waterlogging models fluid as a source occupying the block cell; it does not provide a block-specific API for arbitrary clipped fluid volumes. Visual validation therefore covers edge panes, centred sheets, connected corners, adjacent flow, vanilla rendering, Sodium, Iris, and shaders before any additional rendering work is considered.
+Native waterlogging models fluid as a source occupying the block cell and does not expose a block-specific clipped volume. Client-only renderer-specific mixins therefore clamp water vertices to the interior boundary of every active `EdgePaneBlock` face. A single edge supplies one clipping plane; connection properties automatically add the planes required by L-shaped, cube, and opposite-edge states.
+
+Without Sodium, Fabric's default-render handoff runs Minecraft's standard fluid tessellator through a clipping vertex output. With Sodium, an optional mixin adjusts coordinates inside Sodium's native fluid tessellator before its normal quad encoding; this preserves Sodium's water material metadata for Iris shaders. The hooks do not register or replace the global water handler, water model, textures, tint, render layer, or material. Centred panes and every non-edge water block remain on the active renderer's unmodified normal path. A mixin config plugin selects exactly one path at startup.
 
 ## World compatibility
 

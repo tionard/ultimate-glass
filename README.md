@@ -2,7 +2,7 @@
 
 Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise edge-aligned glass panes, rotatable centred full sheets, connected corners, and tiered glassworking tools.
 
-## Version 0.1.6 features
+## Version 0.1.7 features
 
 - Vanilla glass panes remain fully vanilla and place with their normal connected geometry.
 - Clear and all 16 stained variants have separate Ultimate Glass Pane items.
@@ -13,8 +13,9 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders preci
 - Iron and diamond Glazier's Tools toggle custom panes between outside-face and centred full-sheet geometry without involving vanilla panes.
 - Centred panes are complete sheets rather than vanilla's single-pane rod and support X, Y, and Z orientations.
 - Both custom geometries support native source-water waterlogging and preserve it through rotation and toggling.
+- Water rendered inside edge panes is clipped at every active pane's inner face, including merged L-shaped and cube corners; centred panes keep the normal water render.
 
-Waterlogging uses Minecraft's standard block contract and the active renderer's normal water path. Ultimate Glass does not replace water tessellation or call Sodium internals. On the client, its panes are registered through Fabric's supported transparent-block fluid-overlay API.
+Waterlogging uses Minecraft's standard block contract. For edge panes only, a client render hook clips the active renderer's water vertices at the pane's inner faces. Vanilla uses Minecraft's standard fluid tessellator, while Sodium keeps its native fluid mesh and material path so Iris can still classify and shade it as water. No global water handler is registered, and all other water—including centred-pane water—follows the renderer's unmodified normal path. Custom panes are also registered through Fabric's supported transparent-block fluid-overlay API.
 
 ## Glazier's Tool tiers
 

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "com.github.tionard.ultimateglass.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "plugin": "com.github.tionard.ultimateglass.mixin.UltimateGlassMixinPlugin",
+  "client": [
+    "FluidRenderingImplMixin",
+    "SodiumDefaultFluidRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
