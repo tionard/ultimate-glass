@@ -1,4 +1,4 @@
-# Ultimate Glass 0.1.7 manual test checklist
+# Ultimate Glass 0.1.8 manual test checklist
 
 ## Environment
 
@@ -72,6 +72,24 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 5. Cycle the selected rotation axis with V and rotate each sheet around X, Y, and Z.
 6. Verify rotation around the sheet's own normal leaves it unchanged; each perpendicular axis swaps it to the remaining plane.
 7. Shift-place an edge pane from a centred sheet and verify the copied pane is parallel to that sheet.
+
+## Seamless connected panes
+
+1. Confirm Seamless connected panes is enabled by default in Mod Menu and persists after restart.
+2. Place two matching coplanar edge panes beside each other and verify their shared frame disappears while every exposed side retains its frame.
+3. Repeat in horizontal and vertical planes, across all four in-plane directions, chunk boundaries, and chunk-section boundaries.
+4. Build 2x2 and 3x3 coplanar sheets; verify only the outside perimeter is framed and no small corner gaps appear where two internal seams meet.
+5. Repeat the coplanar checks with matching centred panes on X, Y, and Z axes.
+6. Verify different stained colours do not join seamlessly.
+7. Verify edge panes do not join centred panes, even when parallel.
+8. Verify vanilla panes remain visually untouched.
+9. Build L-shaped and three-plane cube corners; verify every angled junction retains its solid outside edge.
+10. Extend an L-shaped corner through neighbouring blocks; verify flat coplanar seams disappear while the angled junction frame remains continuous through the run.
+11. Disable seamless rendering and verify every pane immediately returns to the ordinary framed appearance without replacing blocks or reloading the world.
+12. Re-enable it and verify the connected appearance returns immediately.
+13. Break, place, rotate, and edge/centred-toggle panes; verify affected seams update without stale frame pieces.
+14. Repeat with vanilla/Fabric rendering and Sodium/Iris, both shaders disabled and enabled.
+15. Waterlog seamless edge and corner panes; verify frame suppression does not change water clipping, shader classification, or source-water behavior.
 
 ## Native waterlogging
 

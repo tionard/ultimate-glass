@@ -36,6 +36,14 @@ Convex outside corners use generated merged geometry:
 
 Concave inner arrangements remain unconnected.
 
+## Seamless connected rendering
+
+Matching Ultimate panes use seamless rendering by default. Coplanar panes of the same colour and geometry suppress only the glass/frame segments along their shared block boundary. Junction frames inside L-shaped and cube-corner blocks remain visible because they form intentional outside edges rather than flat coplanar seams.
+
+The setting is client-side and purely visual: it does not add block-state properties, alter collision or water clipping, or require server synchronization. Generated models split existing Minecraft glass and concrete quads at the two-pixel frame boundary, and a Fabric model wrapper filters the matching pieces after checking neighbouring block states. Disabling the setting emits every generated piece and restores the ordinary framed appearance. Toggling it invalidates compiled chunk geometry so the visible world updates immediately.
+
+Only the exact same Ultimate block joins seamlessly. Different stained colours, edge-to-centred neighbours, and vanilla panes retain their complete outside frames.
+
 ## Rotation and geometry toggle
 
 `Change Rotation Axis` is assigned to V by default and cycles X, Y, and Z. Right-clicking with any Glazier's Tool rotates either custom geometry 90 degrees around the selected axis. Rotation and conversion refresh nearby corner states.

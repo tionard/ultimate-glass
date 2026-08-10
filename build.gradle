@@ -99,6 +99,43 @@ tasks.register("generatePaneResources") {
             return faces
         }
 
+        def splitPaneElements = { List<Integer> paneFrom, List<Integer> paneTo, String plane ->
+            int planeAxis = directions[plane].axis
+            def inPlaneAxes = (0..2).findAll { axis -> axis != planeAxis }
+            def cuts = [:]
+
+            inPlaneAxes.each { axis ->
+                def axisCuts = [paneFrom[axis]]
+                [2, 14].each { cut ->
+                    if (paneFrom[axis] < cut && cut < paneTo[axis]) {
+                        axisCuts << cut
+                    }
+                }
+                axisCuts << paneTo[axis]
+                cuts[axis] = axisCuts
+            }
+
+            def elements = []
+            int firstAxis = inPlaneAxes[0]
+            int secondAxis = inPlaneAxes[1]
+            for (int first = 0; first < cuts[firstAxis].size() - 1; first++) {
+                for (int second = 0; second < cuts[secondAxis].size() - 1; second++) {
+                    def from = new ArrayList<Integer>(paneFrom)
+                    def to = new ArrayList<Integer>(paneTo)
+                    from[firstAxis] = cuts[firstAxis][first]
+                    to[firstAxis] = cuts[firstAxis][first + 1]
+                    from[secondAxis] = cuts[secondAxis][second]
+                    to[secondAxis] = cuts[secondAxis][second + 1]
+
+                    def faces = [:]
+                    faces[plane] = [texture: "#pane"]
+                    faces[directions[plane].opposite] = [texture: "#pane"]
+                    elements << [from: from, to: to, faces: faces]
+                }
+            }
+            return elements
+        }
+
         def createMergedShape = { int mask ->
             def planes = ["north"]
             connectionSides.eachWithIndex { side, index ->
@@ -120,10 +157,7 @@ tasks.register("generatePaneResources") {
                 }
 
                 if ((0..2).every { axis -> to[axis] > from[axis] }) {
-                    def faces = [:]
-                    faces[plane] = [texture: "#pane"]
-                    faces[directions[plane].opposite] = [texture: "#pane"]
-                    elements << [from: from, to: to, faces: faces]
+                    elements.addAll(splitPaneElements(from, to, plane))
                 }
             }
 
@@ -244,20 +278,13 @@ tasks.register("generatePaneResources") {
             )
         }
 
-        def centeredElements = [
-                [
-                        from: [0, 0, 7],
-                        to: [16, 16, 9],
-                        faces: [
-                                north: [texture: "#pane"],
-                                south: [texture: "#pane"]
-                        ]
-                ],
+        def centeredElements = splitPaneElements([0, 0, 7], [16, 16, 9], "north")
+        centeredElements.addAll([
                 [from: [0, 0, 7], to: [2, 16, 9], faces: [west: [texture: "#edge"]]],
                 [from: [14, 0, 7], to: [16, 16, 9], faces: [east: [texture: "#edge"]]],
                 [from: [0, 0, 7], to: [16, 2, 9], faces: [down: [texture: "#edge"]]],
                 [from: [0, 14, 7], to: [16, 16, 9], faces: [up: [texture: "#edge"]]]
-        ]
+        ])
         writeJson(
                 "assets/ultimateglass/models/block/centered_pane_base.json",
                 [

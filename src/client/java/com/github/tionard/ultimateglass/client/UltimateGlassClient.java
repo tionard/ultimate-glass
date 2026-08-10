@@ -19,6 +19,7 @@ import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
+import com.github.tionard.ultimateglass.client.render.SeamlessPaneModels;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
 import com.github.tionard.ultimateglass.network.RotationAxisPayload;
 import com.github.tionard.ultimateglass.network.ShiftPlacementModePayload;
@@ -56,6 +57,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         UltimateGlassClientConfig.load();
+        SeamlessPaneModels.initialize();
         UltimateGlassBlocks.edgePanes().forEach(block ->
                 FluidRenderingRegistry.setBlockTransparency(block, true));
         UltimateGlassBlocks.centeredPanes().forEach(block ->
@@ -138,6 +140,20 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 UltimateGlassServerConfig.ironCraftingEnabled(),
                 UltimateGlassServerConfig.diamondCraftingEnabled()
         ));
+    }
+
+    public static void toggleSeamlessConnectedPanes() {
+        UltimateGlassClientConfig.toggleSeamlessConnectedPanes();
+
+        Minecraft client = Minecraft.getInstance();
+        if (client.level != null) {
+            client.levelRenderer.invalidateCompiledGeometry(
+                    client.level,
+                    client.options,
+                    client.gameRenderer.mainCamera(),
+                    client.getBlockColors()
+            );
+        }
     }
 
     private static String axisMessageKey(Direction.Axis axis) {

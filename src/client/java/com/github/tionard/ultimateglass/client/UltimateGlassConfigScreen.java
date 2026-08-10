@@ -16,6 +16,7 @@ public final class UltimateGlassConfigScreen extends Screen {
     private final Screen parent;
     private final Map<GlaziersToolTier, Button> craftingButtons = new EnumMap<>(GlaziersToolTier.class);
     private Button shiftModeButton;
+    private Button seamlessPanesButton;
 
     public UltimateGlassConfigScreen(Screen parent) {
         super(Component.translatable("config.ultimateglass.title"));
@@ -28,7 +29,17 @@ public final class UltimateGlassConfigScreen extends Screen {
 
         int buttonWidth = 260;
         int left = this.width / 2 - buttonWidth / 2;
-        int top = this.height / 2 - 54;
+        int top = this.height / 2 - 66;
+
+        seamlessPanesButton = this.addRenderableWidget(
+                Button.builder(seamlessPanesButtonText(), button -> {
+                    UltimateGlassClient.toggleSeamlessConnectedPanes();
+                    button.setMessage(seamlessPanesButtonText());
+                })
+                        .pos(left, top)
+                        .size(buttonWidth, 20)
+                        .build()
+        );
 
         shiftModeButton = this.addRenderableWidget(
                 Button.builder(shiftModeButtonText(), button -> {
@@ -36,14 +47,14 @@ public final class UltimateGlassConfigScreen extends Screen {
                     UltimateGlassClient.syncShiftPlacementMode();
                     button.setMessage(shiftModeButtonText());
                 })
-                        .pos(left, top)
+                        .pos(left, top + 24)
                         .size(buttonWidth, 20)
                         .build()
         );
 
-        addCraftingButton(left, top + 24, buttonWidth, GlaziersToolTier.COPPER);
-        addCraftingButton(left, top + 48, buttonWidth, GlaziersToolTier.IRON);
-        addCraftingButton(left, top + 72, buttonWidth, GlaziersToolTier.DIAMOND);
+        addCraftingButton(left, top + 48, buttonWidth, GlaziersToolTier.COPPER);
+        addCraftingButton(left, top + 72, buttonWidth, GlaziersToolTier.IRON);
+        addCraftingButton(left, top + 96, buttonWidth, GlaziersToolTier.DIAMOND);
 
         this.addRenderableWidget(
                 Button.builder(CommonComponents.GUI_DONE, button -> returnToParent())
@@ -58,6 +69,9 @@ public final class UltimateGlassConfigScreen extends Screen {
         super.tick();
         if (shiftModeButton != null) {
             shiftModeButton.setMessage(shiftModeButtonText());
+        }
+        if (seamlessPanesButton != null) {
+            seamlessPanesButton.setMessage(seamlessPanesButtonText());
         }
         craftingButtons.forEach((tier, button) -> button.setMessage(craftingButtonText(tier)));
     }
@@ -90,6 +104,14 @@ public final class UltimateGlassConfigScreen extends Screen {
                 UltimateGlassClientConfig.shiftPlacementMode() == ShiftPlacementMode.FACE
                         ? "config.ultimateglass.shift_mode_face"
                         : "config.ultimateglass.shift_mode_near"
+        );
+    }
+
+    private Component seamlessPanesButtonText() {
+        return Component.translatable(
+                UltimateGlassClientConfig.seamlessConnectedPanes()
+                        ? "config.ultimateglass.seamless_panes_enabled"
+                        : "config.ultimateglass.seamless_panes_disabled"
         );
     }
 

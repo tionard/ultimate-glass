@@ -2,7 +2,7 @@
 
 Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise edge-aligned glass panes, rotatable centred full sheets, connected corners, and tiered glassworking tools.
 
-## Version 0.1.7 features
+## Version 0.1.8 features
 
 - Vanilla glass panes remain fully vanilla and place with their normal connected geometry.
 - Clear and all 16 stained variants have separate Ultimate Glass Pane items.
@@ -14,6 +14,7 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders preci
 - Centred panes are complete sheets rather than vanilla's single-pane rod and support X, Y, and Z orientations.
 - Both custom geometries support native source-water waterlogging and preserve it through rotation and toggling.
 - Water rendered inside edge panes is clipped at every active pane's inner face, including merged L-shaped and cube corners; centred panes keep the normal water render.
+- Matching coplanar Ultimate panes remove their shared frame texture by default, while L-shaped and cube-corner junctions retain their solid outside edges.
 
 Waterlogging uses Minecraft's standard block contract. For edge panes only, a client render hook clips the active renderer's water vertices at the pane's inner faces. Vanilla uses Minecraft's standard fluid tessellator, while Sodium keeps its native fluid mesh and material path so Iris can still classify and shade it as water. No global water handler is registered, and all other water—including centred-pane water—follows the renderer's unmodified normal path. Custom panes are also registered through Fabric's supported transparent-block fluid-overlay API.
 
@@ -39,12 +40,13 @@ Existing 0.1.3 Glazier's Tools retain diamond-tier behavior for world compatibil
 
 Mod Menu exposes:
 
+- Seamless connected panes enabled/disabled (enabled by default)
 - Shift placement mode: clicked face or near player
 - Copper tool crafting enabled/disabled
 - Iron tool crafting enabled/disabled
 - Diamond tool crafting enabled/disabled
 
-Crafting settings are server-authoritative. Disabling a tool recipe does not remove the item from commands or Creative mode.
+The seamless-pane setting is client-side and purely visual. It joins only matching Ultimate pane variants with the same colour and geometry; vanilla panes and edge-to-centred neighbours remain unchanged. Crafting settings are server-authoritative. Disabling a tool recipe does not remove the item from commands or Creative mode.
 
 All world changes are performed by the logical server. Ultimate Glass is required on both the server and every connecting client. Fabric API is required; Mod Menu is optional.
 

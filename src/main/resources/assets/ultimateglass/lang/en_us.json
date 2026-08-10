@@ -31,6 +31,8 @@
   "config.ultimateglass.title": "Ultimate Glass Settings",
   "config.ultimateglass.shift_mode_face": "Shift placement: Clicked face",
   "config.ultimateglass.shift_mode_near": "Shift placement: Near player",
+  "config.ultimateglass.seamless_panes_enabled": "Seamless connected panes: Enabled",
+  "config.ultimateglass.seamless_panes_disabled": "Seamless connected panes: Disabled",
   "config.ultimateglass.crafting_copper_enabled": "Copper tool crafting: Enabled",
   "config.ultimateglass.crafting_copper_disabled": "Copper tool crafting: Disabled",
   "config.ultimateglass.crafting_iron_enabled": "Iron tool crafting: Enabled",

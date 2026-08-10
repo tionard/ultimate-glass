@@ -23,6 +23,7 @@ public final class UltimateGlassClientConfig {
             .resolve("ultimate-glass-client.json");
 
     private static ShiftPlacementMode shiftPlacementMode = ShiftPlacementMode.FACE;
+    private static volatile boolean seamlessConnectedPanes = true;
 
     private UltimateGlassClientConfig() {
     }
@@ -35,12 +36,17 @@ public final class UltimateGlassClientConfig {
 
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             ConfigData data = GSON.fromJson(reader, ConfigData.class);
-            if (data != null && data.shiftPlacementMode != null) {
-                shiftPlacementMode = data.shiftPlacementMode;
+            if (data != null) {
+                if (data.shiftPlacementMode != null) {
+                    shiftPlacementMode = data.shiftPlacementMode;
+                }
+                seamlessConnectedPanes = data.seamlessConnectedPanes == null
+                        || data.seamlessConnectedPanes;
             }
         } catch (IOException | RuntimeException exception) {
             UltimateGlass.LOGGER.warn("Could not read client configuration; using defaults", exception);
             shiftPlacementMode = ShiftPlacementMode.FACE;
+            seamlessConnectedPanes = true;
         }
     }
 
@@ -52,6 +58,16 @@ public final class UltimateGlassClientConfig {
         shiftPlacementMode = shiftPlacementMode.next();
         save();
         return shiftPlacementMode;
+    }
+
+    public static boolean seamlessConnectedPanes() {
+        return seamlessConnectedPanes;
+    }
+
+    public static boolean toggleSeamlessConnectedPanes() {
+        seamlessConnectedPanes = !seamlessConnectedPanes;
+        save();
+        return seamlessConnectedPanes;
     }
 
     public static boolean isCraftingEnabled(GlaziersToolTier tier) {
@@ -78,7 +94,7 @@ public final class UltimateGlassClientConfig {
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
-                GSON.toJson(new ConfigData(shiftPlacementMode), writer);
+                GSON.toJson(new ConfigData(shiftPlacementMode, seamlessConnectedPanes), writer);
             }
         } catch (IOException exception) {
             UltimateGlass.LOGGER.warn("Could not save client configuration", exception);
@@ -87,12 +103,14 @@ public final class UltimateGlassClientConfig {
 
     private static final class ConfigData {
         private ShiftPlacementMode shiftPlacementMode = ShiftPlacementMode.FACE;
+        private Boolean seamlessConnectedPanes = true;
 
         private ConfigData() {
         }
 
-        private ConfigData(ShiftPlacementMode shiftPlacementMode) {
+        private ConfigData(ShiftPlacementMode shiftPlacementMode, boolean seamlessConnectedPanes) {
             this.shiftPlacementMode = shiftPlacementMode;
+            this.seamlessConnectedPanes = seamlessConnectedPanes;
         }
     }
 }
