@@ -2,16 +2,25 @@
 
 Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise edge-aligned glass panes, rotatable centred full sheets, connected corners, and tiered glassworking tools.
 
-## Version 0.1.8 features
+## Version 0.2.0-beta.3
+
+Beta.3 allows centred panes to merge into perpendicular centred planes. A block can now contain
+X, Y, Z, XY, XZ, YZ, or XYZ geometry with trimmed transparent intersections, one shared frame line
+per plane pair, and one centre cube at a three-plane junction. Beta.2 tinted panes are fully included.
+
+### Gameplay features
 
 - Vanilla glass panes remain fully vanilla and place with their normal connected geometry.
 - Clear and all 16 stained variants have separate Ultimate Glass Pane items.
+- Tinted glass has a distinct Ultimate Tinted Glass Pane item and is not treated as a stain colour.
+- Six tinted glass blocks craft 16 Ultimate Tinted Glass Panes in the vanilla pane pattern.
 - One vanilla pane converts to one matching Ultimate Glass Pane in any crafting grid, and the recipe works in reverse.
 - Ultimate Glass Panes initially place against an outside face of the block space.
 - Normal placement selects the side farthest from the player; Shift placement can copy an existing orientation or use the configured clicked-face/near-player fallback.
 - Adjacent perpendicular edge panes create merged L-shaped and three-plane cube corners.
 - Iron and diamond Glazier's Tools toggle custom panes between outside-face and centred full-sheet geometry without involving vanilla panes.
 - Centred panes are complete sheets rather than vanilla's single-pane rod and support X, Y, and Z orientations.
+- Adjacent perpendicular centred panes merge into clean two- and three-plane junctions.
 - Both custom geometries support native source-water waterlogging and preserve it through rotation and toggling.
 - Water rendered inside edge panes is clipped at every active pane's inner face, including merged L-shaped and cube corners; centred panes keep the normal water render.
 - Matching coplanar Ultimate panes remove their shared frame texture by default, while L-shaped and cube-corner junctions retain their solid outside edges.
@@ -54,13 +63,25 @@ All world changes are performed by the logical server. Ultimate Glass is require
 
 Ultimate Glass does not add properties to vanilla pane block states or intercept vanilla pane placement. Mod-owned blocks represent centred and outside-face geometry, and mod-owned items place those blocks. Convert custom panes back to vanilla before removing the mod from a world.
 
+## Pane architecture
+
+Ordinary panes remain normal blocks with no BlockEntities. Both edge and centred blocks expose a
+common pane appearance and produce a `PaneGeometry` made from immutable `PanePlane` values. The
+same geometry now drives outline/collision shapes, seamless continuation checks, rotation, and
+edge-water clipping. `PaneMaterial` keeps clear, stained, and tinted glass logically separate.
+Tinted panes remain ordinary blocks and explicitly reproduce vanilla tinted-glass light dampening.
+Centred panes preserve `AXIS` as their primary plane and add only two relative connection flags;
+old states therefore continue to load as single-plane sheets.
+
+The existing `FACING`, edge connection, `AXIS`, and `WATERLOGGED` properties remain present.
+
 ## Development baseline
 
 - Minecraft Java 26.2
 - Fabric Loader 0.19.3
 - Fabric API 0.156.0+26.2
 - Java 25
-- Fabric Loom 1.17
+- Fabric Loom 1.17.19
 - Mod Menu 20.0.1, optional at runtime
 
 ## Build
@@ -70,6 +91,8 @@ gradle build
 ```
 
 The remapped mod JAR is created in `build/libs`.
+
+The build includes unit tests for pane materials, plane sets, relative edge geometry, and rotation.
 
 ## License
 

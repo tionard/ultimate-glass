@@ -1,4 +1,24 @@
-# Ultimate Glass 0.1.8 manual test checklist
+# Ultimate Glass 0.2.0-beta.3 regression checklist
+
+Beta.3 adds connected centred planes. Run the complete beta.2 regression checklist below against
+both a new world and a backed-up world, then run the centred-junction checks.
+
+## Automated gate
+
+1. Run `gradle build` with Java 25.
+2. Confirm the pane material, plane-set, relative-geometry, and rotation unit tests pass.
+3. Confirm the output is `build/libs/ultimate-glass-0.2.0-beta.3.jar`.
+4. Start a dedicated server with the beta JAR and wait for the normal ready message.
+5. Confirm no registered block/item IDs or BlockState property names differ from 0.1.8.
+
+## Existing-world compatibility
+
+1. Back up and open a representative 0.1.8 world with beta.1.
+2. Visit saved clear and stained edge panes in all six orientations.
+3. Visit saved centred panes on X, Y, and Z.
+4. Visit saved L corners, cube corners, and waterlogged arrangements.
+5. Confirm no missing blocks/items, remapped states, changed geometry, or unexpected fluid updates.
+6. Save, restart, and revisit the same chunks.
 
 ## Environment
 
@@ -12,6 +32,10 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 4. Repeat both directions for several stained colours and verify no colour changes or item loss.
 5. Place a vanilla pane item and verify it uses untouched vanilla connected-pane geometry.
 6. Place an Ultimate Glass Pane and verify it uses outside-face geometry.
+7. Craft six tinted glass blocks in two full rows and confirm the output is 16 Ultimate Tinted Glass Panes.
+8. Confirm there is no reverse tinted-pane recipe.
+9. Exercise edge, centred, horizontal, corner, seamless, waterlogged, rotation, toggle, and harvesting behavior with tinted panes.
+10. Compare a sealed room made from Ultimate tinted panes with vanilla tinted glass and verify both block light and skylight completely.
 
 ## Shift placement modes
 
@@ -73,6 +97,19 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 6. Verify rotation around the sheet's own normal leaves it unchanged; each perpendicular axis swaps it to the remaining plane.
 7. Shift-place an edge pane from a centred sheet and verify the copied pane is parallel to that sheet.
 
+## Connected centred junctions
+
+1. Build isolated X, Y, and Z sheets and confirm their old single-plane appearance and collision remain unchanged.
+2. Build XY, XZ, and YZ junctions in both source-placement orders.
+3. Build an XYZ junction and confirm there is one clean centre cube and one shared frame line per plane pair.
+4. Inspect every junction closely with clear, several stained colours, and tinted glass; confirm no overlapping transparent faces, flicker, white strips, or doubled frame lines.
+5. Extend each plane into large centred grids and verify only matching coplanar continuations become seamless.
+6. Rotate every two-plane and three-plane junction around X, Y, and Z; verify the complete plane set, outline, collision, and waterlogging rotate together.
+7. Place and remove each primary source pane and verify connection flags appear and clear immediately without ghost planes.
+8. Save/reload old beta.2 single centred states and confirm absent connection flags default to false.
+9. Attempt Shift-conversion on a connected multi-plane block and confirm it remains centred; remove perpendicular sources and confirm conversion then succeeds.
+10. Repeat large grids, L junctions, and XYZ junctions with vanilla/Fabric rendering and Sodium/Iris, with shaders disabled and enabled.
+
 ## Seamless connected panes
 
 1. Confirm Seamless connected panes is enabled by default in Mod Menu and persists after restart.
@@ -81,15 +118,17 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 4. Build 2x2 and 3x3 coplanar sheets; verify only the outside perimeter is framed and no small corner gaps appear where two internal seams meet.
 5. Repeat the coplanar checks with matching centred panes on X, Y, and Z axes.
 6. Verify different stained colours do not join seamlessly.
-7. Verify edge panes do not join centred panes, even when parallel.
-8. Verify vanilla panes remain visually untouched.
-9. Build L-shaped and three-plane cube corners; verify every angled junction retains its solid outside edge.
-10. Extend an L-shaped corner through neighbouring blocks; verify flat coplanar seams disappear while the angled junction frame remains continuous through the run.
-11. Disable seamless rendering and verify every pane immediately returns to the ordinary framed appearance without replacing blocks or reloading the world.
-12. Re-enable it and verify the connected appearance returns immediately.
-13. Break, place, rotate, and edge/centred-toggle panes; verify affected seams update without stale frame pieces.
-14. Repeat with vanilla/Fabric rendering and Sodium/Iris, both shaders disabled and enabled.
-15. Waterlog seamless edge and corner panes; verify frame suppression does not change water clipping, shader classification, or source-water behavior.
+7. Build 2x2 windows from several matching stained colours and verify internal seams contain no
+   clear or differently tinted strips, crosses, or rectangular patches at any viewing angle.
+8. Verify edge panes do not join centred panes, even when parallel.
+9. Verify vanilla panes remain visually untouched.
+10. Build L-shaped and three-plane cube corners; verify every angled junction retains its solid outside edge.
+11. Extend an L-shaped corner through neighbouring blocks; verify flat coplanar seams disappear while the angled junction frame remains continuous through the run.
+12. Disable seamless rendering and verify every pane immediately returns to the ordinary framed appearance without replacing blocks or reloading the world.
+13. Re-enable it and verify the connected appearance returns immediately.
+14. Break, place, rotate, and edge/centred-toggle panes; verify affected seams update without stale frame pieces.
+15. Repeat with vanilla/Fabric rendering and Sodium/Iris, both shaders disabled and enabled.
+16. Waterlog seamless edge and corner panes; verify frame suppression does not change water clipping, shader classification, or source-water behavior.
 
 ## Native waterlogging
 

@@ -7,7 +7,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 
-import com.github.tionard.ultimateglass.block.EdgePaneBlock;
+import com.github.tionard.ultimateglass.pane.PaneGeometry;
+import com.github.tionard.ultimateglass.pane.UltimatePane;
 
 /** Crops the standard fluid mesh to the interior side of every pane face in an edge-pane state. */
 public final class EdgePaneFluidClipping {
@@ -50,22 +51,24 @@ public final class EdgePaneFluidClipping {
             float minZ = baseZ;
             float maxZ = baseZ + 1.0F;
 
-            if (EdgePaneBlock.hasPaneOnFace(state, Direction.WEST)) {
+            PaneGeometry geometry = ((UltimatePane) state.getBlock()).geometry(state);
+
+            if (geometry.hasEdgePlane(Direction.WEST)) {
                 minX += PANE_THICKNESS + INNER_FACE_OFFSET;
             }
-            if (EdgePaneBlock.hasPaneOnFace(state, Direction.EAST)) {
+            if (geometry.hasEdgePlane(Direction.EAST)) {
                 maxX -= PANE_THICKNESS + INNER_FACE_OFFSET;
             }
-            if (EdgePaneBlock.hasPaneOnFace(state, Direction.DOWN)) {
+            if (geometry.hasEdgePlane(Direction.DOWN)) {
                 minY += PANE_THICKNESS + INNER_FACE_OFFSET;
             }
-            if (EdgePaneBlock.hasPaneOnFace(state, Direction.UP)) {
+            if (geometry.hasEdgePlane(Direction.UP)) {
                 maxY -= PANE_THICKNESS + INNER_FACE_OFFSET;
             }
-            if (EdgePaneBlock.hasPaneOnFace(state, Direction.NORTH)) {
+            if (geometry.hasEdgePlane(Direction.NORTH)) {
                 minZ += PANE_THICKNESS + INNER_FACE_OFFSET;
             }
-            if (EdgePaneBlock.hasPaneOnFace(state, Direction.SOUTH)) {
+            if (geometry.hasEdgePlane(Direction.SOUTH)) {
                 maxZ -= PANE_THICKNESS + INNER_FACE_OFFSET;
             }
 

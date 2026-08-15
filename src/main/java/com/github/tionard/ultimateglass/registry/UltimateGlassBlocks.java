@@ -16,28 +16,32 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
+import com.github.tionard.ultimateglass.pane.PaneAppearance;
+import com.github.tionard.ultimateglass.pane.PaneMaterial;
 
 public final class UltimateGlassBlocks {
     private static final Map<Block, PaneFamily> FAMILIES_BY_VANILLA = new LinkedHashMap<>();
     private static final Map<Block, PaneFamily> FAMILIES_BY_BLOCK = new LinkedHashMap<>();
+    private static final Map<PaneMaterial, PaneFamily> FAMILIES_BY_MATERIAL = new LinkedHashMap<>();
 
-    public static final EdgePaneBlock EDGE_GLASS_PANE = register("edge_glass_pane", Blocks.GLASS_PANE);
-    public static final EdgePaneBlock EDGE_WHITE_STAINED_GLASS_PANE = registerColored("white");
-    public static final EdgePaneBlock EDGE_ORANGE_STAINED_GLASS_PANE = registerColored("orange");
-    public static final EdgePaneBlock EDGE_MAGENTA_STAINED_GLASS_PANE = registerColored("magenta");
-    public static final EdgePaneBlock EDGE_LIGHT_BLUE_STAINED_GLASS_PANE = registerColored("light_blue");
-    public static final EdgePaneBlock EDGE_YELLOW_STAINED_GLASS_PANE = registerColored("yellow");
-    public static final EdgePaneBlock EDGE_LIME_STAINED_GLASS_PANE = registerColored("lime");
-    public static final EdgePaneBlock EDGE_PINK_STAINED_GLASS_PANE = registerColored("pink");
-    public static final EdgePaneBlock EDGE_GRAY_STAINED_GLASS_PANE = registerColored("gray");
-    public static final EdgePaneBlock EDGE_LIGHT_GRAY_STAINED_GLASS_PANE = registerColored("light_gray");
-    public static final EdgePaneBlock EDGE_CYAN_STAINED_GLASS_PANE = registerColored("cyan");
-    public static final EdgePaneBlock EDGE_PURPLE_STAINED_GLASS_PANE = registerColored("purple");
-    public static final EdgePaneBlock EDGE_BLUE_STAINED_GLASS_PANE = registerColored("blue");
-    public static final EdgePaneBlock EDGE_BROWN_STAINED_GLASS_PANE = registerColored("brown");
-    public static final EdgePaneBlock EDGE_GREEN_STAINED_GLASS_PANE = registerColored("green");
-    public static final EdgePaneBlock EDGE_RED_STAINED_GLASS_PANE = registerColored("red");
-    public static final EdgePaneBlock EDGE_BLACK_STAINED_GLASS_PANE = registerColored("black");
+    public static final EdgePaneBlock EDGE_GLASS_PANE = register(PaneMaterial.CLEAR);
+    public static final EdgePaneBlock EDGE_WHITE_STAINED_GLASS_PANE = register(PaneMaterial.WHITE_STAINED);
+    public static final EdgePaneBlock EDGE_ORANGE_STAINED_GLASS_PANE = register(PaneMaterial.ORANGE_STAINED);
+    public static final EdgePaneBlock EDGE_MAGENTA_STAINED_GLASS_PANE = register(PaneMaterial.MAGENTA_STAINED);
+    public static final EdgePaneBlock EDGE_LIGHT_BLUE_STAINED_GLASS_PANE = register(PaneMaterial.LIGHT_BLUE_STAINED);
+    public static final EdgePaneBlock EDGE_YELLOW_STAINED_GLASS_PANE = register(PaneMaterial.YELLOW_STAINED);
+    public static final EdgePaneBlock EDGE_LIME_STAINED_GLASS_PANE = register(PaneMaterial.LIME_STAINED);
+    public static final EdgePaneBlock EDGE_PINK_STAINED_GLASS_PANE = register(PaneMaterial.PINK_STAINED);
+    public static final EdgePaneBlock EDGE_GRAY_STAINED_GLASS_PANE = register(PaneMaterial.GRAY_STAINED);
+    public static final EdgePaneBlock EDGE_LIGHT_GRAY_STAINED_GLASS_PANE = register(PaneMaterial.LIGHT_GRAY_STAINED);
+    public static final EdgePaneBlock EDGE_CYAN_STAINED_GLASS_PANE = register(PaneMaterial.CYAN_STAINED);
+    public static final EdgePaneBlock EDGE_PURPLE_STAINED_GLASS_PANE = register(PaneMaterial.PURPLE_STAINED);
+    public static final EdgePaneBlock EDGE_BLUE_STAINED_GLASS_PANE = register(PaneMaterial.BLUE_STAINED);
+    public static final EdgePaneBlock EDGE_BROWN_STAINED_GLASS_PANE = register(PaneMaterial.BROWN_STAINED);
+    public static final EdgePaneBlock EDGE_GREEN_STAINED_GLASS_PANE = register(PaneMaterial.GREEN_STAINED);
+    public static final EdgePaneBlock EDGE_RED_STAINED_GLASS_PANE = register(PaneMaterial.RED_STAINED);
+    public static final EdgePaneBlock EDGE_BLACK_STAINED_GLASS_PANE = register(PaneMaterial.BLACK_STAINED);
+    public static final EdgePaneBlock EDGE_TINTED_GLASS_PANE = register(PaneMaterial.TINTED);
 
     private UltimateGlassBlocks() {
     }
@@ -60,6 +64,15 @@ public final class UltimateGlassBlocks {
         return FAMILIES_BY_BLOCK.get(block);
     }
 
+    public static PaneFamily familyFor(PaneMaterial material) {
+        return FAMILIES_BY_MATERIAL.get(material);
+    }
+
+    public static PaneAppearance appearanceFor(Block block) {
+        PaneFamily family = FAMILIES_BY_BLOCK.get(block);
+        return family == null ? null : family.appearance();
+    }
+
     public static Block vanillaFor(Block customPane) {
         PaneFamily family = FAMILIES_BY_BLOCK.get(customPane);
         return family == null || customPane == family.vanillaPane()
@@ -68,26 +81,19 @@ public final class UltimateGlassBlocks {
     }
 
     public static Collection<EdgePaneBlock> edgePanes() {
-        return FAMILIES_BY_VANILLA.values().stream()
+        return FAMILIES_BY_MATERIAL.values().stream()
                 .map(PaneFamily::edgePane)
                 .toList();
     }
 
     public static Collection<CenteredPaneBlock> centeredPanes() {
-        return FAMILIES_BY_VANILLA.values().stream()
+        return FAMILIES_BY_MATERIAL.values().stream()
                 .map(PaneFamily::centeredPane)
                 .toList();
     }
 
     public static Collection<PaneFamily> paneFamilies() {
-        return FAMILIES_BY_VANILLA.values();
-    }
-
-    private static EdgePaneBlock registerColored(String color) {
-        return register(
-                "edge_" + color + "_stained_glass_pane",
-                vanillaBlock(color + "_stained_glass_pane")
-        );
+        return FAMILIES_BY_MATERIAL.values();
     }
 
     private static Block vanillaBlock(String path) {
@@ -99,11 +105,21 @@ public final class UltimateGlassBlocks {
         return block;
     }
 
-    private static EdgePaneBlock register(String name, Block vanillaPane) {
+    private static EdgePaneBlock register(PaneMaterial material) {
+        boolean tinted = material == PaneMaterial.TINTED;
+        String panePath = tinted ? "tinted_glass_pane" : material.vanillaPanePath();
+        Block vanillaPane = switch (material) {
+            case CLEAR -> Blocks.GLASS_PANE;
+            case TINTED -> Blocks.TINTED_GLASS;
+            default -> vanillaBlock(material.vanillaPanePath());
+        };
+        PaneAppearance appearance = new PaneAppearance(material);
+        String name = "edge_" + panePath;
         String centeredName = "centered_" + name.substring("edge_".length());
         ResourceKey<Block> centeredKey = blockKey(centeredName);
         CenteredPaneBlock centeredPane = new CenteredPaneBlock(
                 vanillaPane,
+                appearance,
                 BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(centeredKey)
         );
         Registry.register(BuiltInRegistries.BLOCK, centeredKey, centeredPane);
@@ -111,15 +127,19 @@ public final class UltimateGlassBlocks {
         ResourceKey<Block> edgeKey = blockKey(name);
         EdgePaneBlock edgePane = new EdgePaneBlock(
                 vanillaPane,
+                appearance,
                 BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(edgeKey)
         );
         Registry.register(BuiltInRegistries.BLOCK, edgeKey, edgePane);
 
-        PaneFamily family = new PaneFamily(vanillaPane, centeredPane, edgePane);
-        FAMILIES_BY_VANILLA.put(vanillaPane, family);
-        FAMILIES_BY_BLOCK.put(vanillaPane, family);
+        PaneFamily family = new PaneFamily(vanillaPane, centeredPane, edgePane, appearance);
+        if (!tinted) {
+            FAMILIES_BY_VANILLA.put(vanillaPane, family);
+            FAMILIES_BY_BLOCK.put(vanillaPane, family);
+        }
         FAMILIES_BY_BLOCK.put(centeredPane, family);
         FAMILIES_BY_BLOCK.put(edgePane, family);
+        FAMILIES_BY_MATERIAL.put(material, family);
         return edgePane;
     }
 
@@ -131,7 +151,13 @@ public final class UltimateGlassBlocks {
     public record PaneFamily(
             Block vanillaPane,
             CenteredPaneBlock centeredPane,
-            EdgePaneBlock edgePane
+            EdgePaneBlock edgePane,
+            PaneAppearance appearance
     ) {
+        public String itemPath() {
+            return appearance.material() == PaneMaterial.TINTED
+                    ? "ultimate_tinted_glass_pane"
+                    : "ultimate_" + BuiltInRegistries.BLOCK.getKey(vanillaPane).getPath();
+        }
     }
 }
