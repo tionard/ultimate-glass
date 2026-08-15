@@ -1,5 +1,24 @@
 # Ultimate Glass - Design
 
+## Shared pane description
+
+The 0.2 architecture separates a pane's appearance from its physical geometry:
+
+- `PaneMaterial` identifies clear, stained, or tinted glass without treating tinted glass as a
+  decorative colour.
+- `PaneAppearance` is the common appearance value carried by each ordinary pane family. Later
+  frame and design phases can extend this concept without encoding arbitrary data in BlockState.
+- `PanePlane` identifies one edge-aligned or centred physical sheet.
+- `PanePlaneSet` is an immutable set of those sheets.
+- `PaneGeometry` converts a plane set into shared collision/outline geometry and supports rotation.
+  Its finite ordinary block-state geometries and combined voxel shapes are cached.
+- `UltimatePane` lets render and fluid paths consume appearance and geometry without duplicating
+  block-specific state decoding.
+
+Ordinary clear and stained panes continue to be normal blocks. No BlockEntity or ticker is used.
+Registered IDs and the compatibility-sensitive `FACING`, connection, `AXIS`, and `WATERLOGGED`
+properties remain unchanged from 0.1.8.
+
 ## Pane families and items
 
 Each clear/stained family contains three blocks:
@@ -10,7 +29,7 @@ Each clear/stained family contains three blocks:
 
 Only the two mod-owned geometries belong to the tool toggle. A separate Ultimate Glass Pane item places the outside-face block. Vanilla pane items place vanilla blocks and never enter the toggle cycle.
 
-Every vanilla pane has a reversible shapeless conversion recipe at a one-to-one ratio. Both custom block geometries map back to the same Ultimate Glass Pane item when harvested intact.
+Every vanilla pane has a reversible shapeless conversion recipe at a one-to-one ratio. Both custom block geometries map back to the same Ultimate Glass Pane item when harvested intact. The family also owns one shared `PaneAppearance`, and lookups are available by vanilla block, custom block, or `PaneMaterial`.
 
 ## Placement
 
@@ -36,11 +55,15 @@ Convex outside corners use generated merged geometry:
 
 Concave inner arrangements remain unconnected.
 
+Convex connection discovery lives in `PaneConnectionQueries`. Block state stores the same four
+relative connection flags as 0.1.8; decoding those flags produces a world-oriented
+`PaneGeometry`, which is shared by collision, seamless rendering, and water clipping.
+
 ## Seamless connected rendering
 
 Matching Ultimate panes use seamless rendering by default. Coplanar panes of the same colour and geometry suppress only the glass/frame segments along their shared block boundary. Junction frames inside L-shaped and cube-corner blocks remain visible because they form intentional outside edges rather than flat coplanar seams.
 
-The setting is client-side and purely visual: it does not add block-state properties, alter collision or water clipping, or require server synchronization. Generated models split existing Minecraft glass and concrete quads at the two-pixel frame boundary, and a Fabric model wrapper filters the matching pieces after checking neighbouring block states. Disabling the setting emits every generated piece and restores the ordinary framed appearance. Toggling it invalidates compiled chunk geometry so the visible world updates immediately.
+The setting is client-side and purely visual: it does not add block-state properties, alter collision or water clipping, or require server synchronization. Generated models divide broad glass faces at the two-pixel frame boundary and provide two variants for each boundary section: the normal vanilla-texture edge and an explicitly marked replacement sampled from a real two-by-two region at the centre of the same texture. The marker survives model baking and is removed before rendering. A Fabric model wrapper keeps the normal edge while exposed, but at a matching continuation it removes the solid frame and normal texture edge and emits the centre-sampled replacement. The connected area therefore retains the material's interior colour and transparency, including with resource packs. Disabling the setting drops every replacement and restores the ordinary framed appearance. Toggling it invalidates compiled chunk geometry so the visible world updates immediately.
 
 Only the exact same Ultimate block joins seamlessly. Different stained colours, edge-to-centred neighbours, and vanilla panes retain their complete outside frames.
 

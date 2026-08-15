@@ -2,7 +2,14 @@
 
 Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise edge-aligned glass panes, rotatable centred full sheets, connected corners, and tiered glassworking tools.
 
-## Version 0.1.8 features
+## Version 0.2.0-beta.1
+
+The first 0.2 beta is primarily an architecture release. It retains the complete 0.1.8 feature set and
+registered IDs while introducing shared material, appearance, pane-plane, geometry, rotation, and
+connection concepts for later 0.2 features. It also fixes a carry-over seamless-rendering defect
+that gave internal stained-glass edges the wrong colour and opacity.
+
+### Gameplay features
 
 - Vanilla glass panes remain fully vanilla and place with their normal connected geometry.
 - Clear and all 16 stained variants have separate Ultimate Glass Pane items.
@@ -54,13 +61,23 @@ All world changes are performed by the logical server. Ultimate Glass is require
 
 Ultimate Glass does not add properties to vanilla pane block states or intercept vanilla pane placement. Mod-owned blocks represent centred and outside-face geometry, and mod-owned items place those blocks. Convert custom panes back to vanilla before removing the mod from a world.
 
+## Pane architecture
+
+Ordinary panes remain normal blocks with no BlockEntities. Both edge and centred blocks expose a
+common pane appearance and produce a `PaneGeometry` made from immutable `PanePlane` values. The
+same geometry now drives outline/collision shapes, seamless continuation checks, rotation, and
+edge-water clipping. `PaneMaterial` keeps clear, stained, and tinted glass logically separate;
+tinted is reserved for beta.2 and is not registered by beta.1.
+
+The existing `FACING`, edge connection, `AXIS`, and `WATERLOGGED` properties are unchanged.
+
 ## Development baseline
 
 - Minecraft Java 26.2
 - Fabric Loader 0.19.3
 - Fabric API 0.156.0+26.2
 - Java 25
-- Fabric Loom 1.17
+- Fabric Loom 1.17.19
 - Mod Menu 20.0.1, optional at runtime
 
 ## Build
@@ -70,6 +87,8 @@ gradle build
 ```
 
 The remapped mod JAR is created in `build/libs`.
+
+The build includes unit tests for pane materials, plane sets, relative edge geometry, and rotation.
 
 ## License
 

@@ -19,6 +19,10 @@ import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.client.UltimateGlassClientConfig;
+import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
+import com.github.tionard.ultimateglass.pane.PaneGeometry;
+import com.github.tionard.ultimateglass.pane.PanePlane;
+import com.github.tionard.ultimateglass.pane.UltimatePane;
 
 /** Removes frame pieces only where matching Ultimate panes continue the same sheet. */
 public final class SeamlessPaneModels {
@@ -26,6 +30,7 @@ public final class SeamlessPaneModels {
     private static final float CENTER_MIN = 7.0F / 16.0F;
     private static final float CENTER_MAX = 9.0F / 16.0F;
     private static final float EPSILON = 0.0001F;
+    private static final int SEAM_FILL_TINT_INDEX = 15;
     private static boolean initialized;
 
     private SeamlessPaneModels() {
@@ -63,12 +68,10 @@ public final class SeamlessPaneModels {
                 RandomSource random,
                 Predicate<Direction> cullTest
         ) {
-            if (!UltimateGlassClientConfig.seamlessConnectedPanes()) {
-                super.emitQuads(emitter, level, pos, state, random, cullTest);
-                return;
-            }
-
-            emitter.pushTransform(quad -> keepQuad(quad, level, pos, state));
+            boolean seamless = UltimateGlassClientConfig.seamlessConnectedPanes();
+            emitter.pushTransform(quad -> seamless
+                    ? keepQuad(quad, level, pos, state)
+                    : !isSeamFillQuad(quad));
             try {
                 super.emitQuads(emitter, level, pos, state, random, cullTest);
             } finally {
@@ -97,111 +100,102 @@ public final class SeamlessPaneModels {
             BlockPos pos,
             BlockState state
     ) {
+        boolean seamFill = isSeamFillQuad(quad);
+        if (seamFill) {
+            // Tint index is only a baked-model marker. Clear it so the texture renders unchanged.
+            quad.tintIndex(-1);
+        }
         if (state.getBlock() instanceof EdgePaneBlock) {
-            return keepEdgeQuad(quad, level, pos, state);
+            return keepEdgeQuad(quad, level, pos, state, seamFill);
         }
         if (state.getBlock() instanceof CenteredPaneBlock) {
-            return keepCenteredQuad(quad, level, pos, state);
+            return keepCenteredQuad(quad, level, pos, state, seamFill);
         }
-        return true;
+        return !seamFill;
     }
 
     private static boolean keepEdgeQuad(
             MutableQuadView quad,
             BlockAndTintGetter level,
             BlockPos pos,
-            BlockState state
+            BlockState state,
+            boolean seamFill
     ) {
-        List<Direction> containingPlanes = new ArrayList<>(3);
-        for (Direction direction : Direction.values()) {
-            if (EdgePaneBlock.hasPaneOnFace(state, direction) && insideFaceSlab(quad, direction)) {
-                containingPlanes.add(direction);
+        PaneGeometry geometry = ((UltimatePane) state.getBlock()).geometry(state);
+        List<PanePlane> containingPlanes = new ArrayList<>(3);
+        for (PanePlane plane : geometry.planes()) {
+            if (plane.isEdge() && insideFaceSlab(quad, plane.edgeDirection())) {
+                containingPlanes.add(plane);
             }
         }
 
         // L- and cube-corner junctions are intentional outside edges, not coplanar seams.
         if (containingPlanes.size() >= 2) {
-            return true;
+            return !seamFill;
         }
 
         if (containingPlanes.size() == 1) {
-            Direction plane = containingPlanes.getFirst();
-            List<Direction> borders = boundaryDirectionsExcept(quad, plane.getAxis());
-            return borders.isEmpty() || borders.stream().anyMatch(direction ->
-                    !edgeContinues(level, pos, state, direction, List.of(plane))
-            );
+            PanePlane plane = containingPlanes.getFirst();
+            List<Direction> borders = boundaryDirectionsExcept(quad, plane.axis());
+            return keepBoundarySection(
+                    seamFill, borders, level, pos, state, plane);
         }
 
-        return true;
+        return !seamFill;
     }
 
     private static boolean keepCenteredQuad(
             MutableQuadView quad,
             BlockAndTintGetter level,
             BlockPos pos,
-            BlockState state
+            BlockState state,
+            boolean seamFill
     ) {
         Direction.Axis axis = state.getValue(CenteredPaneBlock.AXIS);
         if (!insideCenteredSlab(quad, axis)) {
-            return true;
+            return !seamFill;
         }
 
         List<Direction> borders = boundaryDirectionsExcept(quad, axis);
-        return borders.isEmpty() || borders.stream().anyMatch(direction ->
-                !centeredContinues(level, pos, state, direction, axis)
+        PanePlane plane = PanePlane.centered(axis);
+        return keepBoundarySection(seamFill, borders, level, pos, state, plane);
+    }
+
+    private static boolean keepBoundarySection(
+            boolean seamFill,
+            List<Direction> borders,
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            PanePlane plane
+    ) {
+        if (borders.isEmpty()) {
+            return !seamFill;
+        }
+
+        boolean everyBorderContinues = borders.stream().allMatch(direction ->
+                PaneConnectionQueries.hasMatchingContinuation(
+                        level, pos, state, direction, plane)
         );
+        return seamFill == everyBorderContinues;
     }
 
     private static long continuationMask(BlockAndTintGetter level, BlockPos pos, BlockState state) {
         long mask = 0L;
-        if (state.getBlock() instanceof EdgePaneBlock) {
-            for (Direction plane : Direction.values()) {
-                if (!EdgePaneBlock.hasPaneOnFace(state, plane)) {
-                    continue;
-                }
+        if (state.getBlock() instanceof UltimatePane pane) {
+            PaneGeometry geometry = pane.geometry(state);
+            for (PanePlane plane : geometry.planes()) {
                 for (Direction direction : Direction.values()) {
-                    if (direction.getAxis() != plane.getAxis()
-                            && edgeContinues(level, pos, state, direction, List.of(plane))) {
-                        mask |= 1L << (plane.ordinal() * Direction.values().length + direction.ordinal());
+                    if (PaneConnectionQueries.hasMatchingContinuation(
+                            level, pos, state, direction, plane)) {
+                        int bit = plane.ordinal() * Direction.values().length
+                                + direction.ordinal();
+                        mask |= 1L << bit;
                     }
-                }
-            }
-        } else if (state.getBlock() instanceof CenteredPaneBlock) {
-            Direction.Axis axis = state.getValue(CenteredPaneBlock.AXIS);
-            for (Direction direction : Direction.values()) {
-                if (direction.getAxis() != axis
-                        && centeredContinues(level, pos, state, direction, axis)) {
-                    mask |= 1L << direction.ordinal();
                 }
             }
         }
         return mask;
-    }
-
-    private static boolean edgeContinues(
-            BlockAndTintGetter level,
-            BlockPos pos,
-            BlockState state,
-            Direction neighborDirection,
-            List<Direction> planes
-    ) {
-        BlockState neighbor = level.getBlockState(pos.relative(neighborDirection));
-        if (neighbor.getBlock() != state.getBlock()) {
-            return false;
-        }
-        return planes.stream().allMatch(plane -> EdgePaneBlock.hasPaneOnFace(neighbor, plane));
-    }
-
-    private static boolean centeredContinues(
-            BlockAndTintGetter level,
-            BlockPos pos,
-            BlockState state,
-            Direction neighborDirection,
-            Direction.Axis axis
-    ) {
-        BlockState neighbor = level.getBlockState(pos.relative(neighborDirection));
-        return neighbor.getBlock() == state.getBlock()
-                && neighbor.getValue(CenteredPaneBlock.AXIS) == axis;
     }
 
     private static List<Direction> boundaryDirectionsExcept(
@@ -237,6 +231,11 @@ public final class SeamlessPaneModels {
             }
         }
         return true;
+    }
+
+    /** Generated seam replacements carry an explicit marker that survives model baking. */
+    private static boolean isSeamFillQuad(MutableQuadView quad) {
+        return quad.tintIndex() == SEAM_FILL_TINT_INDEX;
     }
 
     private static float coordinate(MutableQuadView quad, int vertex, Direction.Axis axis) {

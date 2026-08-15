@@ -22,27 +22,41 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import com.github.tionard.ultimateglass.pane.PaneAppearance;
+import com.github.tionard.ultimateglass.pane.PaneGeometry;
+import com.github.tionard.ultimateglass.pane.PanePlane;
+import com.github.tionard.ultimateglass.pane.UltimatePane;
+
 /** A full glass sheet centred in its block space on one of the three axes. */
-public final class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock {
+public final class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-    private static final VoxelShape X_SHAPE = Block.box(7.0, 0.0, 0.0, 9.0, 16.0, 16.0);
-    private static final VoxelShape Y_SHAPE = Block.box(0.0, 7.0, 0.0, 16.0, 9.0, 16.0);
-    private static final VoxelShape Z_SHAPE = Block.box(0.0, 0.0, 7.0, 16.0, 16.0, 9.0);
-
     private final Block vanillaPane;
+    private final PaneAppearance appearance;
 
-    public CenteredPaneBlock(Block vanillaPane, Properties properties) {
+    public CenteredPaneBlock(Block vanillaPane, PaneAppearance appearance, Properties properties) {
         super(properties);
         this.vanillaPane = vanillaPane;
+        this.appearance = appearance;
         registerDefaultState(defaultBlockState()
                 .setValue(AXIS, Direction.Axis.Z)
                 .setValue(WATERLOGGED, false));
     }
 
+    @Override
     public Block vanillaPane() {
         return vanillaPane;
+    }
+
+    @Override
+    public PaneAppearance appearance() {
+        return appearance;
+    }
+
+    @Override
+    public PaneGeometry geometry(BlockState state) {
+        return PaneGeometry.centered(state.getValue(AXIS));
     }
 
     @Override
@@ -105,22 +119,10 @@ public final class CenteredPaneBlock extends Block implements SimpleWaterloggedB
 
     /** Rotates the sheet normal 90 degrees around the selected world axis. */
     public static Direction.Axis rotateAround(Direction.Axis paneAxis, Direction.Axis rotationAxis) {
-        if (paneAxis == rotationAxis) {
-            return paneAxis;
-        }
-
-        return switch (rotationAxis) {
-            case X -> paneAxis == Direction.Axis.Y ? Direction.Axis.Z : Direction.Axis.Y;
-            case Y -> paneAxis == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
-            case Z -> paneAxis == Direction.Axis.X ? Direction.Axis.Y : Direction.Axis.X;
-        };
+        return PanePlane.rotateAxis(paneAxis, rotationAxis);
     }
 
     private static VoxelShape shapeForState(BlockState state) {
-        return switch (state.getValue(AXIS)) {
-            case X -> X_SHAPE;
-            case Y -> Y_SHAPE;
-            case Z -> Z_SHAPE;
-        };
+        return ((CenteredPaneBlock) state.getBlock()).geometry(state).shape();
     }
 }

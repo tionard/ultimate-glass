@@ -1,4 +1,24 @@
-# Ultimate Glass 0.1.8 manual test checklist
+# Ultimate Glass 0.2.0-beta.1 regression checklist
+
+Beta.1 intentionally changes no gameplay. Run the complete 0.1.8 checklist below against both a
+new world and a backed-up world last saved with the released 0.1.8 JAR.
+
+## Automated gate
+
+1. Run `gradle build` with Java 25.
+2. Confirm the pane material, plane-set, relative-geometry, and rotation unit tests pass.
+3. Confirm the output is `build/libs/ultimate-glass-0.2.0-beta.1.jar`.
+4. Start a dedicated server with the beta JAR and wait for the normal ready message.
+5. Confirm no registered block/item IDs or BlockState property names differ from 0.1.8.
+
+## Existing-world compatibility
+
+1. Back up and open a representative 0.1.8 world with beta.1.
+2. Visit saved clear and stained edge panes in all six orientations.
+3. Visit saved centred panes on X, Y, and Z.
+4. Visit saved L corners, cube corners, and waterlogged arrangements.
+5. Confirm no missing blocks/items, remapped states, changed geometry, or unexpected fluid updates.
+6. Save, restart, and revisit the same chunks.
 
 ## Environment
 
@@ -81,15 +101,17 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 4. Build 2x2 and 3x3 coplanar sheets; verify only the outside perimeter is framed and no small corner gaps appear where two internal seams meet.
 5. Repeat the coplanar checks with matching centred panes on X, Y, and Z axes.
 6. Verify different stained colours do not join seamlessly.
-7. Verify edge panes do not join centred panes, even when parallel.
-8. Verify vanilla panes remain visually untouched.
-9. Build L-shaped and three-plane cube corners; verify every angled junction retains its solid outside edge.
-10. Extend an L-shaped corner through neighbouring blocks; verify flat coplanar seams disappear while the angled junction frame remains continuous through the run.
-11. Disable seamless rendering and verify every pane immediately returns to the ordinary framed appearance without replacing blocks or reloading the world.
-12. Re-enable it and verify the connected appearance returns immediately.
-13. Break, place, rotate, and edge/centred-toggle panes; verify affected seams update without stale frame pieces.
-14. Repeat with vanilla/Fabric rendering and Sodium/Iris, both shaders disabled and enabled.
-15. Waterlog seamless edge and corner panes; verify frame suppression does not change water clipping, shader classification, or source-water behavior.
+7. Build 2x2 windows from several matching stained colours and verify internal seams contain no
+   clear or differently tinted strips, crosses, or rectangular patches at any viewing angle.
+8. Verify edge panes do not join centred panes, even when parallel.
+9. Verify vanilla panes remain visually untouched.
+10. Build L-shaped and three-plane cube corners; verify every angled junction retains its solid outside edge.
+11. Extend an L-shaped corner through neighbouring blocks; verify flat coplanar seams disappear while the angled junction frame remains continuous through the run.
+12. Disable seamless rendering and verify every pane immediately returns to the ordinary framed appearance without replacing blocks or reloading the world.
+13. Re-enable it and verify the connected appearance returns immediately.
+14. Break, place, rotate, and edge/centred-toggle panes; verify affected seams update without stale frame pieces.
+15. Repeat with vanilla/Fabric rendering and Sodium/Iris, both shaders disabled and enabled.
+16. Waterlog seamless edge and corner panes; verify frame suppression does not change water clipping, shader classification, or source-water behavior.
 
 ## Native waterlogging
 

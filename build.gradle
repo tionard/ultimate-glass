@@ -13,6 +13,7 @@ base {
 }
 
 repositories {
+    mavenCentral()
     maven { url = 'https://maven.fabricmc.net/' }
     maven {
         name = 'TerraformersMC'
@@ -36,6 +37,10 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     implementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+    testImplementation platform('org.junit:junit-bom:5.14.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 def generatedPaneResourcesDir = layout.buildDirectory.dir("generated/ultimateGlassPaneResources").get().asFile
@@ -99,7 +104,7 @@ tasks.register("generatePaneResources") {
             return faces
         }
 
-        def splitPaneElements = { List<Integer> paneFrom, List<Integer> paneTo, String plane ->
+        def paneSurfaceElements = { List<Integer> paneFrom, List<Integer> paneTo, String plane ->
             int planeAxis = directions[plane].axis
             def inPlaneAxes = (0..2).findAll { axis -> axis != planeAxis }
             def cuts = [:]
@@ -127,10 +132,31 @@ tasks.register("generatePaneResources") {
                     from[secondAxis] = cuts[secondAxis][second]
                     to[secondAxis] = cuts[secondAxis][second + 1]
 
-                    def faces = [:]
-                    faces[plane] = [texture: "#pane"]
-                    faces[directions[plane].opposite] = [texture: "#pane"]
-                    elements << [from: from, to: to, faces: faces]
+                    def normalFaces = [:]
+                    normalFaces[plane] = [texture: "#pane"]
+                    normalFaces[directions[plane].opposite] = [texture: "#pane"]
+                    elements << [from: from, to: to, faces: normalFaces]
+
+                    boolean boundarySection = inPlaneAxes.any { axis ->
+                        (from[axis] == 0 && to[axis] <= 2)
+                                || (from[axis] >= 14 && to[axis] == 16)
+                    }
+                    if (boundarySection) {
+                        // Sample a real 2x2 region at the pane texture's centre. Tint index 15 is
+                        // metadata for the runtime wrapper and is cleared before the quad emits.
+                        def seamlessFaces = [:]
+                        seamlessFaces[plane] = [
+                                texture: "#pane",
+                                uv: [7, 7, 9, 9],
+                                tintindex: 15
+                        ]
+                        seamlessFaces[directions[plane].opposite] = [
+                                texture: "#pane",
+                                uv: [7, 7, 9, 9],
+                                tintindex: 15
+                        ]
+                        elements << [from: from, to: to, faces: seamlessFaces]
+                    }
                 }
             }
             return elements
@@ -157,7 +183,7 @@ tasks.register("generatePaneResources") {
                 }
 
                 if ((0..2).every { axis -> to[axis] > from[axis] }) {
-                    elements.addAll(splitPaneElements(from, to, plane))
+                    elements.addAll(paneSurfaceElements(from, to, plane))
                 }
             }
 
@@ -278,7 +304,7 @@ tasks.register("generatePaneResources") {
             )
         }
 
-        def centeredElements = splitPaneElements([0, 0, 7], [16, 16, 9], "north")
+        def centeredElements = paneSurfaceElements([0, 0, 7], [16, 16, 9], "north")
         centeredElements.addAll([
                 [from: [0, 0, 7], to: [2, 16, 9], faces: [west: [texture: "#edge"]]],
                 [from: [14, 0, 7], to: [16, 16, 9], faces: [east: [texture: "#edge"]]],
@@ -477,6 +503,10 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
     options.release = 25
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
 }
 
 java {
