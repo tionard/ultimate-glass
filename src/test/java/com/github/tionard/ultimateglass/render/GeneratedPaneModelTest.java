@@ -9,7 +9,9 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -152,6 +154,23 @@ final class GeneratedPaneModelTest {
     void framedSeamSamplesKeepTheirRealPixelDimensions() throws IOException {
         assertSeamSampleDimensions("edge_pane_shape_0_framed_base.json");
         assertSeamSampleDimensions("edge_pane_shape_0_dynamic_framed_base.json");
+    }
+
+    @Test
+    void everyFramedTwoPixelBoundarySectionHasASeamReplacement() throws IOException {
+        assertEveryBoundarySectionHasFill("edge_pane_shape_0_framed_base.json");
+        assertEveryBoundarySectionHasFill("edge_pane_shape_0_dynamic_framed_base.json");
+    }
+
+    @Test
+    void dynamicItemRendererUsesNormalizedAtlasCoordinates() throws IOException {
+        String source = Files.readString(Path.of(
+                "src/client/java/com/github/tionard/ultimateglass/client/render/"
+                        + "DynamicFramePaneItemRenderer.java"
+        ));
+        assertTrue(source.contains(".setUv(sprite.getU(u), sprite.getV(v))"));
+        assertFalse(source.contains("getU(u * 16"));
+        assertFalse(source.contains("getV(v * 16"));
     }
 
     @Test
@@ -308,6 +327,38 @@ final class GeneratedPaneModelTest {
                 assertEquals(16.0F, v0 + v1, 0.0001F);
             }
         }
+    }
+
+    private static void assertEveryBoundarySectionHasFill(String modelName) throws IOException {
+        JsonArray elements = readJson(MODEL_ROOT.resolve(modelName)).getAsJsonArray("elements");
+        Set<String> normalBoundarySections = new HashSet<>();
+        Set<String> seamBoundarySections = new HashSet<>();
+        for (JsonElement elementValue : elements) {
+            JsonObject element = elementValue.getAsJsonObject();
+            JsonObject faces = element.getAsJsonObject("faces");
+            if (!faces.has("north")) {
+                continue;
+            }
+            int[] from = coordinates(element.getAsJsonArray("from"));
+            int[] to = coordinates(element.getAsJsonArray("to"));
+            if (to[0] > 2 && from[0] < 14 && to[1] > 2 && from[1] < 14) {
+                continue;
+            }
+
+            JsonObject face = faces.getAsJsonObject("north");
+            String section = element.getAsJsonArray("from") + ":"
+                    + element.getAsJsonArray("to");
+            int marker = face.has("tintindex") ? face.get("tintindex").getAsInt() : -1;
+            if (marker == 11 || marker == 15) {
+                seamBoundarySections.add(section);
+            } else if ("#pane".equals(face.get("texture").getAsString())
+                    || "#edge".equals(face.get("texture").getAsString())) {
+                normalBoundarySections.add(section);
+            }
+        }
+
+        assertEquals(24, normalBoundarySections.size());
+        assertEquals(normalBoundarySections, seamBoundarySections);
     }
 
     private record PaneElementCounts(int normal, int seamless) {

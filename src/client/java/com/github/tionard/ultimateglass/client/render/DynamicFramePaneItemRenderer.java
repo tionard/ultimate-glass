@@ -256,7 +256,7 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
     ) {
         vertices.addVertex(pose, x, y, z)
                 .setColor(0xFFFFFFFF)
-                .setUv(sprite.getU(u * 16.0F), sprite.getV(v * 16.0F))
+                .setUv(sprite.getU(u), sprite.getV(v))
                 .setOverlay(overlay)
                 .setLight(light)
                 .setNormal(pose, normalX, normalY, normalZ);
