@@ -34,7 +34,7 @@ import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.placement.PanePlacementResolver;
 
 /** A glass pane aligned to one of the six outside faces of its block space. */
-public final class EdgePaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
+public class EdgePaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final BooleanProperty CONNECT_TOP = BooleanProperty.create("connect_top");

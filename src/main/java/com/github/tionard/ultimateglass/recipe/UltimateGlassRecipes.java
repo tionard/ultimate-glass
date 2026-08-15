@@ -14,6 +14,10 @@ import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
 
 public final class UltimateGlassRecipes {
+    public static final RecipeSerializer<WoodFramedPaneRecipe> WOOD_FRAMED_PANE = registerUnit(
+            "wood_framed_pane",
+            new WoodFramedPaneRecipe()
+    );
     public static final RecipeSerializer<GlaziersToolRecipe> COPPER_TOOL = register(
             "copper_glaziers_tool",
             GlaziersToolTier.COPPER
@@ -48,6 +52,18 @@ public final class UltimateGlassRecipes {
     ) {
         GlaziersToolRecipe recipe = new GlaziersToolRecipe(tier);
         RecipeSerializer<GlaziersToolRecipe> serializer = new RecipeSerializer<>(
+                MapCodec.unit(recipe),
+                StreamCodec.unit(recipe)
+        );
+        return Registry.register(
+                BuiltInRegistries.RECIPE_SERIALIZER,
+                Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, name),
+                serializer
+        );
+    }
+
+    private static <T extends CustomRecipe> RecipeSerializer<T> registerUnit(String name, T recipe) {
+        RecipeSerializer<T> serializer = new RecipeSerializer<>(
                 MapCodec.unit(recipe),
                 StreamCodec.unit(recipe)
         );

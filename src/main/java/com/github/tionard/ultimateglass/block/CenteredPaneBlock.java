@@ -33,7 +33,7 @@ import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 
 /** A full glass sheet centred in its block space on one of the three axes. */
-public final class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
+public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final BooleanProperty CONNECT_FIRST = BooleanProperty.create("connect_first");

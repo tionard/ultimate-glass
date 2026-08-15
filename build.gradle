@@ -96,22 +96,38 @@ tasks.register("generatePaneResources") {
             }
         }
 
-        def allFaces = { String texture ->
+        def texturedFace = { String texture, boolean dynamicFrame ->
+            def face = [texture: texture]
+            if (dynamicFrame && texture == "#edge") {
+                face.tintindex = 14
+            }
+            return face
+        }
+
+        def allFaces = { String texture, boolean dynamicFrame ->
             def faces = [:]
             directions.keySet().each { direction ->
-                faces[direction] = [texture: texture]
+                faces[direction] = texturedFace(texture, dynamicFrame)
             }
             return faces
         }
 
-        def paneSurfaceElements = { List<Integer> paneFrom, List<Integer> paneTo, String plane ->
+        def paneSurfaceElements = { List<Integer> paneFrom, List<Integer> paneTo, String plane, String frameMode ->
             int planeAxis = directions[plane].axis
             def inPlaneAxes = (0..2).findAll { axis -> axis != planeAxis }
+            def uvAxes = switch (planeAxis) {
+                case 0 -> [2, 1]
+                case 1 -> [0, 2]
+                default -> [0, 1]
+            }
             def cuts = [:]
 
             inPlaneAxes.each { axis ->
                 def axisCuts = [paneFrom[axis]]
-                [2, 14].each { cut ->
+                // Vanilla glass textures draw their outside outline in exactly one pixel even
+                // though the pane itself is two pixels thick. Keep that outline independently so
+                // a horizontal join cannot punch a two-pixel hole in a perpendicular outer edge.
+                (frameMode == "none" ? [1, 15] : [1, 2, 14, 15]).each { cut ->
                     if (paneFrom[axis] < cut && cut < paneTo[axis]) {
                         axisCuts << cut
                     }
@@ -132,28 +148,51 @@ tasks.register("generatePaneResources") {
                     from[secondAxis] = cuts[secondAxis][second]
                     to[secondAxis] = cuts[secondAxis][second + 1]
 
+                    boolean woodBand = frameMode != "none" && inPlaneAxes.any { axis ->
+                        (from[axis] == 0 && to[axis] == 1)
+                                || (from[axis] == 15 && to[axis] == 16)
+                    }
+                    String surfaceTexture = woodBand ? "#edge" : "#pane"
+                    int normalTintIndex = woodBand && frameMode != "item"
+                            ? (frameMode == "dynamic" ? 12 : 13)
+                            : -1
                     def normalFaces = [:]
-                    normalFaces[plane] = [texture: "#pane"]
-                    normalFaces[directions[plane].opposite] = [texture: "#pane"]
+                    normalFaces[plane] = [texture: surfaceTexture]
+                    normalFaces[directions[plane].opposite] = [texture: surfaceTexture]
+                    if (normalTintIndex >= 0) {
+                        normalFaces[plane].tintindex = normalTintIndex
+                        normalFaces[directions[plane].opposite].tintindex = normalTintIndex
+                    }
                     elements << [from: from, to: to, faces: normalFaces]
 
                     boolean boundarySection = inPlaneAxes.any { axis ->
-                        (from[axis] == 0 && to[axis] <= 2)
-                                || (from[axis] >= 14 && to[axis] == 16)
+                        to[axis] <= 2 || from[axis] >= 14
                     }
-                    if (boundarySection) {
-                        // Sample a real 2x2 region at the pane texture's centre. Tint index 15 is
-                        // metadata for the runtime wrapper and is cleared before the quad emits.
+                    if (boundarySection && frameMode != "item") {
+                        // Preserve the segment's real pixel dimensions while sampling the texture
+                        // centre. Stretching the old fixed 2x2 sample over a 1x12 framed strip made
+                        // stained-glass joins look like bright, opaque gaps.
+                        float uvWidth = to[uvAxes[0]] - from[uvAxes[0]]
+                        float uvHeight = to[uvAxes[1]] - from[uvAxes[1]]
+                        def seamUv = [
+                                8.0F - uvWidth / 2.0F,
+                                8.0F - uvHeight / 2.0F,
+                                8.0F + uvWidth / 2.0F,
+                                8.0F + uvHeight / 2.0F
+                        ]
+                        // Marker 11 pairs with a one-pixel wood surface; marker 15 is a normal
+                        // two-pixel glass/edge replacement. Both are cleared by the client wrapper.
+                        int seamTintIndex = woodBand ? 11 : 15
                         def seamlessFaces = [:]
                         seamlessFaces[plane] = [
                                 texture: "#pane",
-                                uv: [7, 7, 9, 9],
-                                tintindex: 15
+                                uv: seamUv,
+                                tintindex: seamTintIndex
                         ]
                         seamlessFaces[directions[plane].opposite] = [
                                 texture: "#pane",
-                                uv: [7, 7, 9, 9],
-                                tintindex: 15
+                                uv: seamUv,
+                                tintindex: seamTintIndex
                         ]
                         elements << [from: from, to: to, faces: seamlessFaces]
                     }
@@ -162,7 +201,7 @@ tasks.register("generatePaneResources") {
             return elements
         }
 
-        def createMergedShape = { int mask ->
+        def createMergedShape = { int mask, String frameMode ->
             def planes = ["north"]
             connectionSides.eachWithIndex { side, index ->
                 if ((mask & (1 << index)) != 0) {
@@ -183,7 +222,7 @@ tasks.register("generatePaneResources") {
                 }
 
                 if ((0..2).every { axis -> to[axis] > from[axis] }) {
-                    elements.addAll(paneSurfaceElements(from, to, plane))
+                    elements.addAll(paneSurfaceElements(from, to, plane, frameMode))
                 }
             }
 
@@ -215,7 +254,7 @@ tasks.register("generatePaneResources") {
                     }
 
                     def faces = [:]
-                    faces[edgeDirection] = [texture: "#edge"]
+                    faces[edgeDirection] = texturedFace("#edge", frameMode == "dynamic")
                     elements << [from: from, to: to, faces: faces]
                 }
             }
@@ -254,7 +293,7 @@ tasks.register("generatePaneResources") {
                         elements << [
                                 from: from,
                                 to: to,
-                                faces: allFaces("#edge")
+                                faces: allFaces("#edge", frameMode == "dynamic")
                         ]
                     }
                 }
@@ -284,7 +323,7 @@ tasks.register("generatePaneResources") {
                         elements << [
                                 from: from,
                                 to: to,
-                                faces: allFaces("#edge")
+                                faces: allFaces("#edge", frameMode == "dynamic")
                         ]
                     }
                 }
@@ -300,9 +339,21 @@ tasks.register("generatePaneResources") {
         for (int mask = 0; mask < 16; mask++) {
             writeJson(
                     "assets/ultimateglass/models/block/edge_pane_shape_${mask}_base.json",
-                    createMergedShape(mask)
+                    createMergedShape(mask, "none")
+            )
+            writeJson(
+                    "assets/ultimateglass/models/block/edge_pane_shape_${mask}_framed_base.json",
+                    createMergedShape(mask, "static")
+            )
+            writeJson(
+                    "assets/ultimateglass/models/block/edge_pane_shape_${mask}_dynamic_framed_base.json",
+                    createMergedShape(mask, "dynamic")
             )
         }
+        writeJson(
+                "assets/ultimateglass/models/block/edge_pane_item_framed_base.json",
+                createMergedShape(0, "item")
+        )
 
         def centeredAxes = [
                 x: [axis: 0, negative: "west", positive: "east"],
@@ -314,7 +365,7 @@ tasks.register("generatePaneResources") {
             split ? [[0, 7], [9, 16]] : [[0, 16]]
         }
 
-        def createCenteredShape = { int mask ->
+        def createCenteredShape = { int mask, String frameMode ->
             def active = centeredAxes.findAll { name, data ->
                 (mask & (1 << data.axis)) != 0
             }
@@ -337,7 +388,7 @@ tasks.register("generatePaneResources") {
                         to[first.value.axis] = firstRange[1]
                         from[second.value.axis] = secondRange[0]
                         to[second.value.axis] = secondRange[1]
-                        elements.addAll(paneSurfaceElements(from, to, planeData.negative))
+                        elements.addAll(paneSurfaceElements(from, to, planeData.negative, frameMode))
                     }
                 }
             }
@@ -366,7 +417,7 @@ tasks.register("generatePaneResources") {
                             elements << [
                                     from: from,
                                     to: to,
-                                    faces: [(boundary.direction): [texture: "#edge"]]
+                                    faces: [(boundary.direction): texturedFace("#edge", frameMode == "dynamic")]
                             ]
                         }
                     }
@@ -391,7 +442,7 @@ tasks.register("generatePaneResources") {
                         to[second.value.axis] = 9
                         from[lineEntry.value.axis] = lineRange[0]
                         to[lineEntry.value.axis] = lineRange[1]
-                        elements << [from: from, to: to, faces: allFaces("#edge")]
+                        elements << [from: from, to: to, faces: allFaces("#edge", frameMode == "dynamic")]
                     }
                 }
             }
@@ -400,7 +451,7 @@ tasks.register("generatePaneResources") {
                 elements << [
                         from: [7, 7, 7],
                         to: [9, 9, 9],
-                        faces: allFaces("#edge")
+                        faces: allFaces("#edge", frameMode == "dynamic")
                 ]
             }
 
@@ -414,7 +465,15 @@ tasks.register("generatePaneResources") {
         for (int mask = 1; mask < 8; mask++) {
             writeJson(
                     "assets/ultimateglass/models/block/centered_pane_shape_${mask}_base.json",
-                    createCenteredShape(mask)
+                    createCenteredShape(mask, "none")
+            )
+            writeJson(
+                    "assets/ultimateglass/models/block/centered_pane_shape_${mask}_framed_base.json",
+                    createCenteredShape(mask, "static")
+            )
+            writeJson(
+                    "assets/ultimateglass/models/block/centered_pane_shape_${mask}_dynamic_framed_base.json",
+                    createCenteredShape(mask, "dynamic")
             )
         }
 
@@ -446,6 +505,22 @@ tasks.register("generatePaneResources") {
                 [facing: "west", rotation: [y: 270]],
                 [facing: "up", rotation: [x: 270]],
                 [facing: "down", rotation: [x: 90]]
+        ]
+
+        def woodFrames = [
+                [path: "oak", texture: "minecraft:block/oak_planks"],
+                [path: "spruce", texture: "minecraft:block/spruce_planks"],
+                [path: "birch", texture: "minecraft:block/birch_planks"],
+                [path: "jungle", texture: "minecraft:block/jungle_planks"],
+                [path: "acacia", texture: "minecraft:block/acacia_planks"],
+                [path: "dark_oak", texture: "minecraft:block/dark_oak_planks"],
+                [path: "pale_oak", texture: "minecraft:block/pale_oak_planks"],
+                [path: "crimson", texture: "minecraft:block/crimson_planks"],
+                [path: "warped", texture: "minecraft:block/warped_planks"],
+                [path: "mangrove", texture: "minecraft:block/mangrove_planks"],
+                [path: "bamboo", texture: "minecraft:block/bamboo_planks"],
+                [path: "cherry", texture: "minecraft:block/cherry_planks"],
+                [path: "modded", texture: "minecraft:block/oak_planks", dynamic: true]
         ]
 
         colors.each { color ->
@@ -486,41 +561,47 @@ tasks.register("generatePaneResources") {
                     ]
             )
 
+            String cookingInput = tinted
+                    ? "ultimateglass:tinted_glass_pane"
+                    : "minecraft:${vanillaPaneName}"
             if (tinted) {
                 writeJson(
-                        "data/ultimateglass/recipe/${customItemName}.json",
+                        "data/ultimateglass/recipe/tinted_glass_pane.json",
                         [
                                 type: "minecraft:crafting_shaped",
                                 category: "building",
-                                group: "ultimate_glass_panes",
+                                group: "vanilla_glass_panes",
                                 pattern: ["###", "###"],
                                 key: ["#": "minecraft:tinted_glass"],
-                                result: [id: "ultimateglass:${customItemName}", count: 16]
-                        ]
-                )
-            } else {
-                writeJson(
-                        "data/ultimateglass/recipe/${customItemName}.json",
-                        [
-                                type: "minecraft:crafting_shapeless",
-                                category: "building",
-                                group: "ultimate_glass_panes",
-                                ingredients: ["minecraft:${vanillaPaneName}"],
-                                result: [id: "ultimateglass:${customItemName}"]
-                        ]
-                )
-
-                writeJson(
-                        "data/ultimateglass/recipe/${vanillaPaneName}_from_${customItemName}.json",
-                        [
-                                type: "minecraft:crafting_shapeless",
-                                category: "building",
-                                group: "vanilla_glass_panes",
-                                ingredients: ["ultimateglass:${customItemName}"],
-                                result: [id: "minecraft:${vanillaPaneName}"]
+                                result: [id: "ultimateglass:tinted_glass_pane", count: 16]
                         ]
                 )
             }
+
+            writeJson(
+                    "data/ultimateglass/recipe/${customItemName}.json",
+                    [
+                            type: "minecraft:smelting",
+                            category: "blocks",
+                            group: "tempered_glass_panes",
+                            ingredient: cookingInput,
+                            result: [id: "ultimateglass:${customItemName}"],
+                            experience: 0.1,
+                            cookingtime: 200
+                    ]
+            )
+            writeJson(
+                    "data/ultimateglass/recipe/${customItemName}_from_blasting.json",
+                    [
+                            type: "minecraft:blasting",
+                            category: "blocks",
+                            group: "tempered_glass_panes",
+                            ingredient: cookingInput,
+                            result: [id: "ultimateglass:${customItemName}"],
+                            experience: 0.1,
+                            cookingtime: 100
+                    ]
+            )
 
             [blockName, centeredBlockName].each { customBlockName ->
                 writeJson(
@@ -616,7 +697,182 @@ tasks.register("generatePaneResources") {
                     "assets/ultimateglass/blockstates/${blockName}.json",
                     [multipart: multipart]
             )
+
+            woodFrames.each { wood ->
+                boolean dynamicFrame = wood.dynamic ?: false
+                String framePrefix = dynamicFrame ? "modded_framed_" : "${wood.path}_framed_"
+                String frameBlockName = "edge_${framePrefix}${vanillaPaneName}"
+                String frameCenteredBlockName = "centered_${framePrefix}${vanillaPaneName}"
+                String frameItemName = dynamicFrame
+                        ? "modded_framed_ultimate_${vanillaPaneName}"
+                        : "${wood.path}_framed_ultimate_${vanillaPaneName}"
+                String shapeSuffix = dynamicFrame ? "dynamic_framed" : "framed"
+                def frameTextures = [pane: color.pane, edge: wood.texture]
+
+                writeJson(
+                        "assets/ultimateglass/models/item/${frameItemName}.json",
+                        [
+                                parent: "ultimateglass:block/edge_pane_item_framed_base",
+                                textures: frameTextures
+                        ]
+                )
+                writeJson(
+                        "assets/ultimateglass/items/${frameItemName}.json",
+                        [model: [type: "minecraft:model", model: "ultimateglass:item/${frameItemName}"]]
+                )
+
+                [frameBlockName, frameCenteredBlockName].each { customBlockName ->
+                    writeJson(
+                            "data/ultimateglass/loot_table/blocks/${customBlockName}.json",
+                            [
+                                    type: "minecraft:block",
+                                    pools: [[
+                                            conditions: [[
+                                                    condition: "minecraft:match_tool",
+                                                    predicate: [predicates: [
+                                                            "minecraft:enchantments": [[
+                                                                    enchantments: "minecraft:silk_touch",
+                                                                    levels: [min: 1]
+                                                            ]]
+                                                    ]]
+                                            ]],
+                                            entries: [[type: "minecraft:item", name: "ultimateglass:${frameItemName}"]],
+                                            rolls: 1.0
+                                    ]],
+                                    random_sequence: "ultimateglass:blocks/${customBlockName}"
+                            ]
+                    )
+                }
+
+                for (int mask = 1; mask < 8; mask++) {
+                    writeJson(
+                            "assets/ultimateglass/models/block/${frameCenteredBlockName}_shape_${mask}.json",
+                            [
+                                    parent: "ultimateglass:block/centered_pane_shape_${mask}_${shapeSuffix}_base",
+                                    textures: frameTextures
+                            ]
+                    )
+                }
+
+                def frameCenteredVariants = [:]
+                centeredAxes.each { primaryName, primaryData ->
+                    def perpendicular = centeredAxes.findAll { name, data ->
+                        data.axis != primaryData.axis
+                    }.entrySet().toList().sort { entry -> entry.value.axis }
+                    for (int connectionMask = 0; connectionMask < 4; connectionMask++) {
+                        int shapeMask = 1 << primaryData.axis
+                        if ((connectionMask & 1) != 0) {
+                            shapeMask |= 1 << perpendicular[0].value.axis
+                        }
+                        if ((connectionMask & 2) != 0) {
+                            shapeMask |= 1 << perpendicular[1].value.axis
+                        }
+                        String key = "axis=${primaryName},connect_first=${(connectionMask & 1) != 0},connect_second=${(connectionMask & 2) != 0}"
+                        frameCenteredVariants[key] = [
+                                model: "ultimateglass:block/${frameCenteredBlockName}_shape_${shapeMask}"
+                        ]
+                    }
+                }
+                writeJson(
+                        "assets/ultimateglass/blockstates/${frameCenteredBlockName}.json",
+                        [variants: frameCenteredVariants]
+                )
+
+                for (int mask = 0; mask < 16; mask++) {
+                    writeJson(
+                            "assets/ultimateglass/models/block/${frameBlockName}_shape_${mask}.json",
+                            [
+                                    parent: "ultimateglass:block/edge_pane_shape_${mask}_${shapeSuffix}_base",
+                                    textures: frameTextures
+                            ]
+                    )
+                }
+
+                def frameMultipart = []
+                orientations.each { orientation ->
+                    for (int mask = 0; mask < 16; mask++) {
+                        def condition = [facing: orientation.facing]
+                        connectionSides.eachWithIndex { side, index ->
+                            condition["connect_${side}"] = ((mask & (1 << index)) != 0).toString()
+                        }
+                        frameMultipart << [
+                                when: condition,
+                                apply: [model: "ultimateglass:block/${frameBlockName}_shape_${mask}"]
+                                        + orientation.rotation
+                        ]
+                    }
+                }
+                writeJson(
+                        "assets/ultimateglass/blockstates/${frameBlockName}.json",
+                        [multipart: frameMultipart]
+                )
+            }
         }
+
+        writeJson(
+                "data/ultimateglass/recipe/wood_framed_pane.json",
+                [type: "ultimateglass:wood_framed_pane"]
+        )
+
+        def tintedPaneModels = [
+                post: "template_glass_pane_post",
+                side: "template_glass_pane_side",
+                side_alt: "template_glass_pane_side_alt",
+                noside: "template_glass_pane_noside",
+                noside_alt: "template_glass_pane_noside_alt"
+        ]
+        tintedPaneModels.each { name, parent ->
+            def textures = [pane: "minecraft:block/tinted_glass"]
+            if (!name.startsWith("noside")) {
+                textures.edge = "minecraft:block/tinted_glass"
+            }
+            writeJson(
+                    "assets/ultimateglass/models/block/tinted_glass_pane_${name}.json",
+                    [parent: "minecraft:block/${parent}", textures: textures]
+            )
+        }
+        writeJson(
+                "assets/ultimateglass/blockstates/tinted_glass_pane.json",
+                [multipart: [
+                        [apply: [model: "ultimateglass:block/tinted_glass_pane_post"]],
+                        [when: [north: "true"], apply: [model: "ultimateglass:block/tinted_glass_pane_side"]],
+                        [when: [east: "true"], apply: [model: "ultimateglass:block/tinted_glass_pane_side", y: 90]],
+                        [when: [south: "true"], apply: [model: "ultimateglass:block/tinted_glass_pane_side_alt"]],
+                        [when: [west: "true"], apply: [model: "ultimateglass:block/tinted_glass_pane_side_alt", y: 90]],
+                        [when: [north: "false"], apply: [model: "ultimateglass:block/tinted_glass_pane_noside"]],
+                        [when: [east: "false"], apply: [model: "ultimateglass:block/tinted_glass_pane_noside_alt"]],
+                        [when: [south: "false"], apply: [model: "ultimateglass:block/tinted_glass_pane_noside_alt", y: 90]],
+                        [when: [west: "false"], apply: [model: "ultimateglass:block/tinted_glass_pane_noside", y: 270]]
+                ]]
+        )
+        writeJson(
+                "assets/ultimateglass/models/item/tinted_glass_pane.json",
+                [parent: "minecraft:item/generated", textures: [layer0: "minecraft:block/tinted_glass"]]
+        )
+        writeJson(
+                "assets/ultimateglass/items/tinted_glass_pane.json",
+                [model: [type: "minecraft:model", model: "ultimateglass:item/tinted_glass_pane"]]
+        )
+        writeJson(
+                "data/ultimateglass/loot_table/blocks/tinted_glass_pane.json",
+                [
+                        type: "minecraft:block",
+                        pools: [[
+                                conditions: [[
+                                        condition: "minecraft:match_tool",
+                                        predicate: [predicates: [
+                                                "minecraft:enchantments": [[
+                                                        enchantments: "minecraft:silk_touch",
+                                                        levels: [min: 1]
+                                                ]]
+                                        ]]
+                                ]],
+                                entries: [[type: "minecraft:item", name: "ultimateglass:tinted_glass_pane"]],
+                                rolls: 1.0
+                        ]],
+                        random_sequence: "ultimateglass:blocks/tinted_glass_pane"
+                ]
+        )
     }
 }
 
