@@ -5,8 +5,11 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
@@ -23,6 +26,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
+import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.pane.PanePlane;
@@ -32,6 +36,8 @@ import com.github.tionard.ultimateglass.pane.UltimatePane;
 public final class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    public static final BooleanProperty CONNECT_FIRST = BooleanProperty.create("connect_first");
+    public static final BooleanProperty CONNECT_SECOND = BooleanProperty.create("connect_second");
 
     private final Block vanillaPane;
     private final PaneAppearance appearance;
@@ -42,7 +48,9 @@ public final class CenteredPaneBlock extends Block implements SimpleWaterloggedB
         this.appearance = appearance;
         registerDefaultState(defaultBlockState()
                 .setValue(AXIS, Direction.Axis.Z)
-                .setValue(WATERLOGGED, false));
+                .setValue(WATERLOGGED, false)
+                .setValue(CONNECT_FIRST, false)
+                .setValue(CONNECT_SECOND, false));
     }
 
     @Override
@@ -57,7 +65,11 @@ public final class CenteredPaneBlock extends Block implements SimpleWaterloggedB
 
     @Override
     public PaneGeometry geometry(BlockState state) {
-        return PaneGeometry.centered(state.getValue(AXIS));
+        return PaneGeometry.centered(
+                state.getValue(AXIS),
+                state.getValue(CONNECT_FIRST),
+                state.getValue(CONNECT_SECOND)
+        );
     }
 
     @Override
@@ -79,9 +91,22 @@ public final class CenteredPaneBlock extends Block implements SimpleWaterloggedB
     @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         FluidState fluid = context.getLevel().getFluidState(context.getClickedPos());
-        return defaultBlockState()
+        BlockState state = defaultBlockState()
                 .setValue(AXIS, context.getClickedFace().getAxis())
                 .setValue(WATERLOGGED, fluid.is(Fluids.WATER));
+        return withConnections(state, context.getLevel(), context.getClickedPos());
+    }
+
+    @Override
+    public void setPlacedBy(
+            Level level,
+            BlockPos pos,
+            BlockState state,
+            @Nullable LivingEntity placer,
+            ItemStack stack
+    ) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        refreshConnectionsAround(level, pos);
     }
 
     @Override
@@ -98,7 +123,8 @@ public final class CenteredPaneBlock extends Block implements SimpleWaterloggedB
         if (state.getValue(WATERLOGGED)) {
             scheduledTicks.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
         }
-        return super.updateShape(state, level, scheduledTicks, pos, direction, neighborPos, neighborState, random);
+        BlockState updated = withConnections(state, level, pos);
+        return super.updateShape(updated, level, scheduledTicks, pos, direction, neighborPos, neighborState, random);
     }
 
     @Override
@@ -128,12 +154,69 @@ public final class CenteredPaneBlock extends Block implements SimpleWaterloggedB
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(AXIS, WATERLOGGED);
+        builder.add(AXIS, WATERLOGGED, CONNECT_FIRST, CONNECT_SECOND);
     }
 
     /** Rotates the sheet normal 90 degrees around the selected world axis. */
     public static Direction.Axis rotateAround(Direction.Axis paneAxis, Direction.Axis rotationAxis) {
         return PanePlane.rotateAxis(paneAxis, rotationAxis);
+    }
+
+    /** Rotates the primary plane and every connected centered plane as one geometry. */
+    public static BlockState rotateAround(BlockState state, Direction.Axis rotationAxis) {
+        CenteredPaneBlock pane = (CenteredPaneBlock) state.getBlock();
+        PaneGeometry rotated = pane.geometry(state).rotateAround(rotationAxis);
+        Direction.Axis primary = PanePlane.rotateAxis(state.getValue(AXIS), rotationAxis);
+        return state
+                .setValue(AXIS, primary)
+                .setValue(
+                        CONNECT_FIRST,
+                        rotated.hasCenteredPlane(PaneGeometry.firstPerpendicularAxis(primary))
+                )
+                .setValue(
+                        CONNECT_SECOND,
+                        rotated.hasCenteredPlane(PaneGeometry.secondPerpendicularAxis(primary))
+                );
+    }
+
+    public BlockState withConnections(BlockState state, BlockGetter level, BlockPos pos) {
+        Direction.Axis primary = state.getValue(AXIS);
+        return state
+                .setValue(CONNECT_FIRST, PaneConnectionQueries.hasCenteredConnection(
+                        level,
+                        pos,
+                        state,
+                        PaneGeometry.firstPerpendicularAxis(primary)
+                ))
+                .setValue(CONNECT_SECOND, PaneConnectionQueries.hasCenteredConnection(
+                        level,
+                        pos,
+                        state,
+                        PaneGeometry.secondPerpendicularAxis(primary)
+                ));
+    }
+
+    public static void refreshConnectionsAround(Level level, BlockPos changedPos) {
+        if (level.isClientSide()) {
+            return;
+        }
+
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                for (int z = -1; z <= 1; z++) {
+                    BlockPos candidatePos = changedPos.offset(x, y, z);
+                    BlockState candidate = level.getBlockState(candidatePos);
+                    if (!(candidate.getBlock() instanceof CenteredPaneBlock pane)) {
+                        continue;
+                    }
+
+                    BlockState updated = pane.withConnections(candidate, level, candidatePos);
+                    if (updated != candidate) {
+                        level.setBlockAndUpdate(candidatePos, updated);
+                    }
+                }
+            }
+        }
     }
 
     private static VoxelShape shapeForState(BlockState state) {

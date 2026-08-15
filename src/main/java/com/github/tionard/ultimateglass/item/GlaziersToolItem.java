@@ -63,22 +63,18 @@ public final class GlaziersToolItem extends Item {
                         context.getClickedPos(),
                         state.setValue(EdgePaneBlock.FACING, rotated)
                 );
-                EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
+                refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
         }
 
         if (block instanceof CenteredPaneBlock) {
             if (!level.isClientSide()) {
-                Direction.Axis rotated = CenteredPaneBlock.rotateAround(
-                        state.getValue(CenteredPaneBlock.AXIS),
-                        RotationAxisState.get(player)
-                );
                 level.setBlockAndUpdate(
                         context.getClickedPos(),
-                        state.setValue(CenteredPaneBlock.AXIS, rotated)
+                        CenteredPaneBlock.rotateAround(state, RotationAxisState.get(player))
                 );
-                EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
+                refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
         }
@@ -119,12 +115,15 @@ public final class GlaziersToolItem extends Item {
                         .setValue(CenteredPaneBlock.AXIS, facing.getAxis())
                         .setValue(CenteredPaneBlock.WATERLOGGED, waterlogged);
                 level.setBlockAndUpdate(context.getClickedPos(), target);
-                EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
+                refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
         }
 
         if (block == family.centeredPane()) {
+            if (((CenteredPaneBlock) block).geometry(state).planes().size() > 1) {
+                return InteractionResult.SUCCESS;
+            }
             if (!level.isClientSide()) {
                 Direction.Axis axis = state.getValue(CenteredPaneBlock.AXIS);
                 level.setBlockAndUpdate(
@@ -133,7 +132,7 @@ public final class GlaziersToolItem extends Item {
                                 .setValue(EdgePaneBlock.FACING, edgeFacing(context, axis))
                                 .setValue(EdgePaneBlock.WATERLOGGED, waterlogged)
                 );
-                EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
+                refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
         }
@@ -188,5 +187,10 @@ public final class GlaziersToolItem extends Item {
 
         String path = id.getPath();
         return "glass".equals(path) || path.endsWith("_stained_glass");
+    }
+
+    private static void refreshPaneConnections(Level level, net.minecraft.core.BlockPos pos) {
+        EdgePaneBlock.refreshConnectionsAround(level, pos);
+        CenteredPaneBlock.refreshConnectionsAround(level, pos);
     }
 }

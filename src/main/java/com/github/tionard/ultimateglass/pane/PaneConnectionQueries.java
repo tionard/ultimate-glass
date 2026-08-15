@@ -6,6 +6,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
+import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 
 /** Stateless connection lookups shared by block-state and rendering code. */
 public final class PaneConnectionQueries {
@@ -61,5 +62,30 @@ public final class PaneConnectionQueries {
         return neighbor.getBlock() == state.getBlock()
                 && neighbor.getBlock() instanceof UltimatePane pane
                 && pane.geometry(neighbor).planes().contains(plane);
+    }
+
+    /**
+     * A derived centered plane is sourced only by a directly adjacent pane whose primary AXIS is
+     * that plane. Derived flags are deliberately ignored so connections cannot sustain themselves.
+     */
+    public static boolean hasCenteredConnection(
+            BlockGetter level,
+            BlockPos pos,
+            BlockState state,
+            Direction.Axis requestedAxis
+    ) {
+        for (Direction direction : Direction.values()) {
+            if (direction.getAxis() == requestedAxis) {
+                continue;
+            }
+
+            BlockState neighbor = level.getBlockState(pos.relative(direction));
+            if (neighbor.getBlock() == state.getBlock()
+                    && neighbor.getBlock() instanceof CenteredPaneBlock
+                    && neighbor.getValue(CenteredPaneBlock.AXIS) == requestedAxis) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -19,6 +19,24 @@ Ordinary clear, stained, and tinted panes continue to be normal blocks. No Block
 Registered IDs and the compatibility-sensitive `FACING`, connection, `AXIS`, and `WATERLOGGED`
 properties remain unchanged from 0.1.8.
 
+## Connected centred geometry
+
+Centred blocks retain `AXIS` as their primary saved plane. `connect_first` and `connect_second`
+refer to a stable pair of perpendicular axes, allowing all seven non-empty X/Y/Z plane sets while
+old states without the flags retain the default single plane. A connection flag is derived only
+from a directly adjacent matching block whose primary `AXIS` supplies that plane; derived planes
+never source more derived planes, so disconnected junctions cannot persist as ghost geometry.
+
+The common `PaneGeometry` cache contains all seven centred sets. Generated models trim transparent
+sheets at every perpendicular centre slab, split perimeter frames around shared lines, emit one
+opaque line per plane pair, and emit one 2x2x2 centre cube for XYZ. The same plane set drives model
+selection, collision, outline, rotation, support, and seamless continuation checks. Waterlogging
+remains one normal centred source-water state for every set.
+
+Shift-conversion to a single edge pane is blocked while a centred block carries perpendicular
+source connections, avoiding destructive loss of a multi-plane junction. Remove those sources
+first, after which conversion behaves as before.
+
 ## Pane families and items
 
 Each clear/stained family contains three blocks:

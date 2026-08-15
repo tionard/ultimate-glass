@@ -1,13 +1,13 @@
-# Ultimate Glass 0.2.0-beta.2 regression checklist
+# Ultimate Glass 0.2.0-beta.3 regression checklist
 
-Beta.2 adds the tinted family. Run the complete beta.1 regression checklist below against both a
-new world and a backed-up world, then run the tinted-specific checks.
+Beta.3 adds connected centred planes. Run the complete beta.2 regression checklist below against
+both a new world and a backed-up world, then run the centred-junction checks.
 
 ## Automated gate
 
 1. Run `gradle build` with Java 25.
 2. Confirm the pane material, plane-set, relative-geometry, and rotation unit tests pass.
-3. Confirm the output is `build/libs/ultimate-glass-0.2.0-beta.2.jar`.
+3. Confirm the output is `build/libs/ultimate-glass-0.2.0-beta.3.jar`.
 4. Start a dedicated server with the beta JAR and wait for the normal ready message.
 5. Confirm no registered block/item IDs or BlockState property names differ from 0.1.8.
 
@@ -96,6 +96,19 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 5. Cycle the selected rotation axis with V and rotate each sheet around X, Y, and Z.
 6. Verify rotation around the sheet's own normal leaves it unchanged; each perpendicular axis swaps it to the remaining plane.
 7. Shift-place an edge pane from a centred sheet and verify the copied pane is parallel to that sheet.
+
+## Connected centred junctions
+
+1. Build isolated X, Y, and Z sheets and confirm their old single-plane appearance and collision remain unchanged.
+2. Build XY, XZ, and YZ junctions in both source-placement orders.
+3. Build an XYZ junction and confirm there is one clean centre cube and one shared frame line per plane pair.
+4. Inspect every junction closely with clear, several stained colours, and tinted glass; confirm no overlapping transparent faces, flicker, white strips, or doubled frame lines.
+5. Extend each plane into large centred grids and verify only matching coplanar continuations become seamless.
+6. Rotate every two-plane and three-plane junction around X, Y, and Z; verify the complete plane set, outline, collision, and waterlogging rotate together.
+7. Place and remove each primary source pane and verify connection flags appear and clear immediately without ghost planes.
+8. Save/reload old beta.2 single centred states and confirm absent connection flags default to false.
+9. Attempt Shift-conversion on a connected multi-plane block and confirm it remains centred; remove perpendicular sources and confirm conversion then succeeds.
+10. Repeat large grids, L junctions, and XYZ junctions with vanilla/Fabric rendering and Sodium/Iris, with shaders disabled and enabled.
 
 ## Seamless connected panes
 

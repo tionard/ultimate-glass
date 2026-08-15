@@ -6,6 +6,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
+import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 
 public final class UltimateGlassInteractions {
@@ -14,8 +15,10 @@ public final class UltimateGlassInteractions {
 
     public static void initialize() {
         PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
-            if (state.getBlock() instanceof EdgePaneBlock) {
+            if (state.getBlock() instanceof EdgePaneBlock
+                    || state.getBlock() instanceof CenteredPaneBlock) {
                 EdgePaneBlock.refreshConnectionsAround(level, pos);
+                CenteredPaneBlock.refreshConnectionsAround(level, pos);
             }
 
             if (player.getAbilities().instabuild

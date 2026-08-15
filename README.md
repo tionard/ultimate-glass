@@ -2,11 +2,11 @@
 
 Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise edge-aligned glass panes, rotatable centred full sheets, connected corners, and tiered glassworking tools.
 
-## Version 0.2.0-beta.2
+## Version 0.2.0-beta.3
 
-Beta.2 adds Ultimate Tinted Glass Panes to the beta.1 architecture. Tinted panes support the same
-edge, centred, corner, rotation, waterlogging, seamless-rendering, and tool behavior as every other
-Ultimate pane while retaining vanilla tinted glass's complete block-light and skylight dampening.
+Beta.3 allows centred panes to merge into perpendicular centred planes. A block can now contain
+X, Y, Z, XY, XZ, YZ, or XYZ geometry with trimmed transparent intersections, one shared frame line
+per plane pair, and one centre cube at a three-plane junction. Beta.2 tinted panes are fully included.
 
 ### Gameplay features
 
@@ -20,6 +20,7 @@ Ultimate pane while retaining vanilla tinted glass's complete block-light and sk
 - Adjacent perpendicular edge panes create merged L-shaped and three-plane cube corners.
 - Iron and diamond Glazier's Tools toggle custom panes between outside-face and centred full-sheet geometry without involving vanilla panes.
 - Centred panes are complete sheets rather than vanilla's single-pane rod and support X, Y, and Z orientations.
+- Adjacent perpendicular centred panes merge into clean two- and three-plane junctions.
 - Both custom geometries support native source-water waterlogging and preserve it through rotation and toggling.
 - Water rendered inside edge panes is clipped at every active pane's inner face, including merged L-shaped and cube corners; centred panes keep the normal water render.
 - Matching coplanar Ultimate panes remove their shared frame texture by default, while L-shaped and cube-corner junctions retain their solid outside edges.
@@ -69,8 +70,10 @@ common pane appearance and produce a `PaneGeometry` made from immutable `PanePla
 same geometry now drives outline/collision shapes, seamless continuation checks, rotation, and
 edge-water clipping. `PaneMaterial` keeps clear, stained, and tinted glass logically separate.
 Tinted panes remain ordinary blocks and explicitly reproduce vanilla tinted-glass light dampening.
+Centred panes preserve `AXIS` as their primary plane and add only two relative connection flags;
+old states therefore continue to load as single-plane sheets.
 
-The existing `FACING`, edge connection, `AXIS`, and `WATERLOGGED` properties are unchanged.
+The existing `FACING`, edge connection, `AXIS`, and `WATERLOGGED` properties remain present.
 
 ## Development baseline
 

@@ -39,6 +39,49 @@ final class PaneGeometryTest {
     }
 
     @Test
+    void centeredGeometrySupportsEveryNonEmptyAxisSet() {
+        for (int mask = 1; mask < 8; mask++) {
+            Direction.Axis primary = Direction.Axis.values()[Integer.numberOfTrailingZeros(mask)];
+            boolean connectFirst = (mask & (1 << PaneGeometry.firstPerpendicularAxis(primary).ordinal())) != 0;
+            boolean connectSecond = (mask & (1 << PaneGeometry.secondPerpendicularAxis(primary).ordinal())) != 0;
+            PaneGeometry geometry = PaneGeometry.centered(primary, connectFirst, connectSecond);
+
+            assertEquals(Integer.bitCount(mask), geometry.planes().size());
+            for (Direction.Axis axis : Direction.Axis.values()) {
+                assertEquals(
+                        (mask & (1 << axis.ordinal())) != 0,
+                        geometry.hasCenteredPlane(axis)
+                );
+            }
+        }
+    }
+
+    @Test
+    void centeredRelativeFlagsHaveStableWorldAxisMapping() {
+        assertEquals(Direction.Axis.Y, PaneGeometry.firstPerpendicularAxis(Direction.Axis.X));
+        assertEquals(Direction.Axis.Z, PaneGeometry.secondPerpendicularAxis(Direction.Axis.X));
+        assertEquals(Direction.Axis.X, PaneGeometry.firstPerpendicularAxis(Direction.Axis.Y));
+        assertEquals(Direction.Axis.Z, PaneGeometry.secondPerpendicularAxis(Direction.Axis.Y));
+        assertEquals(Direction.Axis.X, PaneGeometry.firstPerpendicularAxis(Direction.Axis.Z));
+        assertEquals(Direction.Axis.Y, PaneGeometry.secondPerpendicularAxis(Direction.Axis.Z));
+    }
+
+    @Test
+    void multiPlaneCenteredGeometryRotatesAsOneSet() {
+        PaneGeometry xy = PaneGeometry.centered(Direction.Axis.X, true, false);
+        PaneGeometry xz = xy.rotateAround(Direction.Axis.X);
+
+        assertTrue(xz.hasCenteredPlane(Direction.Axis.X));
+        assertTrue(xz.hasCenteredPlane(Direction.Axis.Z));
+        assertFalse(xz.hasCenteredPlane(Direction.Axis.Y));
+
+        PaneGeometry xyz = PaneGeometry.centered(Direction.Axis.X, true, true);
+        for (Direction.Axis rotationAxis : Direction.Axis.values()) {
+            assertEquals(xyz.planes(), xyz.rotateAround(rotationAxis).planes());
+        }
+    }
+
+    @Test
     void ordinaryBlockStateGeometriesAreCached() {
         assertSame(
                 PaneGeometry.edge(Direction.DOWN, true, false, true, true),

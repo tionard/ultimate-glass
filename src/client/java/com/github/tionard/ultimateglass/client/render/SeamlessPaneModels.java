@@ -151,14 +151,26 @@ public final class SeamlessPaneModels {
             BlockState state,
             boolean seamFill
     ) {
-        Direction.Axis axis = state.getValue(CenteredPaneBlock.AXIS);
-        if (!insideCenteredSlab(quad, axis)) {
+        PaneGeometry geometry = ((UltimatePane) state.getBlock()).geometry(state);
+        List<PanePlane> containingPlanes = new ArrayList<>(3);
+        for (PanePlane plane : geometry.planes()) {
+            if (plane.isCentered() && insideCenteredSlab(quad, plane.axis())) {
+                containingPlanes.add(plane);
+            }
+        }
+
+        // Shared pair/triple junction geometry is intentional and must keep its frame surfaces.
+        if (containingPlanes.size() >= 2) {
             return !seamFill;
         }
 
-        List<Direction> borders = boundaryDirectionsExcept(quad, axis);
-        PanePlane plane = PanePlane.centered(axis);
-        return keepBoundarySection(seamFill, borders, level, pos, state, plane);
+        if (containingPlanes.size() == 1) {
+            PanePlane plane = containingPlanes.getFirst();
+            List<Direction> borders = boundaryDirectionsExcept(quad, plane.axis());
+            return keepBoundarySection(seamFill, borders, level, pos, state, plane);
+        }
+
+        return !seamFill;
     }
 
     private static boolean keepBoundarySection(

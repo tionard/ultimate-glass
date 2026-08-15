@@ -304,21 +304,119 @@ tasks.register("generatePaneResources") {
             )
         }
 
-        def centeredElements = paneSurfaceElements([0, 0, 7], [16, 16, 9], "north")
-        centeredElements.addAll([
-                [from: [0, 0, 7], to: [2, 16, 9], faces: [west: [texture: "#edge"]]],
-                [from: [14, 0, 7], to: [16, 16, 9], faces: [east: [texture: "#edge"]]],
-                [from: [0, 0, 7], to: [16, 2, 9], faces: [down: [texture: "#edge"]]],
-                [from: [0, 14, 7], to: [16, 16, 9], faces: [up: [texture: "#edge"]]]
-        ])
-        writeJson(
-                "assets/ultimateglass/models/block/centered_pane_base.json",
-                [
-                        render_type: "minecraft:translucent",
-                        textures: [particle: "#pane"],
-                        elements: centeredElements
+        def centeredAxes = [
+                x: [axis: 0, negative: "west", positive: "east"],
+                y: [axis: 1, negative: "down", positive: "up"],
+                z: [axis: 2, negative: "north", positive: "south"]
+        ]
+
+        def centeredRanges = { boolean split ->
+            split ? [[0, 7], [9, 16]] : [[0, 16]]
+        }
+
+        def createCenteredShape = { int mask ->
+            def active = centeredAxes.findAll { name, data ->
+                (mask & (1 << data.axis)) != 0
+            }
+            def elements = []
+
+            // Each transparent sheet stops at perpendicular center slabs.
+            active.each { planeName, planeData ->
+                def inPlaneAxes = centeredAxes.findAll { name, data ->
+                    data.axis != planeData.axis
+                }
+                def first = inPlaneAxes.entrySet().toList()[0]
+                def second = inPlaneAxes.entrySet().toList()[1]
+                centeredRanges(active.containsKey(first.key)).each { firstRange ->
+                    centeredRanges(active.containsKey(second.key)).each { secondRange ->
+                        def from = [0, 0, 0]
+                        def to = [16, 16, 16]
+                        from[planeData.axis] = 7
+                        to[planeData.axis] = 9
+                        from[first.value.axis] = firstRange[0]
+                        to[first.value.axis] = firstRange[1]
+                        from[second.value.axis] = secondRange[0]
+                        to[second.value.axis] = secondRange[1]
+                        elements.addAll(paneSurfaceElements(from, to, planeData.negative))
+                    }
+                }
+            }
+
+            // Split perimeter frame runs wherever a shared centered line crosses them.
+            active.each { planeName, planeData ->
+                centeredAxes.findAll { name, data ->
+                    data.axis != planeData.axis
+                }.each { boundaryName, boundaryData ->
+                    def lineEntry = centeredAxes.find { name, data ->
+                        data.axis != planeData.axis && data.axis != boundaryData.axis
+                    }
+                    centeredRanges(active.containsKey(lineEntry.key)).each { lineRange ->
+                        [
+                                [direction: boundaryData.negative, from: 0, to: 2],
+                                [direction: boundaryData.positive, from: 14, to: 16]
+                        ].each { boundary ->
+                            def from = [0, 0, 0]
+                            def to = [16, 16, 16]
+                            from[planeData.axis] = 7
+                            to[planeData.axis] = 9
+                            from[boundaryData.axis] = boundary.from
+                            to[boundaryData.axis] = boundary.to
+                            from[lineEntry.value.axis] = lineRange[0]
+                            to[lineEntry.value.axis] = lineRange[1]
+                            elements << [
+                                    from: from,
+                                    to: to,
+                                    faces: [(boundary.direction): [texture: "#edge"]]
+                            ]
+                        }
+                    }
+                }
+            }
+
+            // Exactly one shared opaque line for every pair of centered planes.
+            def activeEntries = active.entrySet().toList()
+            for (int firstIndex = 0; firstIndex < activeEntries.size(); firstIndex++) {
+                for (int secondIndex = firstIndex + 1; secondIndex < activeEntries.size(); secondIndex++) {
+                    def first = activeEntries[firstIndex]
+                    def second = activeEntries[secondIndex]
+                    def lineEntry = centeredAxes.find { name, data ->
+                        data.axis != first.value.axis && data.axis != second.value.axis
+                    }
+                    centeredRanges(active.containsKey(lineEntry.key)).each { lineRange ->
+                        def from = [0, 0, 0]
+                        def to = [16, 16, 16]
+                        from[first.value.axis] = 7
+                        to[first.value.axis] = 9
+                        from[second.value.axis] = 7
+                        to[second.value.axis] = 9
+                        from[lineEntry.value.axis] = lineRange[0]
+                        to[lineEntry.value.axis] = lineRange[1]
+                        elements << [from: from, to: to, faces: allFaces("#edge")]
+                    }
+                }
+            }
+
+            if (active.size() == 3) {
+                elements << [
+                        from: [7, 7, 7],
+                        to: [9, 9, 9],
+                        faces: allFaces("#edge")
                 ]
-        )
+            }
+
+            return [
+                    render_type: "minecraft:translucent",
+                    textures: [particle: "#pane"],
+                    elements: elements
+            ]
+        }
+
+        for (int mask = 1; mask < 8; mask++) {
+            writeJson(
+                    "assets/ultimateglass/models/block/centered_pane_shape_${mask}_base.json",
+                    createCenteredShape(mask)
+            )
+        }
 
         def colors = [
                 [suffix: "", pane: "minecraft:block/glass", edge: "minecraft:block/white_concrete"],
@@ -452,31 +550,39 @@ tasks.register("generatePaneResources") {
                 )
             }
 
-            writeJson(
-                    "assets/ultimateglass/models/block/${centeredBlockName}.json",
-                    [
-                            parent: "ultimateglass:block/centered_pane_base",
-                            textures: textures
+            for (int mask = 1; mask < 8; mask++) {
+                writeJson(
+                        "assets/ultimateglass/models/block/${centeredBlockName}_shape_${mask}.json",
+                        [
+                                parent: "ultimateglass:block/centered_pane_shape_${mask}_base",
+                                textures: textures
+                        ]
+                )
+            }
+
+            def centeredVariants = [:]
+            centeredAxes.each { primaryName, primaryData ->
+                def perpendicular = centeredAxes.findAll { name, data ->
+                    data.axis != primaryData.axis
+                }.entrySet().toList().sort { entry -> entry.value.axis }
+                for (int connectionMask = 0; connectionMask < 4; connectionMask++) {
+                    int shapeMask = 1 << primaryData.axis
+                    if ((connectionMask & 1) != 0) {
+                        shapeMask |= 1 << perpendicular[0].value.axis
+                    }
+                    if ((connectionMask & 2) != 0) {
+                        shapeMask |= 1 << perpendicular[1].value.axis
+                    }
+                    String key = "axis=${primaryName},connect_first=${(connectionMask & 1) != 0},connect_second=${(connectionMask & 2) != 0}"
+                    centeredVariants[key] = [
+                            model: "ultimateglass:block/${centeredBlockName}_shape_${shapeMask}"
                     ]
-            )
+                }
+            }
 
             writeJson(
                     "assets/ultimateglass/blockstates/${centeredBlockName}.json",
-                    [
-                            variants: [
-                                    "axis=x": [
-                                            model: "ultimateglass:block/${centeredBlockName}",
-                                            y: 90
-                                    ],
-                                    "axis=y": [
-                                            model: "ultimateglass:block/${centeredBlockName}",
-                                            x: 90
-                                    ],
-                                    "axis=z": [
-                                            model: "ultimateglass:block/${centeredBlockName}"
-                                    ]
-                            ]
-                    ]
+                    [variants: centeredVariants]
             )
 
             for (int mask = 0; mask < 16; mask++) {

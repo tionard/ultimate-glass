@@ -37,7 +37,7 @@ public final class PaneGeometry {
             }
         }
         for (PaneGeometry geometry : CENTERED_GEOMETRIES) {
-            if (geometry.planes.equals(planes)) {
+            if (geometry != null && geometry.planes.equals(planes)) {
                 return geometry;
             }
         }
@@ -59,7 +59,22 @@ public final class PaneGeometry {
     }
 
     public static PaneGeometry centered(Direction.Axis axis) {
-        return CENTERED_GEOMETRIES[axis.ordinal()];
+        return centered(axis, false, false);
+    }
+
+    public static PaneGeometry centered(
+            Direction.Axis primaryAxis,
+            boolean connectFirst,
+            boolean connectSecond
+    ) {
+        int mask = 1 << primaryAxis.ordinal();
+        if (connectFirst) {
+            mask |= 1 << firstPerpendicularAxis(primaryAxis).ordinal();
+        }
+        if (connectSecond) {
+            mask |= 1 << secondPerpendicularAxis(primaryAxis).ordinal();
+        }
+        return CENTERED_GEOMETRIES[mask];
     }
 
     public PanePlaneSet planes() {
@@ -104,6 +119,22 @@ public final class PaneGeometry {
         };
     }
 
+    /** Stable relative-axis mapping used by the two backward-compatible centered flags. */
+    public static Direction.Axis firstPerpendicularAxis(Direction.Axis primaryAxis) {
+        return switch (primaryAxis) {
+            case X -> Direction.Axis.Y;
+            case Y, Z -> Direction.Axis.X;
+        };
+    }
+
+    /** Stable relative-axis mapping used by the two backward-compatible centered flags. */
+    public static Direction.Axis secondPerpendicularAxis(Direction.Axis primaryAxis) {
+        return switch (primaryAxis) {
+            case X, Y -> Direction.Axis.Z;
+            case Z -> Direction.Axis.Y;
+        };
+    }
+
     private static PaneGeometry[][] createEdgeGeometries() {
         Direction[] directions = Direction.values();
         PaneGeometry[][] geometries = new PaneGeometry[directions.length][EDGE_CONNECTION_COMBINATIONS];
@@ -136,10 +167,15 @@ public final class PaneGeometry {
     }
 
     private static PaneGeometry[] createCenteredGeometries() {
-        Direction.Axis[] axes = Direction.Axis.values();
-        PaneGeometry[] geometries = new PaneGeometry[axes.length];
-        for (Direction.Axis axis : axes) {
-            geometries[axis.ordinal()] = new PaneGeometry(PanePlaneSet.of(PanePlane.centered(axis)));
+        PaneGeometry[] geometries = new PaneGeometry[8];
+        for (int mask = 1; mask < geometries.length; mask++) {
+            PanePlaneSet planes = PanePlaneSet.EMPTY;
+            for (Direction.Axis axis : Direction.Axis.values()) {
+                if ((mask & (1 << axis.ordinal())) != 0) {
+                    planes = planes.plus(PanePlane.centered(axis));
+                }
+            }
+            geometries[mask] = new PaneGeometry(planes);
         }
         return geometries;
     }

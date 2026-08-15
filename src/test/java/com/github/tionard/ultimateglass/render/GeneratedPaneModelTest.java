@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -34,7 +36,51 @@ final class GeneratedPaneModelTest {
 
     @Test
     void centeredPaneProvidesInteriorSamplesForEveryBoundarySection() throws IOException {
-        assertEquals(new PaneElementCounts(9, 8), paneElementCounts("centered_pane_base.json"));
+        for (int mask : new int[] {1, 2, 4}) {
+            assertEquals(
+                    new PaneElementCounts(9, 8),
+                    paneElementCounts("centered_pane_shape_" + mask + "_base.json")
+            );
+        }
+    }
+
+    @Test
+    void centeredJunctionModelsTrimEveryTransparentIntersection() throws IOException {
+        for (int mask : new int[] {3, 5, 6}) {
+            assertEquals(
+                    new PaneElementCounts(24, 20),
+                    paneElementCounts("centered_pane_shape_" + mask + "_base.json")
+            );
+        }
+        assertEquals(
+                new PaneElementCounts(48, 36),
+                paneElementCounts("centered_pane_shape_7_base.json")
+        );
+
+        for (int mask = 1; mask < 8; mask++) {
+            assertNoOverlappingNonSeamFaces("centered_pane_shape_" + mask + "_base.json");
+        }
+    }
+
+    @Test
+    void centeredBlockStateMapsAllPrimaryAndRelativeConnectionStates() throws IOException {
+        JsonObject variants = readJson(GENERATED_ROOT.resolve(
+                "assets/ultimateglass/blockstates/centered_glass_pane.json"
+        )).getAsJsonObject("variants");
+        assertEquals(12, variants.size());
+
+        assertCenteredVariant(variants, "x", false, false, 1);
+        assertCenteredVariant(variants, "x", true, false, 3);
+        assertCenteredVariant(variants, "x", false, true, 5);
+        assertCenteredVariant(variants, "x", true, true, 7);
+        assertCenteredVariant(variants, "y", false, false, 2);
+        assertCenteredVariant(variants, "y", true, false, 3);
+        assertCenteredVariant(variants, "y", false, true, 6);
+        assertCenteredVariant(variants, "y", true, true, 7);
+        assertCenteredVariant(variants, "z", false, false, 4);
+        assertCenteredVariant(variants, "z", true, false, 5);
+        assertCenteredVariant(variants, "z", false, true, 6);
+        assertCenteredVariant(variants, "z", true, true, 7);
     }
 
     @Test
@@ -49,6 +95,8 @@ final class GeneratedPaneModelTest {
         Path assets = GENERATED_ROOT.resolve("assets/ultimateglass");
         assertTrue(Files.exists(assets.resolve("blockstates/edge_tinted_glass_pane.json")));
         assertTrue(Files.exists(assets.resolve("blockstates/centered_tinted_glass_pane.json")));
+        assertTrue(Files.exists(assets.resolve(
+                "models/block/centered_tinted_glass_pane_shape_7.json")));
 
         Path recipeRoot = GENERATED_ROOT.resolve("data/ultimateglass/recipe");
         JsonObject recipe = readJson(recipeRoot.resolve("ultimate_tinted_glass_pane.json"));
@@ -62,6 +110,54 @@ final class GeneratedPaneModelTest {
         try (Reader reader = Files.newBufferedReader(path)) {
             return JsonParser.parseReader(reader).getAsJsonObject();
         }
+    }
+
+    private static void assertCenteredVariant(
+            JsonObject variants,
+            String axis,
+            boolean connectFirst,
+            boolean connectSecond,
+            int shapeMask
+    ) {
+        String key = "axis=" + axis
+                + ",connect_first=" + connectFirst
+                + ",connect_second=" + connectSecond;
+        assertEquals(
+                "ultimateglass:block/centered_glass_pane_shape_" + shapeMask,
+                variants.getAsJsonObject(key).get("model").getAsString()
+        );
+    }
+
+    private static void assertNoOverlappingNonSeamFaces(String modelName) throws IOException {
+        JsonArray elements = readJson(MODEL_ROOT.resolve(modelName)).getAsJsonArray("elements");
+        List<ModelFace> faces = new ArrayList<>();
+        for (JsonElement elementValue : elements) {
+            JsonObject element = elementValue.getAsJsonObject();
+            int[] from = coordinates(element.getAsJsonArray("from"));
+            int[] to = coordinates(element.getAsJsonArray("to"));
+            for (var entry : element.getAsJsonObject("faces").entrySet()) {
+                JsonObject face = entry.getValue().getAsJsonObject();
+                if (face.has("tintindex")) {
+                    continue;
+                }
+                ModelFace candidate = ModelFace.of(entry.getKey(), from, to);
+                for (ModelFace existing : faces) {
+                    assertFalse(
+                            candidate.overlaps(existing),
+                            () -> modelName + " contains overlapping " + candidate + " and " + existing
+                    );
+                }
+                faces.add(candidate);
+            }
+        }
+    }
+
+    private static int[] coordinates(JsonArray values) {
+        return new int[] {
+                values.get(0).getAsInt(),
+                values.get(1).getAsInt(),
+                values.get(2).getAsInt()
+        };
     }
 
     private static PaneElementCounts paneElementCounts(String modelName) throws IOException {
@@ -95,5 +191,46 @@ final class GeneratedPaneModelTest {
     }
 
     private record PaneElementCounts(int normal, int seamless) {
+    }
+
+    private record ModelFace(
+            String direction,
+            int axis,
+            int plane,
+            int firstMin,
+            int firstMax,
+            int secondMin,
+            int secondMax
+    ) {
+        private static ModelFace of(String direction, int[] from, int[] to) {
+            int axis = switch (direction) {
+                case "west", "east" -> 0;
+                case "down", "up" -> 1;
+                case "north", "south" -> 2;
+                default -> throw new IllegalArgumentException(direction);
+            };
+            boolean positive = direction.equals("east")
+                    || direction.equals("up")
+                    || direction.equals("south");
+            int firstAxis = (axis + 1) % 3;
+            int secondAxis = (axis + 2) % 3;
+            return new ModelFace(
+                    direction,
+                    axis,
+                    positive ? to[axis] : from[axis],
+                    from[firstAxis],
+                    to[firstAxis],
+                    from[secondAxis],
+                    to[secondAxis]
+            );
+        }
+
+        private boolean overlaps(ModelFace other) {
+            return direction.equals(other.direction)
+                    && axis == other.axis
+                    && plane == other.plane
+                    && Math.max(firstMin, other.firstMin) < Math.min(firstMax, other.firstMax)
+                    && Math.max(secondMin, other.secondMin) < Math.min(secondMax, other.secondMax);
+        }
     }
 }
