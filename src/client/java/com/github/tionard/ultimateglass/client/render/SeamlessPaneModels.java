@@ -6,6 +6,8 @@ import java.util.function.Predicate;
 
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -18,6 +20,8 @@ import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
+import com.github.tionard.ultimateglass.block.DynamicFramedPane;
+import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.client.UltimateGlassClientConfig;
 import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
@@ -31,6 +35,7 @@ public final class SeamlessPaneModels {
     private static final float CENTER_MAX = 9.0F / 16.0F;
     private static final float EPSILON = 0.0001F;
     private static final int SEAM_FILL_TINT_INDEX = 15;
+    private static final int DYNAMIC_FRAME_TINT_INDEX = 14;
     private static boolean initialized;
 
     private SeamlessPaneModels() {
@@ -69,9 +74,10 @@ public final class SeamlessPaneModels {
                 Predicate<Direction> cullTest
         ) {
             boolean seamless = UltimateGlassClientConfig.seamlessConnectedPanes();
-            emitter.pushTransform(quad -> seamless
-                    ? keepQuad(quad, level, pos, state)
-                    : !isSeamFillQuad(quad));
+            Material.Baked frameMaterial = dynamicFrameMaterial(level, pos, state);
+            emitter.pushTransform(quad -> transformQuad(
+                    quad, level, pos, state, seamless, frameMaterial
+            ));
             try {
                 super.emitQuads(emitter, level, pos, state, random, cullTest);
             } finally {
@@ -87,11 +93,39 @@ public final class SeamlessPaneModels {
                 RandomSource random
         ) {
             Object wrappedKey = super.createGeometryKey(level, pos, state, random);
+            Object frameBlock = dynamicFrameId(level, pos, state);
             if (!UltimateGlassClientConfig.seamlessConnectedPanes()) {
-                return wrappedKey;
+                return frameBlock == null
+                        ? wrappedKey
+                        : new GeometryKey(wrappedKey, 0L, frameBlock);
             }
-            return new GeometryKey(wrappedKey, continuationMask(level, pos, state));
+            return new GeometryKey(
+                    wrappedKey,
+                    continuationMask(level, pos, state),
+                    frameBlock
+            );
         }
+    }
+
+    private static boolean transformQuad(
+            MutableQuadView quad,
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            boolean seamless,
+            Material.Baked frameMaterial
+    ) {
+        boolean dynamicFrame = quad.tintIndex() == DYNAMIC_FRAME_TINT_INDEX;
+        boolean keep = seamless
+                ? keepQuad(quad, level, pos, state)
+                : !isSeamFillQuad(quad);
+        if (keep && dynamicFrame) {
+            quad.tintIndex(-1);
+            if (frameMaterial != null) {
+                quad.materialBake(frameMaterial, MutableQuadView.BAKE_LOCK_UV);
+            }
+        }
+        return keep;
     }
 
     private static boolean keepQuad(
@@ -210,6 +244,32 @@ public final class SeamlessPaneModels {
         return mask;
     }
 
+    private static Material.Baked dynamicFrameMaterial(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state
+    ) {
+        if (!(state.getBlock() instanceof DynamicFramedPane)
+                || !(level.getBlockEntity(pos) instanceof DynamicFrameBlockEntity frame)) {
+            return null;
+        }
+        return Minecraft.getInstance()
+                .getModelManager()
+                .getBlockStateModelSet()
+                .getParticleMaterial(frame.frameBlock().defaultBlockState());
+    }
+
+    private static Object dynamicFrameId(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state
+    ) {
+        return state.getBlock() instanceof DynamicFramedPane
+                && level.getBlockEntity(pos) instanceof DynamicFrameBlockEntity frame
+                ? frame.frameBlockId()
+                : null;
+    }
+
     private static List<Direction> boundaryDirectionsExcept(
             MutableQuadView quad,
             Direction.Axis excludedAxis
@@ -258,6 +318,6 @@ public final class SeamlessPaneModels {
         };
     }
 
-    private record GeometryKey(Object wrapped, long continuations) {
+    private record GeometryKey(Object wrapped, long continuations, Object frameBlock) {
     }
 }

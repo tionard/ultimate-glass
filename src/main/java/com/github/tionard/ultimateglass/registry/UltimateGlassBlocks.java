@@ -15,33 +15,52 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
+import com.github.tionard.ultimateglass.block.DynamicFramedCenteredPaneBlock;
+import com.github.tionard.ultimateglass.block.DynamicFramedEdgePaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
+import com.github.tionard.ultimateglass.block.TintedGlassPaneBlock;
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
+import com.github.tionard.ultimateglass.pane.PaneFrame;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 
 public final class UltimateGlassBlocks {
     private static final Map<Block, PaneFamily> FAMILIES_BY_VANILLA = new LinkedHashMap<>();
     private static final Map<Block, PaneFamily> FAMILIES_BY_BLOCK = new LinkedHashMap<>();
-    private static final Map<PaneMaterial, PaneFamily> FAMILIES_BY_MATERIAL = new LinkedHashMap<>();
+    private static final Map<PaneAppearance, PaneFamily> FAMILIES_BY_APPEARANCE = new LinkedHashMap<>();
+    private static final Map<PaneMaterial, PaneFamily> DYNAMIC_FAMILIES = new LinkedHashMap<>();
 
-    public static final EdgePaneBlock EDGE_GLASS_PANE = register(PaneMaterial.CLEAR);
-    public static final EdgePaneBlock EDGE_WHITE_STAINED_GLASS_PANE = register(PaneMaterial.WHITE_STAINED);
-    public static final EdgePaneBlock EDGE_ORANGE_STAINED_GLASS_PANE = register(PaneMaterial.ORANGE_STAINED);
-    public static final EdgePaneBlock EDGE_MAGENTA_STAINED_GLASS_PANE = register(PaneMaterial.MAGENTA_STAINED);
-    public static final EdgePaneBlock EDGE_LIGHT_BLUE_STAINED_GLASS_PANE = register(PaneMaterial.LIGHT_BLUE_STAINED);
-    public static final EdgePaneBlock EDGE_YELLOW_STAINED_GLASS_PANE = register(PaneMaterial.YELLOW_STAINED);
-    public static final EdgePaneBlock EDGE_LIME_STAINED_GLASS_PANE = register(PaneMaterial.LIME_STAINED);
-    public static final EdgePaneBlock EDGE_PINK_STAINED_GLASS_PANE = register(PaneMaterial.PINK_STAINED);
-    public static final EdgePaneBlock EDGE_GRAY_STAINED_GLASS_PANE = register(PaneMaterial.GRAY_STAINED);
-    public static final EdgePaneBlock EDGE_LIGHT_GRAY_STAINED_GLASS_PANE = register(PaneMaterial.LIGHT_GRAY_STAINED);
-    public static final EdgePaneBlock EDGE_CYAN_STAINED_GLASS_PANE = register(PaneMaterial.CYAN_STAINED);
-    public static final EdgePaneBlock EDGE_PURPLE_STAINED_GLASS_PANE = register(PaneMaterial.PURPLE_STAINED);
-    public static final EdgePaneBlock EDGE_BLUE_STAINED_GLASS_PANE = register(PaneMaterial.BLUE_STAINED);
-    public static final EdgePaneBlock EDGE_BROWN_STAINED_GLASS_PANE = register(PaneMaterial.BROWN_STAINED);
-    public static final EdgePaneBlock EDGE_GREEN_STAINED_GLASS_PANE = register(PaneMaterial.GREEN_STAINED);
-    public static final EdgePaneBlock EDGE_RED_STAINED_GLASS_PANE = register(PaneMaterial.RED_STAINED);
-    public static final EdgePaneBlock EDGE_BLACK_STAINED_GLASS_PANE = register(PaneMaterial.BLACK_STAINED);
-    public static final EdgePaneBlock EDGE_TINTED_GLASS_PANE = register(PaneMaterial.TINTED);
+    /** Connected, centered-geometry-free tinted pane used as the cooking input. */
+    public static final TintedGlassPaneBlock TINTED_GLASS_PANE = registerTintedGlassPane();
+
+    public static final EdgePaneBlock EDGE_GLASS_PANE = registerStatic(PaneMaterial.CLEAR, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_WHITE_STAINED_GLASS_PANE = registerStatic(PaneMaterial.WHITE_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_ORANGE_STAINED_GLASS_PANE = registerStatic(PaneMaterial.ORANGE_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_MAGENTA_STAINED_GLASS_PANE = registerStatic(PaneMaterial.MAGENTA_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_LIGHT_BLUE_STAINED_GLASS_PANE = registerStatic(PaneMaterial.LIGHT_BLUE_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_YELLOW_STAINED_GLASS_PANE = registerStatic(PaneMaterial.YELLOW_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_LIME_STAINED_GLASS_PANE = registerStatic(PaneMaterial.LIME_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_PINK_STAINED_GLASS_PANE = registerStatic(PaneMaterial.PINK_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_GRAY_STAINED_GLASS_PANE = registerStatic(PaneMaterial.GRAY_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_LIGHT_GRAY_STAINED_GLASS_PANE = registerStatic(PaneMaterial.LIGHT_GRAY_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_CYAN_STAINED_GLASS_PANE = registerStatic(PaneMaterial.CYAN_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_PURPLE_STAINED_GLASS_PANE = registerStatic(PaneMaterial.PURPLE_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_BLUE_STAINED_GLASS_PANE = registerStatic(PaneMaterial.BLUE_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_BROWN_STAINED_GLASS_PANE = registerStatic(PaneMaterial.BROWN_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_GREEN_STAINED_GLASS_PANE = registerStatic(PaneMaterial.GREEN_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_RED_STAINED_GLASS_PANE = registerStatic(PaneMaterial.RED_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_BLACK_STAINED_GLASS_PANE = registerStatic(PaneMaterial.BLACK_STAINED, PaneFrame.NONE).edgePane();
+    public static final EdgePaneBlock EDGE_TINTED_GLASS_PANE = registerStatic(PaneMaterial.TINTED, PaneFrame.NONE).edgePane();
+
+    static {
+        for (PaneFrame frame : PaneFrame.woodFrames()) {
+            for (PaneMaterial material : PaneMaterial.values()) {
+                registerStatic(material, frame);
+            }
+        }
+        for (PaneMaterial material : PaneMaterial.values()) {
+            registerDynamic(material);
+        }
+    }
 
     private UltimateGlassBlocks() {
     }
@@ -65,7 +84,17 @@ public final class UltimateGlassBlocks {
     }
 
     public static PaneFamily familyFor(PaneMaterial material) {
-        return FAMILIES_BY_MATERIAL.get(material);
+        return FAMILIES_BY_APPEARANCE.get(new PaneAppearance(material));
+    }
+
+    public static PaneFamily familyFor(PaneAppearance appearance) {
+        return appearance.frame().isDynamic()
+                ? DYNAMIC_FAMILIES.get(appearance.material())
+                : FAMILIES_BY_APPEARANCE.get(appearance);
+    }
+
+    public static PaneFamily dynamicFamily(PaneMaterial material) {
+        return DYNAMIC_FAMILIES.get(material);
     }
 
     public static PaneAppearance appearanceFor(Block block) {
@@ -75,25 +104,34 @@ public final class UltimateGlassBlocks {
 
     public static Block vanillaFor(Block customPane) {
         PaneFamily family = FAMILIES_BY_BLOCK.get(customPane);
-        return family == null || customPane == family.vanillaPane()
-                ? null
-                : family.vanillaPane();
+        return family == null || customPane == family.vanillaPane() ? null : family.vanillaPane();
     }
 
     public static Collection<EdgePaneBlock> edgePanes() {
-        return FAMILIES_BY_MATERIAL.values().stream()
-                .map(PaneFamily::edgePane)
-                .toList();
+        return FAMILIES_BY_APPEARANCE.values().stream().map(PaneFamily::edgePane).toList();
     }
 
     public static Collection<CenteredPaneBlock> centeredPanes() {
-        return FAMILIES_BY_MATERIAL.values().stream()
-                .map(PaneFamily::centeredPane)
-                .toList();
+        return FAMILIES_BY_APPEARANCE.values().stream().map(PaneFamily::centeredPane).toList();
     }
 
     public static Collection<PaneFamily> paneFamilies() {
-        return FAMILIES_BY_MATERIAL.values();
+        return FAMILIES_BY_APPEARANCE.values();
+    }
+
+    public static Collection<Block> dynamicFrameBlocks() {
+        return DYNAMIC_FAMILIES.values().stream()
+                .flatMap(family -> java.util.stream.Stream.of(family.edgePane(), family.centeredPane()))
+                .map(Block.class::cast)
+                .toList();
+    }
+
+    private static TintedGlassPaneBlock registerTintedGlassPane() {
+        ResourceKey<Block> key = blockKey("tinted_glass_pane");
+        TintedGlassPaneBlock block = new TintedGlassPaneBlock(
+                BlockBehaviour.Properties.ofFullCopy(Blocks.TINTED_GLASS).setId(key)
+        );
+        return Registry.register(BuiltInRegistries.BLOCK, key, block);
     }
 
     private static Block vanillaBlock(String path) {
@@ -105,47 +143,85 @@ public final class UltimateGlassBlocks {
         return block;
     }
 
-    private static EdgePaneBlock register(PaneMaterial material) {
-        boolean tinted = material == PaneMaterial.TINTED;
-        String panePath = tinted ? "tinted_glass_pane" : material.vanillaPanePath();
-        Block vanillaPane = switch (material) {
+    private static Block sourcePane(PaneMaterial material) {
+        return switch (material) {
             case CLEAR -> Blocks.GLASS_PANE;
-            case TINTED -> Blocks.TINTED_GLASS;
+            case TINTED -> TINTED_GLASS_PANE;
             default -> vanillaBlock(material.vanillaPanePath());
         };
-        PaneAppearance appearance = new PaneAppearance(material);
-        String name = "edge_" + panePath;
-        String centeredName = "centered_" + name.substring("edge_".length());
+    }
+
+    private static PaneFamily registerStatic(PaneMaterial material, PaneFrame frame) {
+        Block vanillaPane = sourcePane(material);
+        PaneAppearance appearance = new PaneAppearance(material, frame);
+        String panePath = panePath(material);
+        String framePrefix = frame == PaneFrame.NONE ? "" : frame.path() + "_framed_";
+        String edgeName = "edge_" + framePrefix + panePath;
+        String centeredName = "centered_" + framePrefix + panePath;
+
         ResourceKey<Block> centeredKey = blockKey(centeredName);
         CenteredPaneBlock centeredPane = new CenteredPaneBlock(
-                vanillaPane,
-                appearance,
+                vanillaPane, appearance,
                 BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(centeredKey)
         );
         Registry.register(BuiltInRegistries.BLOCK, centeredKey, centeredPane);
 
-        ResourceKey<Block> edgeKey = blockKey(name);
+        ResourceKey<Block> edgeKey = blockKey(edgeName);
         EdgePaneBlock edgePane = new EdgePaneBlock(
-                vanillaPane,
-                appearance,
+                vanillaPane, appearance,
                 BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(edgeKey)
         );
         Registry.register(BuiltInRegistries.BLOCK, edgeKey, edgePane);
 
         PaneFamily family = new PaneFamily(vanillaPane, centeredPane, edgePane, appearance);
-        if (!tinted) {
+        if (frame == PaneFrame.NONE && material != PaneMaterial.TINTED) {
             FAMILIES_BY_VANILLA.put(vanillaPane, family);
             FAMILIES_BY_BLOCK.put(vanillaPane, family);
         }
         FAMILIES_BY_BLOCK.put(centeredPane, family);
         FAMILIES_BY_BLOCK.put(edgePane, family);
-        FAMILIES_BY_MATERIAL.put(material, family);
-        return edgePane;
+        FAMILIES_BY_APPEARANCE.put(appearance, family);
+        return family;
+    }
+
+    private static PaneFamily registerDynamic(PaneMaterial material) {
+        Block vanillaPane = sourcePane(material);
+        PaneAppearance appearance = new PaneAppearance(material, PaneFrame.DYNAMIC);
+        String panePath = panePath(material);
+        String centeredName = "centered_modded_framed_" + panePath;
+        String edgeName = "edge_modded_framed_" + panePath;
+
+        ResourceKey<Block> centeredKey = blockKey(centeredName);
+        CenteredPaneBlock centeredPane = new DynamicFramedCenteredPaneBlock(
+                vanillaPane, appearance,
+                BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(centeredKey)
+        );
+        Registry.register(BuiltInRegistries.BLOCK, centeredKey, centeredPane);
+
+        ResourceKey<Block> edgeKey = blockKey(edgeName);
+        EdgePaneBlock edgePane = new DynamicFramedEdgePaneBlock(
+                vanillaPane, appearance,
+                BlockBehaviour.Properties.ofFullCopy(vanillaPane).setId(edgeKey)
+        );
+        Registry.register(BuiltInRegistries.BLOCK, edgeKey, edgePane);
+
+        PaneFamily family = new PaneFamily(vanillaPane, centeredPane, edgePane, appearance);
+        FAMILIES_BY_BLOCK.put(centeredPane, family);
+        FAMILIES_BY_BLOCK.put(edgePane, family);
+        FAMILIES_BY_APPEARANCE.put(appearance, family);
+        DYNAMIC_FAMILIES.put(material, family);
+        return family;
+    }
+
+    private static String panePath(PaneMaterial material) {
+        return material == PaneMaterial.TINTED ? "tinted_glass_pane" : material.vanillaPanePath();
     }
 
     private static ResourceKey<Block> blockKey(String name) {
-        Identifier id = Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, name);
-        return ResourceKey.create(Registries.BLOCK, id);
+        return ResourceKey.create(
+                Registries.BLOCK,
+                Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, name)
+        );
     }
 
     public record PaneFamily(
@@ -155,9 +231,16 @@ public final class UltimateGlassBlocks {
             PaneAppearance appearance
     ) {
         public String itemPath() {
-            return appearance.material() == PaneMaterial.TINTED
-                    ? "ultimate_tinted_glass_pane"
-                    : "ultimate_" + BuiltInRegistries.BLOCK.getKey(vanillaPane).getPath();
+            String paneName = appearance.material() == PaneMaterial.TINTED
+                    ? "tinted_glass_pane"
+                    : BuiltInRegistries.BLOCK.getKey(vanillaPane).getPath();
+            if (appearance.frame() == PaneFrame.NONE) {
+                return "ultimate_" + paneName;
+            }
+            if (appearance.frame().isDynamic()) {
+                return "modded_framed_ultimate_" + paneName;
+            }
+            return appearance.frame().path() + "_framed_ultimate_" + paneName;
         }
     }
 }

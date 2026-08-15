@@ -91,19 +91,92 @@ final class GeneratedPaneModelTest {
     }
 
     @Test
-    void tintedFamilyGeneratesBothGeometriesAndNonLossyRecipe() throws IOException {
+    void tintedFamilyGeneratesVanillaPaneAndTemperedCookingProgression() throws IOException {
         Path assets = GENERATED_ROOT.resolve("assets/ultimateglass");
+        assertTrue(Files.exists(assets.resolve("blockstates/tinted_glass_pane.json")));
         assertTrue(Files.exists(assets.resolve("blockstates/edge_tinted_glass_pane.json")));
         assertTrue(Files.exists(assets.resolve("blockstates/centered_tinted_glass_pane.json")));
         assertTrue(Files.exists(assets.resolve(
                 "models/block/centered_tinted_glass_pane_shape_7.json")));
 
         Path recipeRoot = GENERATED_ROOT.resolve("data/ultimateglass/recipe");
-        JsonObject recipe = readJson(recipeRoot.resolve("ultimate_tinted_glass_pane.json"));
-        assertEquals("minecraft:crafting_shaped", recipe.get("type").getAsString());
-        assertEquals(16, recipe.getAsJsonObject("result").get("count").getAsInt());
+        JsonObject vanillaRecipe = readJson(recipeRoot.resolve("tinted_glass_pane.json"));
+        assertEquals("minecraft:crafting_shaped", vanillaRecipe.get("type").getAsString());
+        assertEquals(16, vanillaRecipe.getAsJsonObject("result").get("count").getAsInt());
+        assertEquals(
+                "ultimateglass:tinted_glass_pane",
+                vanillaRecipe.getAsJsonObject("result").get("id").getAsString()
+        );
+
+        JsonObject temperedRecipe = readJson(recipeRoot.resolve("ultimate_tinted_glass_pane.json"));
+        assertEquals("minecraft:smelting", temperedRecipe.get("type").getAsString());
+        assertEquals(
+                "ultimateglass:tinted_glass_pane",
+                temperedRecipe.get("ingredient").getAsString()
+        );
+        assertTrue(Files.exists(recipeRoot.resolve("ultimate_tinted_glass_pane_from_blasting.json")));
         assertFalse(Files.exists(recipeRoot.resolve(
                 "tinted_glass_pane_from_ultimate_tinted_glass_pane.json")));
+    }
+
+    @Test
+    void framedModelsAddOnePixelFaceBandAndMarkDynamicWoodQuads() throws IOException {
+        JsonArray fixed = readJson(MODEL_ROOT.resolve(
+                "edge_pane_shape_0_framed_base.json"
+        )).getAsJsonArray("elements");
+        JsonArray dynamic = readJson(MODEL_ROOT.resolve(
+                "edge_pane_shape_0_dynamic_framed_base.json"
+        )).getAsJsonArray("elements");
+
+        assertTrue(hasOnePixelBroadWoodBand(fixed, false));
+        assertTrue(hasOnePixelBroadWoodBand(dynamic, true));
+        assertTrue(Files.exists(MODEL_ROOT.resolve("edge_oak_framed_glass_pane_shape_0.json")));
+        assertTrue(Files.exists(MODEL_ROOT.resolve("edge_modded_framed_glass_pane_shape_0.json")));
+
+        JsonObject framedRecipe = readJson(GENERATED_ROOT.resolve(
+                "data/ultimateglass/recipe/wood_framed_pane.json"
+        ));
+        assertEquals("ultimateglass:wood_framed_pane", framedRecipe.get("type").getAsString());
+    }
+
+    @Test
+    void ordinaryPanesUseFurnaceAndBlastFurnaceTempering() throws IOException {
+        Path recipeRoot = GENERATED_ROOT.resolve("data/ultimateglass/recipe");
+        JsonObject smelting = readJson(recipeRoot.resolve("ultimate_glass_pane.json"));
+        JsonObject blasting = readJson(recipeRoot.resolve("ultimate_glass_pane_from_blasting.json"));
+        assertEquals("minecraft:smelting", smelting.get("type").getAsString());
+        assertEquals("minecraft:glass_pane", smelting.get("ingredient").getAsString());
+        assertEquals("minecraft:blasting", blasting.get("type").getAsString());
+        assertFalse(Files.exists(recipeRoot.resolve(
+                "glass_pane_from_ultimate_glass_pane.json"
+        )));
+    }
+
+    private static boolean hasOnePixelBroadWoodBand(JsonArray elements, boolean dynamic) {
+        for (JsonElement value : elements) {
+            JsonObject element = value.getAsJsonObject();
+            int[] from = coordinates(element.getAsJsonArray("from"));
+            int[] to = coordinates(element.getAsJsonArray("to"));
+            boolean onePixelBand = (from[0] == 0 && to[0] == 1)
+                    || (from[0] == 15 && to[0] == 16)
+                    || (from[1] == 0 && to[1] == 1)
+                    || (from[1] == 15 && to[1] == 16);
+            if (!onePixelBand) {
+                continue;
+            }
+            for (String broadFace : List.of("north", "south")) {
+                if (!element.getAsJsonObject("faces").has(broadFace)) {
+                    continue;
+                }
+                JsonObject face = element.getAsJsonObject("faces").getAsJsonObject(broadFace);
+                if ("#edge".equals(face.get("texture").getAsString())
+                        && face.has("tintindex") == dynamic
+                        && (!dynamic || face.get("tintindex").getAsInt() == 14)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static JsonObject readJson(Path path) throws IOException {

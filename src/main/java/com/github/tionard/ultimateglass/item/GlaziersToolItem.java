@@ -16,6 +16,7 @@ import net.minecraft.world.phys.Vec3;
 
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
+import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
@@ -107,6 +108,7 @@ public final class GlaziersToolItem extends Item {
         }
 
         boolean waterlogged = state.getValue(BlockStateProperties.WATERLOGGED);
+        Identifier dynamicFrame = dynamicFrame(level, context.getClickedPos());
 
         if (block == family.edgePane()) {
             Direction facing = state.getValue(EdgePaneBlock.FACING);
@@ -115,6 +117,7 @@ public final class GlaziersToolItem extends Item {
                         .setValue(CenteredPaneBlock.AXIS, facing.getAxis())
                         .setValue(CenteredPaneBlock.WATERLOGGED, waterlogged);
                 level.setBlockAndUpdate(context.getClickedPos(), target);
+                restoreDynamicFrame(level, context.getClickedPos(), dynamicFrame);
                 refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
@@ -132,6 +135,7 @@ public final class GlaziersToolItem extends Item {
                                 .setValue(EdgePaneBlock.FACING, edgeFacing(context, axis))
                                 .setValue(EdgePaneBlock.WATERLOGGED, waterlogged)
                 );
+                restoreDynamicFrame(level, context.getClickedPos(), dynamicFrame);
                 refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
@@ -192,5 +196,21 @@ public final class GlaziersToolItem extends Item {
     private static void refreshPaneConnections(Level level, net.minecraft.core.BlockPos pos) {
         EdgePaneBlock.refreshConnectionsAround(level, pos);
         CenteredPaneBlock.refreshConnectionsAround(level, pos);
+    }
+
+    private static Identifier dynamicFrame(Level level, net.minecraft.core.BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof DynamicFrameBlockEntity frame
+                ? frame.frameBlockId()
+                : null;
+    }
+
+    private static void restoreDynamicFrame(
+            Level level,
+            net.minecraft.core.BlockPos pos,
+            Identifier frameId
+    ) {
+        if (frameId != null && level.getBlockEntity(pos) instanceof DynamicFrameBlockEntity frame) {
+            frame.setFrameBlockId(frameId);
+        }
     }
 }

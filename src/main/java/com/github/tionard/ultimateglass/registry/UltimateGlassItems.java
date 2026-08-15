@@ -13,18 +13,24 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
+import com.github.tionard.ultimateglass.item.DynamicFramedPaneItem;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
+import com.github.tionard.ultimateglass.item.StaticFramedPaneItem;
+import com.github.tionard.ultimateglass.pane.PaneFrame;
+import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
 
 public final class UltimateGlassItems {
     private static final Map<Block, Item> PANE_ITEMS_BY_BLOCK = new LinkedHashMap<>();
     private static final Map<PaneFamily, Item> PANE_ITEMS_BY_FAMILY = new LinkedHashMap<>();
+    private static final Map<PaneMaterial, Item> UNFRAMED_ITEMS = new LinkedHashMap<>();
 
     private static final ResourceKey<Item> COPPER_TOOL_KEY = key("copper_glaziers_tool");
     private static final ResourceKey<Item> IRON_TOOL_KEY = key("iron_glaziers_tool");
@@ -38,6 +44,10 @@ public final class UltimateGlassItems {
     /** Kept registered so 0.1.3 worlds do not lose existing tools. Hidden from recipes and Creative tabs. */
     public static final Item GLAZIERS_TOOL = registerTool(LEGACY_TOOL_KEY, GlaziersToolTier.DIAMOND);
 
+    public static final Item TINTED_GLASS_PANE = registerBlockItem(
+            "tinted_glass_pane", UltimateGlassBlocks.TINTED_GLASS_PANE
+    );
+
     static {
         UltimateGlassBlocks.paneFamilies().forEach(UltimateGlassItems::registerPaneItem);
     }
@@ -47,7 +57,10 @@ public final class UltimateGlassItems {
 
     public static void initialize() {
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.BUILDING_BLOCKS)
-                .register(output -> paneItems().forEach(output::accept));
+                .register(output -> {
+                    output.accept(TINTED_GLASS_PANE);
+                    paneFamiliesForCreative().forEach(family -> output.accept(paneItemFor(family)));
+                });
 
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
                 .register(output -> {
@@ -65,20 +78,75 @@ public final class UltimateGlassItems {
         return PANE_ITEMS_BY_FAMILY.get(family);
     }
 
+    public static Item paneItemFor(PaneMaterial material) {
+        return UNFRAMED_ITEMS.get(material);
+    }
+
+    public static PaneMaterial unframedMaterial(Item item) {
+        return UNFRAMED_ITEMS.entrySet().stream()
+                .filter(entry -> entry.getValue() == item)
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public static ItemStack framedStack(PaneMaterial material, Block plank) {
+        PaneFrame fixedFrame = PaneFrame.fromPlank(plank.asItem());
+        PaneFamily family = fixedFrame == null
+                ? UltimateGlassBlocks.dynamicFamily(material)
+                : UltimateGlassBlocks.familyFor(new com.github.tionard.ultimateglass.pane.PaneAppearance(
+                        material, fixedFrame
+                ));
+        ItemStack stack = new ItemStack(paneItemFor(family));
+        if (fixedFrame == null) {
+            stack.set(UltimateGlassComponents.FRAME_BLOCK, BuiltInRegistries.BLOCK.getKey(plank));
+        }
+        return stack;
+    }
+
     public static Collection<Item> paneItems() {
         return PANE_ITEMS_BY_FAMILY.values();
     }
 
+    private static Collection<PaneFamily> paneFamiliesForCreative() {
+        return UltimateGlassBlocks.paneFamilies().stream()
+                .filter(family -> !family.appearance().frame().isDynamic())
+                .toList();
+    }
+
     private static void registerPaneItem(PaneFamily family) {
         ResourceKey<Item> key = key(family.itemPath());
-        BlockItem item = new BlockItem(family.edgePane(), new Item.Properties().setId(key));
+        Item item = family.appearance().frame().isDynamic()
+                ? new DynamicFramedPaneItem(
+                        family.edgePane(), family.appearance().material(),
+                        new Item.Properties().setId(key)
+                )
+                : family.appearance().frame() == PaneFrame.NONE
+                ? new BlockItem(family.edgePane(), new Item.Properties().setId(key))
+                : new StaticFramedPaneItem(
+                        family.edgePane(),
+                        family.appearance().frame(),
+                        family.appearance().material(),
+                        new Item.Properties().setId(key)
+                );
         Registry.register(BuiltInRegistries.ITEM, key, item);
 
-        item.registerBlocks(Item.BY_BLOCK, item);
+        ((BlockItem) item).registerBlocks(Item.BY_BLOCK, item);
         Item.BY_BLOCK.put(family.centeredPane(), item);
         PANE_ITEMS_BY_BLOCK.put(family.edgePane(), item);
         PANE_ITEMS_BY_BLOCK.put(family.centeredPane(), item);
         PANE_ITEMS_BY_FAMILY.put(family, item);
+        if (family.appearance().frame() == PaneFrame.NONE) {
+            UNFRAMED_ITEMS.put(family.appearance().material(), item);
+        }
+    }
+
+    private static Item registerBlockItem(String name, Block block) {
+        ResourceKey<Item> key = key(name);
+        BlockItem item = new BlockItem(block, new Item.Properties().setId(key));
+        Registry.register(BuiltInRegistries.ITEM, key, item);
+        item.registerBlocks(Item.BY_BLOCK, item);
+        return item;
     }
 
     private static Item registerTool(ResourceKey<Item> key, GlaziersToolTier tier) {

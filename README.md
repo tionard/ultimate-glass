@@ -1,79 +1,71 @@
-# Ultimate Glass
+# Tempered Glass
 
-Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise edge-aligned glass panes, rotatable centred full sheets, connected corners, and tiered glassworking tools.
+Tempered Glass (internally `ultimateglass` for world compatibility) is a Fabric mod for Minecraft
+Java 26.2. It gives builders edge-aligned glass panes, rotatable centred sheets, connected corners,
+wood framing, and tiered glassworking tools.
 
-## Version 0.2.0-beta.3
+## Version 0.2.0-beta.4
 
-Beta.3 allows centred panes to merge into perpendicular centred planes. A block can now contain
-X, Y, Z, XY, XZ, YZ, or XYZ geometry with trimmed transparent intersections, one shared frame line
-per plane pair, and one centre cube at a three-plane junction. Beta.2 tinted panes are fully included.
+Beta.4 adds wood-framed panes and changes the custom pane progression from crafting conversion to
+tempering in a furnace or blast furnace.
 
-### Gameplay features
+### Pane progression
 
-- Vanilla glass panes remain fully vanilla and place with their normal connected geometry.
-- Clear and all 16 stained variants have separate Ultimate Glass Pane items.
-- Tinted glass has a distinct Ultimate Tinted Glass Pane item and is not treated as a stain colour.
-- Six tinted glass blocks craft 16 Ultimate Tinted Glass Panes in the vanilla pane pattern.
-- One vanilla pane converts to one matching Ultimate Glass Pane in any crafting grid, and the recipe works in reverse.
-- Ultimate Glass Panes initially place against an outside face of the block space.
-- Normal placement selects the side farthest from the player; Shift placement can copy an existing orientation or use the configured clicked-face/near-player fallback.
-- Adjacent perpendicular edge panes create merged L-shaped and three-plane cube corners.
-- Iron and diamond Glazier's Tools toggle custom panes between outside-face and centred full-sheet geometry without involving vanilla panes.
-- Centred panes are complete sheets rather than vanilla's single-pane rod and support X, Y, and Z orientations.
-- Adjacent perpendicular centred panes merge into clean two- and three-plane junctions.
-- Both custom geometries support native source-water waterlogging and preserve it through rotation and toggling.
-- Water rendered inside edge panes is clipped at every active pane's inner face, including merged L-shaped and cube corners; centred panes keep the normal water render.
-- Matching coplanar Ultimate panes remove their shared frame texture by default, while L-shaped and cube-corner junctions retain their solid outside edges.
+- Vanilla clear and stained panes retain their normal connected-pane behaviour.
+- Six tinted-glass blocks craft 16 `Tinted Glass Pane` items. This new pane behaves like a normal
+  vanilla-style connected pane and preserves tinted-glass light blocking.
+- Smelting or blast-smelting any vanilla clear/stained pane produces the matching `Tempered` pane.
+- Smelting or blast-smelting the new tinted pane produces a `Tempered Tinted Glass Pane`.
+- Internal `ultimate_*` registry IDs are intentionally retained so existing worlds do not lose
+  their blocks or items; only the player-facing branding changed to Tempered.
 
-Waterlogging uses Minecraft's standard block contract. For edge panes only, a client render hook clips the active renderer's water vertices at the pane's inner faces. Vanilla uses Minecraft's standard fluid tessellator, while Sodium keeps its native fluid mesh and material path so Iris can still classify and shade it as water. No global water handler is registered, and all other water—including centred-pane water—follows the renderer's unmodified normal path. Custom panes are also registered through Fabric's supported transparent-block fluid-overlay API.
+### Wood frames
 
-## Glazier's Tool tiers
+Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
 
-- **Copper:** rotates custom panes with right-click.
-- **Iron:** also toggles custom panes between edge and centred geometry with Shift + right-click.
-- **Diamond:** also mines supported glass progressively and drops it intact.
+- All 12 Minecraft 26.2 plank species have fixed, BlockEntity-free variants.
+- Planks added by other mods are accepted through the same tag-driven recipe.
+- A modded frame stores only its plank block ID in a non-ticking BlockEntity. Its static geometry
+  is still emitted into the normal chunk mesh; there is no per-frame BlockEntityRenderer.
+- The frame uses the plank block model's particle texture, so resource packs and mod-provided wood
+  textures carry through automatically.
+- Wood covers the thin outside frame and the one-pixel band immediately inside each broad face.
+- Matching glass and matching frame identity are both required for a seamless connection. Internal
+  frame bands disappear; exposed borders and angled junction mullions remain.
 
-All three recipes use one material, one string, and two sticks. They may be mirrored horizontally.
+### Existing geometry and tools
 
-Existing 0.1.3 Glazier's Tools retain diamond-tier behavior for world compatibility but are hidden from new recipes and Creative tabs.
+- Tempered panes place against any outside face, including horizontal orientations.
+- Adjacent edge panes form merged L-shaped and three-plane corners.
+- Iron and diamond Glazier's Tools toggle panes between outside-face and centred full-sheet forms.
+- Centred sheets support X, Y, Z, pairwise junctions, and XYZ junctions.
+- Copper rotates; iron also toggles geometry; diamond also harvests supported glass intact.
+- Edge and centred panes support native source-water waterlogging. Edge water is clipped at every
+  active pane face, including connected corners.
+- Seamless rendering removes only matching coplanar borders and keeps each glass material's colour
+  and transparency at the join.
 
 ## Controls
 
-- **Rotate custom pane:** right-click with any Glazier's Tool.
-- **Change rotation axis:** V by default.
-- **Toggle edge/centred geometry:** Shift + right-click with the iron or diamond tool.
-- **Toggle Shift Placement Mode:** unassigned by default.
-- **Mine glass intact:** break it normally with the diamond tool.
+- Rotate a pane: right-click with any Glazier's Tool.
+- Change rotation axis: `V` by default.
+- Toggle edge/centred geometry: Shift + right-click with iron or diamond.
+- Toggle Shift placement mode: unassigned by default.
+- Mine glass intact: use the diamond tool.
 
 ## Configuration
 
-Mod Menu exposes:
+Mod Menu exposes seamless connected panes, Shift placement mode, and server-authoritative crafting
+switches for each Glazier's Tool tier. Mod Menu is optional; Fabric API is required. The mod must be
+installed on the server and every connecting client.
 
-- Seamless connected panes enabled/disabled (enabled by default)
-- Shift placement mode: clicked face or near player
-- Copper tool crafting enabled/disabled
-- Iron tool crafting enabled/disabled
-- Diamond tool crafting enabled/disabled
+## Release plan
 
-The seamless-pane setting is client-side and purely visual. It joins only matching Ultimate pane variants with the same colour and geometry; vanilla panes and edge-to-centred neighbours remain unchanged. Crafting settings are server-authoritative. Disabling a tool recipe does not remove the item from commands or Creative mode.
-
-All world changes are performed by the logical server. Ultimate Glass is required on both the server and every connecting client. Fabric API is required; Mod Menu is optional.
-
-## Compatibility strategy
-
-Ultimate Glass does not add properties to vanilla pane block states or intercept vanilla pane placement. Mod-owned blocks represent centred and outside-face geometry, and mod-owned items place those blocks. Convert custom panes back to vanilla before removing the mod from a world.
-
-## Pane architecture
-
-Ordinary panes remain normal blocks with no BlockEntities. Both edge and centred blocks expose a
-common pane appearance and produce a `PaneGeometry` made from immutable `PanePlane` values. The
-same geometry now drives outline/collision shapes, seamless continuation checks, rotation, and
-edge-water clipping. `PaneMaterial` keeps clear, stained, and tinted glass logically separate.
-Tinted panes remain ordinary blocks and explicitly reproduce vanilla tinted-glass light dampening.
-Centred panes preserve `AXIS` as their primary plane and add only two relative connection flags;
-old states therefore continue to load as single-plane sheets.
-
-The existing `FACING`, edge connection, `AXIS`, and `WATERLOGGED` properties remain present.
+- `0.2.0-beta.4`: Tempered naming/progression and universal plank framing (this iteration).
+- `0.2.0-beta.5`: Stair/slab composite panes; final planned feature beta for 0.2.
+- `0.2.0`: Release after beta.5 validation, with no additional 0.2 feature betas planned.
+- Mosaic foundation, layered mosaics, and the broader integration/performance phase previously
+  labelled beta.6-beta.8 move to the next feature release, currently targeted as 0.3.0.
 
 ## Development baseline
 
@@ -82,18 +74,16 @@ The existing `FACING`, edge connection, `AXIS`, and `WATERLOGGED` properties rem
 - Fabric API 0.156.0+26.2
 - Java 25
 - Fabric Loom 1.17.19
-- Mod Menu 20.0.1, optional at runtime
+- Mod Menu 20.0.1 (optional at runtime)
 
-## Build
+Build with:
 
 ```bash
 gradle build
 ```
 
-The remapped mod JAR is created in `build/libs`.
-
-The build includes unit tests for pane materials, plane sets, relative edge geometry, and rotation.
+The remapped JAR is created in `build/libs`.
 
 ## License
 
-Ultimate Glass is available under the MIT License. See `LICENSE`.
+Tempered Glass is available under the MIT License. See `LICENSE`.

@@ -62,6 +62,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 FluidRenderingRegistry.setBlockTransparency(block, true));
         UltimateGlassBlocks.centeredPanes().forEach(block ->
                 FluidRenderingRegistry.setBlockTransparency(block, true));
+        FluidRenderingRegistry.setBlockTransparency(UltimateGlassBlocks.TINTED_GLASS_PANE, true);
 
         ClientPlayNetworking.registerGlobalReceiver(
                 ToolCraftingConfigPayload.TYPE,

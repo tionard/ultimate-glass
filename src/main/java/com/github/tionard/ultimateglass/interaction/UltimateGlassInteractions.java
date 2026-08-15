@@ -8,6 +8,8 @@ import net.minecraft.world.level.block.Block;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
+import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
+import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
 
 public final class UltimateGlassInteractions {
     private UltimateGlassInteractions() {
@@ -28,6 +30,9 @@ public final class UltimateGlassInteractions {
             }
 
             ItemStack drop = GlaziersToolItem.collectedStack(state.getBlock());
+            if (blockEntity instanceof DynamicFrameBlockEntity frame && !drop.isEmpty()) {
+                drop.set(UltimateGlassComponents.FRAME_BLOCK, frame.frameBlockId());
+            }
             if (!drop.isEmpty()) {
                 Block.popResource(level, pos, drop);
             }

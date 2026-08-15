@@ -7,6 +7,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
+import com.github.tionard.ultimateglass.block.DynamicFramedPane;
+import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 
 /** Stateless connection lookups shared by block-state and rendering code. */
 public final class PaneConnectionQueries {
@@ -58,8 +60,9 @@ public final class PaneConnectionQueries {
             return false;
         }
 
-        BlockState neighbor = level.getBlockState(pos.relative(neighborDirection));
-        return neighbor.getBlock() == state.getBlock()
+        BlockPos neighborPos = pos.relative(neighborDirection);
+        BlockState neighbor = level.getBlockState(neighborPos);
+        return samePaneVariant(level, pos, state, neighborPos, neighbor)
                 && neighbor.getBlock() instanceof UltimatePane pane
                 && pane.geometry(neighbor).planes().contains(plane);
     }
@@ -79,13 +82,34 @@ public final class PaneConnectionQueries {
                 continue;
             }
 
-            BlockState neighbor = level.getBlockState(pos.relative(direction));
-            if (neighbor.getBlock() == state.getBlock()
+            BlockPos neighborPos = pos.relative(direction);
+            BlockState neighbor = level.getBlockState(neighborPos);
+            if (samePaneVariant(level, pos, state, neighborPos, neighbor)
                     && neighbor.getBlock() instanceof CenteredPaneBlock
                     && neighbor.getValue(CenteredPaneBlock.AXIS) == requestedAxis) {
                 return true;
             }
         }
         return false;
+    }
+
+    public static boolean samePaneVariant(
+            BlockGetter level,
+            BlockPos firstPos,
+            BlockState first,
+            BlockPos secondPos,
+            BlockState second
+    ) {
+        if (first.getBlock() != second.getBlock()) {
+            return false;
+        }
+        if (!(first.getBlock() instanceof DynamicFramedPane)) {
+            return true;
+        }
+        if (!(level.getBlockEntity(firstPos) instanceof DynamicFrameBlockEntity firstFrame)
+                || !(level.getBlockEntity(secondPos) instanceof DynamicFrameBlockEntity secondFrame)) {
+            return false;
+        }
+        return firstFrame.frameBlockId().equals(secondFrame.frameBlockId());
     }
 }

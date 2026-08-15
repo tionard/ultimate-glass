@@ -1,125 +1,116 @@
-# Ultimate Glass - Design
+# Tempered Glass - Design
+
+The mod ID, Java package, configuration paths, and established `ultimate_*` registry IDs remain
+unchanged for compatibility. Tempered Glass is the player-facing name beginning in beta.4.
 
 ## Shared pane description
 
-The 0.2 architecture separates a pane's appearance from its physical geometry:
+Appearance is independent from physical geometry:
 
-- `PaneMaterial` identifies clear, stained, or tinted glass without treating tinted glass as a
-  decorative colour.
-- `PaneAppearance` is the common appearance value carried by each ordinary pane family. Later
-  frame and design phases can extend this concept without encoding arbitrary data in BlockState.
-- `PanePlane` identifies one edge-aligned or centred physical sheet.
-- `PanePlaneSet` is an immutable set of those sheets.
-- `PaneGeometry` converts a plane set into shared collision/outline geometry and supports rotation.
-  Its finite ordinary block-state geometries and combined voxel shapes are cached.
-- `UltimatePane` lets render and fluid paths consume appearance and geometry without duplicating
-  block-specific state decoding.
+- `PaneMaterial` identifies clear, stained, or tinted glass.
+- `PaneFrame` identifies no frame, one of the finite vanilla woods, or the generic dynamic frame.
+- `PaneAppearance` combines material and frame identity.
+- `PanePlane`, `PanePlaneSet`, and `PaneGeometry` describe edge and centred sheets, junctions,
+  collision, outlines, rotation, and renderer-facing geometry.
+- `UltimatePane` exposes the shared appearance and geometry contracts.
 
-Ordinary clear, stained, and tinted panes continue to be normal blocks. No BlockEntity or ticker is used.
-Registered IDs and the compatibility-sensitive `FACING`, connection, `AXIS`, and `WATERLOGGED`
-properties remain unchanged from 0.1.8.
+Unframed panes and the 12 built-in wood-frame families are ordinary blocks with no BlockEntity.
+The compatibility-sensitive `FACING`, edge connection, `AXIS`, centred connection, and
+`WATERLOGGED` properties remain unchanged.
 
-## Connected centred geometry
+## Families, items, and tempering
+
+Each Tempered appearance has one outside-face block, one centred block, and one shared item. The
+item always places the outside-face geometry; iron/diamond tool interaction toggles it to centred
+geometry without passing through a vanilla block.
+
+Clear and stained inputs are Minecraft's normal pane blocks. The mod's `tinted_glass_pane` is an
+`IronBarsBlock`-style connected pane with vanilla tinted-glass light dampening. Six tinted-glass
+blocks craft 16 of these normal panes.
+
+Vanilla-style panes are cooked into Tempered panes:
+
+- furnace: 200 ticks;
+- blast furnace: 100 ticks;
+- clear/stained input: the matching Minecraft pane;
+- tinted input: `ultimateglass:tinted_glass_pane`.
+
+The former reversible shapeless conversion is deliberately absent.
+
+## Wood frames
+
+`WoodFramedPaneRecipe` accepts exactly one unframed Tempered pane and one item in `#minecraft:planks`.
+For a vanilla plank it selects one of the fixed frame families. For any other tagged plank it emits
+the material's generic dynamic frame item with a synchronized `frame_block` data component.
+
+Fixed families encode their wood through block identity and generated models. The generic family
+uses one edge and one centred block per glass material. `DynamicFrameBlockEntity` stores only the
+plank block identifier, has no ticker, synchronizes on change, and exposes the same value as an item
+component for placement, pick-block, harvesting, and edge/centred toggling.
+
+The dynamic client model does not use a BlockEntityRenderer. Generated wood quads carry a private
+bake marker; the normal chunk-model wrapper replaces those quads with the selected plank block
+model's particle material, then emits them into the chunk mesh. The frame ID is included in the
+geometry cache key. This preserves the common fixed-block path and lets mod/resource-pack textures
+flow through without maintaining a wood registry in this mod.
+
+## Framed surface model
+
+The physical pane remains two pixels thick. Framed broad faces are divided at pixel coordinates
+1, 2, 14, and 15:
+
+- coordinates 0-1 and 15-16 use the wood texture;
+- the remaining face uses the glass texture;
+- the existing two-pixel outward frame and junction lines also use wood.
+
+Normal and centre-sampled seam quads occupy the same boundary sections. At an exact continuation,
+the renderer drops the normal boundary (including the wood band) and retains a centre sample from
+the glass texture. At exposed borders the replacement is dropped. Corner sections remain framed
+unless every boundary represented by that section continues, preserving perimeter runs.
+
+For fixed variants, exact block identity defines a matching frame. For dynamic variants,
+`PaneConnectionQueries.samePaneVariant` additionally compares the stored plank block IDs. Different
+woods therefore never merge seamlessly or create centred source connections.
+
+## Connected geometry
+
+Edge connections build merged L and three-plane corners. Transparent sheets are trimmed at every
+intersection, each pair receives one shared frame line, and triple intersections receive one
+2x2x2 corner block.
 
 Centred blocks retain `AXIS` as their primary saved plane. `connect_first` and `connect_second`
-refer to a stable pair of perpendicular axes, allowing all seven non-empty X/Y/Z plane sets while
-old states without the flags retain the default single plane. A connection flag is derived only
-from a directly adjacent matching block whose primary `AXIS` supplies that plane; derived planes
-never source more derived planes, so disconnected junctions cannot persist as ghost geometry.
+refer to stable perpendicular axes, producing X, Y, Z, XY, XZ, YZ, and XYZ sets. Connections are
+derived only from directly adjacent matching primary planes, preventing ghost propagation. A
+connected multi-plane centred state cannot be destructively toggled to a single edge sheet.
 
-The common `PaneGeometry` cache contains all seven centred sets. Generated models trim transparent
-sheets at every perpendicular centre slab, split perimeter frames around shared lines, emit one
-opaque line per plane pair, and emit one 2x2x2 centre cube for XYZ. The same plane set drives model
-selection, collision, outline, rotation, support, and seamless continuation checks. Waterlogging
-remains one normal centred source-water state for every set.
+## Placement, rotation, and tools
 
-Shift-conversion to a single edge pane is blocked while a centred block carries perpendicular
-source connections, avoiding destructive loss of a multi-plane junction. Remove those sources
-first, after which conversion behaves as before.
+Normal placement selects a far outside edge relative to the player. Shift placement first copies a
+compatible orientation; otherwise it uses the configured clicked-face or near-player fallback.
 
-## Pane families and items
+The rotation-axis key cycles X, Y, and Z. Copper rotates. Iron also toggles edge/centred geometry.
+Diamond additionally harvests supported glass intact. When a generic modded frame changes geometry,
+its stored frame ID is copied to the new BlockEntity before neighbour connections are refreshed.
 
-Each clear/stained family contains three blocks:
+## Waterlogging and rendering
 
-- the untouched vanilla pane;
-- a mod-owned centred full-sheet block whose normal is stored as X, Y, or Z;
-- a mod-owned outside-face block whose position is stored as one of six directions.
+Tempered edge and centred blocks implement `SimpleWaterloggedBlock`. Edge-only renderer hooks clip
+water vertices against every active pane face; centred water remains a normal full cell. Vanilla
+and Sodium paths are selected by the mixin plugin so Sodium/Iris retain their normal water material
+classification.
 
-Only the two mod-owned geometries belong to the tool toggle. A separate Ultimate Glass Pane item places the outside-face block. Vanilla pane items place vanilla blocks and never enter the toggle cycle.
-
-Every vanilla pane has a reversible shapeless conversion recipe at a one-to-one ratio. Both custom block geometries map back to the same Ultimate Glass Pane item when harvested intact. The family also owns one shared `PaneAppearance`, and lookups are available by vanilla block, custom block, or `PaneMaterial`.
-
-Tinted glass is a distinct family without a nonexistent vanilla-pane counterpart. Six tinted glass
-blocks craft 16 Ultimate Tinted Glass Panes, with no lossy reverse recipe. Both tinted geometries
-return that item when harvested and override skylight propagation/light dampening to match vanilla
-tinted glass while continuing to use the shared pane geometry.
-
-## Placement
-
-Normal Ultimate Glass Pane placement projects the player's position onto the clicked face and selects a perpendicular outside edge on the far side.
-
-Shift placement first attempts to copy a clear orientation from a custom pane, slab, stair, trapdoor, door, or facing/half block. AXIS-only logs and pillars remain ignored. When no orientation is available, the player-selected fallback is used:
-
-- **Clicked face:** place the pane flush against the clicked surface. This is the default.
-- **Near player:** use the perpendicular near-edge behavior.
-
-The client persists the selected mode, sends it to the logical server, and may toggle it through Mod Menu or an unassigned keybind.
-
-## Connected corners
-
-Convex outside corners use generated merged geometry:
-
-- two perpendicular source panes create an L-shaped corner;
-- three mutually perpendicular panes create a complete cube corner;
-- transparent planes are trimmed at intersections;
-- each pane pair has one shared frame line;
-- three frame lines meet in one 2x2x2 corner block;
-- outline and collision geometry include every active plane.
-
-Concave inner arrangements remain unconnected.
-
-Convex connection discovery lives in `PaneConnectionQueries`. Block state stores the same four
-relative connection flags as 0.1.8; decoding those flags produces a world-oriented
-`PaneGeometry`, which is shared by collision, seamless rendering, and water clipping.
-
-## Seamless connected rendering
-
-Matching Ultimate panes use seamless rendering by default. Coplanar panes of the same colour and geometry suppress only the glass/frame segments along their shared block boundary. Junction frames inside L-shaped and cube-corner blocks remain visible because they form intentional outside edges rather than flat coplanar seams.
-
-The setting is client-side and purely visual: it does not add block-state properties, alter collision or water clipping, or require server synchronization. Generated models divide broad glass faces at the two-pixel frame boundary and provide two variants for each boundary section: the normal vanilla-texture edge and an explicitly marked replacement sampled from a real two-by-two region at the centre of the same texture. The marker survives model baking and is removed before rendering. A Fabric model wrapper keeps the normal edge while exposed, but at a matching continuation it removes the solid frame and normal texture edge and emits the centre-sampled replacement. The connected area therefore retains the material's interior colour and transparency, including with resource packs. Disabling the setting drops every replacement and restores the ordinary framed appearance. Toggling it invalidates compiled chunk geometry so the visible world updates immediately.
-
-Only the exact same Ultimate block joins seamlessly. Different stained colours, edge-to-centred neighbours, and vanilla panes retain their complete outside frames.
-
-## Rotation and geometry toggle
-
-`Change Rotation Axis` is assigned to V by default and cycles X, Y, and Z. Right-clicking with any Glazier's Tool rotates either custom geometry 90 degrees around the selected axis. Rotation and conversion refresh nearby corner states.
-
-Shift + right-click with an iron or diamond tool toggles `outside-face <-> centred full-sheet`. Edge-to-centred conversion preserves the pane normal. Centred-to-edge conversion preserves that axis and selects the clicked or player-facing side of it. The operation works identically for horizontal and vertical panes because no vanilla state is involved.
-
-The centred model mirrors the edge model's face layout: the full glass texture draws both broad faces, while concrete is limited to the four thin outward-facing sides. The frame elements have no broad coplanar faces, preventing texture flicker while keeping edge and centred panes visually identical.
-
-## Tool tiers
-
-- **Copper:** rotation only.
-- **Iron:** rotation plus two-state custom pane conversion.
-- **Diamond:** iron abilities plus progressive, intact glass harvesting.
-
-The legacy 0.1.3 item ID remains registered with diamond-tier behavior to protect existing worlds, but is not newly craftable or shown in Creative tabs.
-
-Each tier uses a custom server-checked recipe with one tier material, one string, and two sticks. Mirrored patterns are accepted.
-
-## Native waterlogging
-
-Both custom blocks implement Minecraft's `SimpleWaterloggedBlock` contract in the same way as vanilla panes. Placement detects existing water, buckets can insert or remove a source, neighbour updates schedule water ticks, and `waterlogged=true` exposes a native source-water `FluidState`.
-
-Rotation retains the complete block state. Edge/centred toggling explicitly copies the waterlogged value, including when loading states created by earlier 0.1.6 development builds.
-
-Ultimate Glass registers its custom blocks as transparent through Fabric's supported fluid-overlay API. This selects the normal overlay used beside glass instead of the falling-water side texture.
-
-Native waterlogging models fluid as a source occupying the block cell and does not expose a block-specific clipped volume. Client-only renderer-specific mixins therefore clamp water vertices to the interior boundary of every active `EdgePaneBlock` face. A single edge supplies one clipping plane; connection properties automatically add the planes required by L-shaped, cube, and opposite-edge states.
-
-Without Sodium, Fabric's default-render handoff runs Minecraft's standard fluid tessellator through a clipping vertex output. With Sodium, an optional mixin adjusts coordinates inside Sodium's native fluid tessellator before its normal quad encoding; this preserves Sodium's water material metadata for Iris shaders. The hooks do not register or replace the global water handler, water model, textures, tint, render layer, or material. Centred panes and every non-edge water block remain on the active renderer's unmodified normal path. A mixin config plugin selects exactly one path at startup.
+The seamless option is client-only. Its model wrapper removes explicitly marked boundary quads,
+does not modify block state or collision, and invalidates compiled chunk geometry when toggled.
 
 ## World compatibility
 
-Vanilla panes remain vanilla blocks. Centred and outside-face panes are mod-owned blocks and require Ultimate Glass to remain installed. Convert both custom geometries back to vanilla panes through the reversible item recipe before removing the mod. Back up worlds before moving between development builds.
+Existing 0.1/earlier-beta custom IDs are retained. Fixed beta.4 vanilla-wood IDs are also retained
+by the revised beta.4 implementation. The new normal tinted pane and generic modded-frame blocks are
+additive. Removing the mod still removes mod-owned Tempered geometry, so users should back up worlds
+before moving between development builds.
+
+## Release sequence
+
+Beta.5 is the final planned 0.2 feature beta and adds stair/slab composites. After its validation,
+the next planned version is 0.2.0. The former beta.6-beta.8 mosaic and integration phases are moved
+to the next feature cycle (currently 0.3.0).

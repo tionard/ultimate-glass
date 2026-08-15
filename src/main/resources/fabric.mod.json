@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "ultimateglass",
   "version": "${version}",
-  "name": "Ultimate Glass",
-  "description": "Expanded glass pane placement and glassworking tools for builders.",
+  "name": "Tempered Glass",
+  "description": "Tempered and framed glass pane placement with precision glassworking tools.",
   "authors": ["tionard"],
   "contact": {
     "sources": "https://github.com/tionard/ultimate-glass",
@@ -18,7 +18,10 @@
     "modmenu": ["com.github.tionard.ultimateglass.client.UltimateGlassModMenu"]
   },
   "mixins": [
-    "ultimateglass.client.mixins.json"
+    {
+      "config": "ultimateglass.client.mixins.json",
+      "environment": "client"
+    }
   ],
   "depends": {
     "fabricloader": ">=0.19.3",
