@@ -34,6 +34,9 @@ public final class SeamlessPaneModels {
     private static final float CENTER_MIN = 7.0F / 16.0F;
     private static final float CENTER_MAX = 9.0F / 16.0F;
     private static final float EPSILON = 0.0001F;
+    private static final int FRAMED_SEAM_FILL_TINT_INDEX = 11;
+    private static final int DYNAMIC_FRAMED_SURFACE_TINT_INDEX = 12;
+    private static final int FRAMED_SURFACE_TINT_INDEX = 13;
     private static final int SEAM_FILL_TINT_INDEX = 15;
     private static final int DYNAMIC_FRAME_TINT_INDEX = 14;
     private static boolean initialized;
@@ -47,16 +50,17 @@ public final class SeamlessPaneModels {
         }
         initialized = true;
 
-        ModelLoadingPlugin.register(context ->
-                context.modifyBlockModelAfterBake().register((model, bakeContext) -> {
-                    BlockState state = bakeContext.state();
-                    if (state.getBlock() instanceof EdgePaneBlock
-                            || state.getBlock() instanceof CenteredPaneBlock) {
-                        return new SeamlessPaneModel(model);
-                    }
-                    return model;
-                })
-        );
+        ModelLoadingPlugin.register(context -> {
+            context.modifyBlockModelAfterBake().register((model, bakeContext) -> {
+                BlockState state = bakeContext.state();
+                if (state.getBlock() instanceof EdgePaneBlock
+                        || state.getBlock() instanceof CenteredPaneBlock) {
+                    return new SeamlessPaneModel(model);
+                }
+                return model;
+            });
+            context.modifyItemModelAfterBake().register(DynamicFramePaneItemRenderer::wrap);
+        });
     }
 
     private static final class SeamlessPaneModel extends WrapperBlockStateModel {
@@ -115,12 +119,22 @@ public final class SeamlessPaneModels {
             boolean seamless,
             Material.Baked frameMaterial
     ) {
-        boolean dynamicFrame = quad.tintIndex() == DYNAMIC_FRAME_TINT_INDEX;
-        boolean keep = seamless
-                ? keepQuad(quad, level, pos, state)
-                : !isSeamFillQuad(quad);
-        if (keep && dynamicFrame) {
+        int marker = quad.tintIndex();
+        boolean dynamicFrame = marker == DYNAMIC_FRAME_TINT_INDEX
+                || marker == DYNAMIC_FRAMED_SURFACE_TINT_INDEX;
+        boolean seamFill = marker == SEAM_FILL_TINT_INDEX
+                || marker == FRAMED_SEAM_FILL_TINT_INDEX;
+        boolean framedSurface = marker == FRAMED_SURFACE_TINT_INDEX
+                || marker == DYNAMIC_FRAMED_SURFACE_TINT_INDEX
+                || marker == FRAMED_SEAM_FILL_TINT_INDEX;
+        if (isModelMarker(marker)) {
+            // These tint values are baked-model metadata, never a request for item/block tinting.
             quad.tintIndex(-1);
+        }
+        boolean keep = seamless
+                ? keepQuad(quad, level, pos, state, seamFill, framedSurface)
+                : !seamFill;
+        if (keep && dynamicFrame) {
             if (frameMaterial != null) {
                 quad.materialBake(frameMaterial, MutableQuadView.BAKE_LOCK_UV);
             }
@@ -132,18 +146,15 @@ public final class SeamlessPaneModels {
             MutableQuadView quad,
             BlockAndTintGetter level,
             BlockPos pos,
-            BlockState state
+            BlockState state,
+            boolean seamFill,
+            boolean framedSurface
     ) {
-        boolean seamFill = isSeamFillQuad(quad);
-        if (seamFill) {
-            // Tint index is only a baked-model marker. Clear it so the texture renders unchanged.
-            quad.tintIndex(-1);
-        }
         if (state.getBlock() instanceof EdgePaneBlock) {
-            return keepEdgeQuad(quad, level, pos, state, seamFill);
+            return keepEdgeQuad(quad, level, pos, state, seamFill, framedSurface);
         }
         if (state.getBlock() instanceof CenteredPaneBlock) {
-            return keepCenteredQuad(quad, level, pos, state, seamFill);
+            return keepCenteredQuad(quad, level, pos, state, seamFill, framedSurface);
         }
         return !seamFill;
     }
@@ -153,7 +164,8 @@ public final class SeamlessPaneModels {
             BlockAndTintGetter level,
             BlockPos pos,
             BlockState state,
-            boolean seamFill
+            boolean seamFill,
+            boolean framedSurface
     ) {
         PaneGeometry geometry = ((UltimatePane) state.getBlock()).geometry(state);
         List<PanePlane> containingPlanes = new ArrayList<>(3);
@@ -170,9 +182,11 @@ public final class SeamlessPaneModels {
 
         if (containingPlanes.size() == 1) {
             PanePlane plane = containingPlanes.getFirst();
-            List<Direction> borders = boundaryDirectionsExcept(quad, plane.axis());
+            List<Direction> borders = boundaryDirectionsExcept(
+                    quad, plane.axis(), framedSurface ? 1.0F / 16.0F : PANE_THICKNESS
+            );
             return keepBoundarySection(
-                    seamFill, borders, level, pos, state, plane);
+                    seamFill, framedSurface, borders, level, pos, state, plane);
         }
 
         return !seamFill;
@@ -183,7 +197,8 @@ public final class SeamlessPaneModels {
             BlockAndTintGetter level,
             BlockPos pos,
             BlockState state,
-            boolean seamFill
+            boolean seamFill,
+            boolean framedSurface
     ) {
         PaneGeometry geometry = ((UltimatePane) state.getBlock()).geometry(state);
         List<PanePlane> containingPlanes = new ArrayList<>(3);
@@ -200,8 +215,12 @@ public final class SeamlessPaneModels {
 
         if (containingPlanes.size() == 1) {
             PanePlane plane = containingPlanes.getFirst();
-            List<Direction> borders = boundaryDirectionsExcept(quad, plane.axis());
-            return keepBoundarySection(seamFill, borders, level, pos, state, plane);
+            List<Direction> borders = boundaryDirectionsExcept(
+                    quad, plane.axis(), framedSurface ? 1.0F / 16.0F : PANE_THICKNESS
+            );
+            return keepBoundarySection(
+                    seamFill, framedSurface, borders, level, pos, state, plane
+            );
         }
 
         return !seamFill;
@@ -209,6 +228,7 @@ public final class SeamlessPaneModels {
 
     private static boolean keepBoundarySection(
             boolean seamFill,
+            boolean framedSurface,
             List<Direction> borders,
             BlockAndTintGetter level,
             BlockPos pos,
@@ -219,11 +239,17 @@ public final class SeamlessPaneModels {
             return !seamFill;
         }
 
-        boolean everyBorderContinues = borders.stream().allMatch(direction ->
+        long continuingBorders = borders.stream().filter(direction ->
                 PaneConnectionQueries.hasMatchingContinuation(
                         level, pos, state, direction, plane)
-        );
-        return seamFill == everyBorderContinues;
+        ).count();
+        // A one-pixel wood corner also belongs to the perpendicular outside frame, so keep it
+        // until every one of its borders continues. Glass/concrete boundary pixels, however,
+        // must disappear as soon as any marked border continues or they peek into the seam.
+        boolean replaceWithGlass = framedSurface
+                ? continuingBorders == borders.size()
+                : continuingBorders > 0;
+        return seamFill == replaceWithGlass;
     }
 
     private static long continuationMask(BlockAndTintGetter level, BlockPos pos, BlockState state) {
@@ -272,11 +298,13 @@ public final class SeamlessPaneModels {
 
     private static List<Direction> boundaryDirectionsExcept(
             MutableQuadView quad,
-            Direction.Axis excludedAxis
+            Direction.Axis excludedAxis,
+            float thickness
     ) {
         List<Direction> directions = new ArrayList<>(2);
         for (Direction direction : Direction.values()) {
-            if (direction.getAxis() != excludedAxis && insideFaceSlab(quad, direction)) {
+            if (direction.getAxis() != excludedAxis
+                    && insideFaceSlab(quad, direction, thickness)) {
                 directions.add(direction);
             }
         }
@@ -284,11 +312,19 @@ public final class SeamlessPaneModels {
     }
 
     private static boolean insideFaceSlab(MutableQuadView quad, Direction direction) {
+        return insideFaceSlab(quad, direction, PANE_THICKNESS);
+    }
+
+    private static boolean insideFaceSlab(
+            MutableQuadView quad,
+            Direction direction,
+            float thickness
+    ) {
         boolean minimum = direction.getAxisDirection() == Direction.AxisDirection.NEGATIVE;
         for (int vertex = 0; vertex < 4; vertex++) {
             float coordinate = coordinate(quad, vertex, direction.getAxis());
-            if (minimum ? coordinate > PANE_THICKNESS + EPSILON
-                    : coordinate < 1.0F - PANE_THICKNESS - EPSILON) {
+            if (minimum ? coordinate > thickness + EPSILON
+                    : coordinate < 1.0F - thickness - EPSILON) {
                 return false;
             }
         }
@@ -305,9 +341,9 @@ public final class SeamlessPaneModels {
         return true;
     }
 
-    /** Generated seam replacements carry an explicit marker that survives model baking. */
-    private static boolean isSeamFillQuad(MutableQuadView quad) {
-        return quad.tintIndex() == SEAM_FILL_TINT_INDEX;
+    private static boolean isModelMarker(int tintIndex) {
+        return tintIndex >= FRAMED_SEAM_FILL_TINT_INDEX
+                && tintIndex <= SEAM_FILL_TINT_INDEX;
     }
 
     private static float coordinate(MutableQuadView quad, int vertex, Direction.Axis axis) {

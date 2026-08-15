@@ -132,11 +132,26 @@ final class GeneratedPaneModelTest {
         assertTrue(hasOnePixelBroadWoodBand(dynamic, true));
         assertTrue(Files.exists(MODEL_ROOT.resolve("edge_oak_framed_glass_pane_shape_0.json")));
         assertTrue(Files.exists(MODEL_ROOT.resolve("edge_modded_framed_glass_pane_shape_0.json")));
+        JsonObject itemBase = readJson(MODEL_ROOT.resolve("edge_pane_item_framed_base.json"));
+        assertFalse(itemBase.toString().contains("tintindex"));
+        JsonObject oakItem = readJson(GENERATED_ROOT.resolve(
+                "assets/ultimateglass/models/item/oak_framed_ultimate_glass_pane.json"
+        ));
+        assertEquals(
+                "ultimateglass:block/edge_pane_item_framed_base",
+                oakItem.get("parent").getAsString()
+        );
 
         JsonObject framedRecipe = readJson(GENERATED_ROOT.resolve(
                 "data/ultimateglass/recipe/wood_framed_pane.json"
         ));
         assertEquals("ultimateglass:wood_framed_pane", framedRecipe.get("type").getAsString());
+    }
+
+    @Test
+    void framedSeamSamplesKeepTheirRealPixelDimensions() throws IOException {
+        assertSeamSampleDimensions("edge_pane_shape_0_framed_base.json");
+        assertSeamSampleDimensions("edge_pane_shape_0_dynamic_framed_base.json");
     }
 
     @Test
@@ -170,8 +185,8 @@ final class GeneratedPaneModelTest {
                 }
                 JsonObject face = element.getAsJsonObject("faces").getAsJsonObject(broadFace);
                 if ("#edge".equals(face.get("texture").getAsString())
-                        && face.has("tintindex") == dynamic
-                        && (!dynamic || face.get("tintindex").getAsInt() == 14)) {
+                        && face.has("tintindex")
+                        && face.get("tintindex").getAsInt() == (dynamic ? 12 : 13)) {
                     return true;
                 }
             }
@@ -253,13 +268,45 @@ final class GeneratedPaneModelTest {
 
                 if (paneFace.has("tintindex")) {
                     assertEquals(15, paneFace.get("tintindex").getAsInt());
-                    assertEquals("[7,7,9,9]", paneFace.getAsJsonArray("uv").toString());
                     seamless++;
                 } else {
                     normal++;
                 }
             }
             return new PaneElementCounts(normal, seamless);
+        }
+    }
+
+    private static void assertSeamSampleDimensions(String modelName) throws IOException {
+        JsonArray elements = readJson(MODEL_ROOT.resolve(modelName)).getAsJsonArray("elements");
+        for (JsonElement elementValue : elements) {
+            JsonObject element = elementValue.getAsJsonObject();
+            int[] from = coordinates(element.getAsJsonArray("from"));
+            int[] to = coordinates(element.getAsJsonArray("to"));
+            for (var entry : element.getAsJsonObject("faces").entrySet()) {
+                JsonObject face = entry.getValue().getAsJsonObject();
+                if (!face.has("tintindex")
+                        || (face.get("tintindex").getAsInt() != 11
+                        && face.get("tintindex").getAsInt() != 15)) {
+                    continue;
+                }
+
+                int[] uvAxes = switch (entry.getKey()) {
+                    case "west", "east" -> new int[] {2, 1};
+                    case "down", "up" -> new int[] {0, 2};
+                    case "north", "south" -> new int[] {0, 1};
+                    default -> throw new IllegalArgumentException(entry.getKey());
+                };
+                JsonArray uv = face.getAsJsonArray("uv");
+                float u0 = uv.get(0).getAsFloat();
+                float v0 = uv.get(1).getAsFloat();
+                float u1 = uv.get(2).getAsFloat();
+                float v1 = uv.get(3).getAsFloat();
+                assertEquals(to[uvAxes[0]] - from[uvAxes[0]], u1 - u0, 0.0001F);
+                assertEquals(to[uvAxes[1]] - from[uvAxes[1]], v1 - v0, 0.0001F);
+                assertEquals(16.0F, u0 + u1, 0.0001F);
+                assertEquals(16.0F, v0 + v1, 0.0001F);
+            }
         }
     }
 

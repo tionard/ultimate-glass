@@ -31,6 +31,8 @@ public final class UltimateGlassItems {
     private static final Map<Block, Item> PANE_ITEMS_BY_BLOCK = new LinkedHashMap<>();
     private static final Map<PaneFamily, Item> PANE_ITEMS_BY_FAMILY = new LinkedHashMap<>();
     private static final Map<PaneMaterial, Item> UNFRAMED_ITEMS = new LinkedHashMap<>();
+    private static final Map<Identifier, PaneMaterial> DYNAMIC_FRAME_MATERIALS =
+            new LinkedHashMap<>();
 
     private static final ResourceKey<Item> COPPER_TOOL_KEY = key("copper_glaziers_tool");
     private static final ResourceKey<Item> IRON_TOOL_KEY = key("iron_glaziers_tool");
@@ -90,6 +92,10 @@ public final class UltimateGlassItems {
                 .orElse(null);
     }
 
+    public static PaneMaterial dynamicFrameMaterial(Identifier itemId) {
+        return DYNAMIC_FRAME_MATERIALS.get(itemId);
+    }
+
     public static ItemStack framedStack(PaneMaterial material, Block plank) {
         PaneFrame fixedFrame = PaneFrame.fromPlank(plank.asItem());
         PaneFamily family = fixedFrame == null
@@ -136,6 +142,9 @@ public final class UltimateGlassItems {
         PANE_ITEMS_BY_BLOCK.put(family.edgePane(), item);
         PANE_ITEMS_BY_BLOCK.put(family.centeredPane(), item);
         PANE_ITEMS_BY_FAMILY.put(family, item);
+        if (family.appearance().frame().isDynamic()) {
+            DYNAMIC_FRAME_MATERIALS.put(key.identifier(), family.appearance().material());
+        }
         if (family.appearance().frame() == PaneFrame.NONE) {
             UNFRAMED_ITEMS.put(family.appearance().material(), item);
         }

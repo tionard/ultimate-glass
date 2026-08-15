@@ -115,6 +115,11 @@ tasks.register("generatePaneResources") {
         def paneSurfaceElements = { List<Integer> paneFrom, List<Integer> paneTo, String plane, String frameMode ->
             int planeAxis = directions[plane].axis
             def inPlaneAxes = (0..2).findAll { axis -> axis != planeAxis }
+            def uvAxes = switch (planeAxis) {
+                case 0 -> [2, 1]
+                case 1 -> [0, 2]
+                default -> [0, 1]
+            }
             def cuts = [:]
 
             inPlaneAxes.each { axis ->
@@ -145,28 +150,47 @@ tasks.register("generatePaneResources") {
                                 || (from[axis] == 15 && to[axis] == 16)
                     }
                     String surfaceTexture = woodBand ? "#edge" : "#pane"
+                    int normalTintIndex = woodBand && frameMode != "item"
+                            ? (frameMode == "dynamic" ? 12 : 13)
+                            : -1
                     def normalFaces = [:]
-                    normalFaces[plane] = texturedFace(surfaceTexture, frameMode == "dynamic")
-                    normalFaces[directions[plane].opposite] = texturedFace(surfaceTexture, frameMode == "dynamic")
+                    normalFaces[plane] = [texture: surfaceTexture]
+                    normalFaces[directions[plane].opposite] = [texture: surfaceTexture]
+                    if (normalTintIndex >= 0) {
+                        normalFaces[plane].tintindex = normalTintIndex
+                        normalFaces[directions[plane].opposite].tintindex = normalTintIndex
+                    }
                     elements << [from: from, to: to, faces: normalFaces]
 
                     boolean boundarySection = inPlaneAxes.any { axis ->
                         (from[axis] == 0 && to[axis] <= 2)
                                 || (from[axis] >= 14 && to[axis] == 16)
                     }
-                    if (boundarySection) {
-                        // Sample a real 2x2 region at the pane texture's centre. Tint index 15 is
-                        // metadata for the runtime wrapper and is cleared before the quad emits.
+                    if (boundarySection && frameMode != "item") {
+                        // Preserve the segment's real pixel dimensions while sampling the texture
+                        // centre. Stretching the old fixed 2x2 sample over a 1x12 framed strip made
+                        // stained-glass joins look like bright, opaque gaps.
+                        float uvWidth = to[uvAxes[0]] - from[uvAxes[0]]
+                        float uvHeight = to[uvAxes[1]] - from[uvAxes[1]]
+                        def seamUv = [
+                                8.0F - uvWidth / 2.0F,
+                                8.0F - uvHeight / 2.0F,
+                                8.0F + uvWidth / 2.0F,
+                                8.0F + uvHeight / 2.0F
+                        ]
+                        // Marker 11 pairs with a one-pixel wood surface; marker 15 is a normal
+                        // two-pixel glass/edge replacement. Both are cleared by the client wrapper.
+                        int seamTintIndex = woodBand ? 11 : 15
                         def seamlessFaces = [:]
                         seamlessFaces[plane] = [
                                 texture: "#pane",
-                                uv: [7, 7, 9, 9],
-                                tintindex: 15
+                                uv: seamUv,
+                                tintindex: seamTintIndex
                         ]
                         seamlessFaces[directions[plane].opposite] = [
                                 texture: "#pane",
-                                uv: [7, 7, 9, 9],
-                                tintindex: 15
+                                uv: seamUv,
+                                tintindex: seamTintIndex
                         ]
                         elements << [from: from, to: to, faces: seamlessFaces]
                     }
@@ -324,6 +348,10 @@ tasks.register("generatePaneResources") {
                     createMergedShape(mask, "dynamic")
             )
         }
+        writeJson(
+                "assets/ultimateglass/models/block/edge_pane_item_framed_base.json",
+                createMergedShape(0, "item")
+        )
 
         def centeredAxes = [
                 x: [axis: 0, negative: "west", positive: "east"],
@@ -681,7 +709,10 @@ tasks.register("generatePaneResources") {
 
                 writeJson(
                         "assets/ultimateglass/models/item/${frameItemName}.json",
-                        [parent: "ultimateglass:block/${frameBlockName}_shape_0"]
+                        [
+                                parent: "ultimateglass:block/edge_pane_item_framed_base",
+                                textures: frameTextures
+                        ]
                 )
                 writeJson(
                         "assets/ultimateglass/items/${frameItemName}.json",
