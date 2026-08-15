@@ -37,15 +37,19 @@ Run this checklist in a new world and a backed-up existing world.
 ## Modded plank frames
 
 1. Install at least two mods that add visibly different planks to `#minecraft:planks`.
-2. Craft each plank with clear, one stained, and tinted Tempered panes.
-3. Verify the item retains the correct source plank and the placed frame uses that plank block's
+2. Craft and place at least three connected panes using one modded plank. Confirm every already
+   placed pane keeps that modded texture when the next pane changes its connection state.
+3. Confirm a plank named `Umbran Planks` produces an item named `Umbran-Framed ...`, while a
+   nonstandard plank-tagged item whose name does not end in `Planks` keeps its full display name.
+4. Craft each plank with clear, one stained, and tinted Tempered panes.
+5. Verify the item retains the correct source plank and the placed frame uses that plank block's
    texture under both default resources and a resource pack.
-4. Save/reload, cross a chunk boundary, unload/reload chunks, and restart the server; verify the
+6. Save/reload, cross a chunk boundary, unload/reload chunks, and restart the server; verify the
    frame identity persists.
-5. Pick-block, Silk Touch, and diamond-tool harvest the pane; replace it and verify identity.
-6. Toggle edge/centred geometry and rotate it; verify identity and texture remain unchanged.
-7. Confirm the dynamic frame BlockEntity has no ticker and no dedicated per-frame renderer.
-8. Remove the contributing wood mod only in a disposable world and confirm the fallback does not
+7. Pick-block, Silk Touch, and diamond-tool harvest the pane; replace it and verify identity.
+8. Toggle edge/centred geometry and rotate it; verify identity and texture remain unchanged.
+9. Confirm the dynamic frame BlockEntity has no ticker and no dedicated per-frame renderer.
+10. Remove the contributing wood mod only in a disposable world and confirm the fallback does not
    crash; restore the mod before evaluating data preservation.
 
 ## Seamless frame rules

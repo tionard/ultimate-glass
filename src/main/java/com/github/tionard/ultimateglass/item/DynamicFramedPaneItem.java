@@ -15,6 +15,8 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 
 /** One registry item can carry every modded plank frame while retaining an informative name. */
 public final class DynamicFramedPaneItem extends BlockItem {
+    private static final String PLANKS_SUFFIX_KEY = "frame.ultimateglass.planks_suffix";
+
     private final PaneMaterial material;
 
     public DynamicFramedPaneItem(Block block, PaneMaterial material, Properties properties) {
@@ -30,10 +32,15 @@ public final class DynamicFramedPaneItem extends BlockItem {
         );
         Block frame = BuiltInRegistries.BLOCK.getOptional(frameId).orElse(Blocks.OAK_PLANKS);
         ItemStack basePane = new ItemStack(UltimateGlassItems.paneItemFor(material));
+        Component frameName = FrameDisplayName.withoutPlanksSuffix(
+                new ItemStack(frame.asItem()).getHoverName(),
+                Component.translatable(PLANKS_SUFFIX_KEY).getString()
+        );
         return Component.translatable(
                 "item.ultimateglass.dynamic_framed_pane",
-                new ItemStack(frame.asItem()).getHoverName(),
+                frameName,
                 basePane.getHoverName()
         );
     }
+
 }
