@@ -47,6 +47,12 @@ final class GeneratedPaneModelTest {
     }
 
     @Test
+    void transparentPaneSeamsReplaceOnlyTheOnePixelTextureOutline() throws IOException {
+        assertOnePixelTransparentBoundary("edge_pane_shape_0_base.json");
+        assertOnePixelTransparentBoundary("centered_pane_shape_1_base.json");
+    }
+
+    @Test
     void centeredJunctionModelsTrimEveryTransparentIntersection() throws IOException {
         for (int mask : new int[] {3, 5, 6}) {
             assertEquals(
@@ -359,6 +365,41 @@ final class GeneratedPaneModelTest {
 
         assertEquals(24, normalBoundarySections.size());
         assertEquals(normalBoundarySections, seamBoundarySections);
+    }
+
+    private static void assertOnePixelTransparentBoundary(String modelName) throws IOException {
+        JsonArray elements = readJson(MODEL_ROOT.resolve(modelName)).getAsJsonArray("elements");
+        int replacementCount = 0;
+        for (JsonElement elementValue : elements) {
+            JsonObject element = elementValue.getAsJsonObject();
+            JsonObject faces = element.getAsJsonObject("faces");
+            JsonObject replacement = faces.entrySet().stream()
+                    .map(entry -> entry.getValue().getAsJsonObject())
+                    .filter(face -> face.has("tintindex")
+                            && face.get("tintindex").getAsInt() == 15)
+                    .findFirst()
+                    .orElse(null);
+            if (replacement == null) {
+                continue;
+            }
+
+            int[] from = coordinates(element.getAsJsonArray("from"));
+            int[] to = coordinates(element.getAsJsonArray("to"));
+            int thinDimensions = 0;
+            for (int axis = 0; axis < 3; axis++) {
+                if ((from[axis] == 0 && to[axis] == 1)
+                        || (from[axis] == 15 && to[axis] == 16)) {
+                    thinDimensions++;
+                }
+            }
+            assertTrue(
+                    thinDimensions > 0,
+                    () -> modelName + " has a replacement wider than its one-pixel outline: "
+                            + element.getAsJsonArray("from") + ":" + element.getAsJsonArray("to")
+            );
+            replacementCount++;
+        }
+        assertEquals(8, replacementCount);
     }
 
     private record PaneElementCounts(int normal, int seamless) {

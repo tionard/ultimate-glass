@@ -124,7 +124,10 @@ tasks.register("generatePaneResources") {
 
             inPlaneAxes.each { axis ->
                 def axisCuts = [paneFrom[axis]]
-                (frameMode == "none" ? [2, 14] : [1, 2, 14, 15]).each { cut ->
+                // Vanilla glass textures draw their outside outline in exactly one pixel even
+                // though the pane itself is two pixels thick. Keep that outline independently so
+                // a horizontal join cannot punch a two-pixel hole in a perpendicular outer edge.
+                (frameMode == "none" ? [1, 15] : [1, 2, 14, 15]).each { cut ->
                     if (paneFrom[axis] < cut && cut < paneTo[axis]) {
                         axisCuts << cut
                     }

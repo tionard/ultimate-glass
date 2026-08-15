@@ -26,6 +26,7 @@ import com.github.tionard.ultimateglass.client.UltimateGlassClientConfig;
 import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PanePlane;
+import com.github.tionard.ultimateglass.pane.PaneSeamPolicy;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 
 /** Removes frame pieces only where matching Ultimate panes continue the same sheet. */
@@ -182,11 +183,23 @@ public final class SeamlessPaneModels {
 
         if (containingPlanes.size() == 1) {
             PanePlane plane = containingPlanes.getFirst();
+            boolean preservePerpendicularOuterEdge = preservesPerpendicularOuterEdge(
+                    quad, state, plane, framedSurface
+            );
             List<Direction> borders = boundaryDirectionsExcept(
-                    quad, plane.axis(), framedSurface ? 1.0F / 16.0F : PANE_THICKNESS
+                    quad,
+                    plane.axis(),
+                    preservePerpendicularOuterEdge ? 1.0F / 16.0F : PANE_THICKNESS
             );
             return keepBoundarySection(
-                    seamFill, framedSurface, borders, level, pos, state, plane);
+                    seamFill,
+                    preservePerpendicularOuterEdge,
+                    borders,
+                    level,
+                    pos,
+                    state,
+                    plane
+            );
         }
 
         return !seamFill;
@@ -215,11 +228,22 @@ public final class SeamlessPaneModels {
 
         if (containingPlanes.size() == 1) {
             PanePlane plane = containingPlanes.getFirst();
+            boolean preservePerpendicularOuterEdge = preservesPerpendicularOuterEdge(
+                    quad, state, plane, framedSurface
+            );
             List<Direction> borders = boundaryDirectionsExcept(
-                    quad, plane.axis(), framedSurface ? 1.0F / 16.0F : PANE_THICKNESS
+                    quad,
+                    plane.axis(),
+                    preservePerpendicularOuterEdge ? 1.0F / 16.0F : PANE_THICKNESS
             );
             return keepBoundarySection(
-                    seamFill, framedSurface, borders, level, pos, state, plane
+                    seamFill,
+                    preservePerpendicularOuterEdge,
+                    borders,
+                    level,
+                    pos,
+                    state,
+                    plane
             );
         }
 
@@ -228,7 +252,7 @@ public final class SeamlessPaneModels {
 
     private static boolean keepBoundarySection(
             boolean seamFill,
-            boolean framedSurface,
+            boolean preservePerpendicularOuterEdge,
             List<Direction> borders,
             BlockAndTintGetter level,
             BlockPos pos,
@@ -243,13 +267,29 @@ public final class SeamlessPaneModels {
                 PaneConnectionQueries.hasMatchingContinuation(
                         level, pos, state, direction, plane)
         ).count();
-        // A one-pixel wood corner also belongs to the perpendicular outside frame, so keep it
-        // until every one of its borders continues. Glass/concrete boundary pixels, however,
-        // must disappear as soon as any marked border continues or they peek into the seam.
-        boolean replaceWithGlass = framedSurface
-                ? continuingBorders == borders.size()
-                : continuingBorders > 0;
+        boolean replaceWithGlass = PaneSeamPolicy.shouldReplaceBoundary(
+                preservePerpendicularOuterEdge,
+                borders.size(),
+                (int) continuingBorders
+        );
         return seamFill == replaceWithGlass;
+    }
+
+    private static boolean preservesPerpendicularOuterEdge(
+            MutableQuadView quad,
+            BlockState state,
+            PanePlane plane,
+            boolean framedSurface
+    ) {
+        if (framedSurface) {
+            return true;
+        }
+        // Plain glass broad faces use the one-pixel outline from the glass texture. Side faces and
+        // framed inner bands still occupy the full two-pixel pane thickness and must disappear as
+        // soon as their matching continuation exists.
+        return state.getBlock() instanceof UltimatePane pane
+                && !pane.appearance().isFramed()
+                && quad.lightFace().getAxis() == plane.axis();
     }
 
     private static long continuationMask(BlockAndTintGetter level, BlockPos pos, BlockState state) {
