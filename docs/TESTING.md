@@ -1,13 +1,13 @@
-# Ultimate Glass 0.2.0-beta.1 regression checklist
+# Ultimate Glass 0.2.0-beta.2 regression checklist
 
-Beta.1 intentionally changes no gameplay. Run the complete 0.1.8 checklist below against both a
-new world and a backed-up world last saved with the released 0.1.8 JAR.
+Beta.2 adds the tinted family. Run the complete beta.1 regression checklist below against both a
+new world and a backed-up world, then run the tinted-specific checks.
 
 ## Automated gate
 
 1. Run `gradle build` with Java 25.
 2. Confirm the pane material, plane-set, relative-geometry, and rotation unit tests pass.
-3. Confirm the output is `build/libs/ultimate-glass-0.2.0-beta.1.jar`.
+3. Confirm the output is `build/libs/ultimate-glass-0.2.0-beta.2.jar`.
 4. Start a dedicated server with the beta JAR and wait for the normal ready message.
 5. Confirm no registered block/item IDs or BlockState property names differ from 0.1.8.
 
@@ -32,6 +32,10 @@ Test Minecraft Java 26.2 with Fabric Loader 0.19.3, Fabric API, Ultimate Glass, 
 4. Repeat both directions for several stained colours and verify no colour changes or item loss.
 5. Place a vanilla pane item and verify it uses untouched vanilla connected-pane geometry.
 6. Place an Ultimate Glass Pane and verify it uses outside-face geometry.
+7. Craft six tinted glass blocks in two full rows and confirm the output is 16 Ultimate Tinted Glass Panes.
+8. Confirm there is no reverse tinted-pane recipe.
+9. Exercise edge, centred, horizontal, corner, seamless, waterlogged, rotation, toggle, and harvesting behavior with tinted panes.
+10. Compare a sealed room made from Ultimate tinted panes with vanilla tinted glass and verify both block light and skylight completely.
 
 ## Shift placement modes
 

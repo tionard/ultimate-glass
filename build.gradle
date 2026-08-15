@@ -337,7 +337,8 @@ tasks.register("generatePaneResources") {
                 [suffix: "brown", pane: "minecraft:block/brown_stained_glass", edge: "minecraft:block/brown_concrete"],
                 [suffix: "green", pane: "minecraft:block/green_stained_glass", edge: "minecraft:block/green_concrete"],
                 [suffix: "red", pane: "minecraft:block/red_stained_glass", edge: "minecraft:block/red_concrete"],
-                [suffix: "black", pane: "minecraft:block/black_stained_glass", edge: "minecraft:block/black_concrete"]
+                [suffix: "black", pane: "minecraft:block/black_stained_glass", edge: "minecraft:block/black_concrete"],
+                [suffix: "tinted", pane: "minecraft:block/tinted_glass", edge: "minecraft:block/tinted_glass", tinted: true]
         ]
 
         def orientations = [
@@ -350,13 +351,20 @@ tasks.register("generatePaneResources") {
         ]
 
         colors.each { color ->
-            String blockName = color.suffix.isEmpty()
+            boolean tinted = color.tinted ?: false
+            String blockName = tinted
+                    ? "edge_tinted_glass_pane"
+                    : color.suffix.isEmpty()
                     ? "edge_glass_pane"
                     : "edge_${color.suffix}_stained_glass_pane"
-            String centeredBlockName = color.suffix.isEmpty()
+            String centeredBlockName = tinted
+                    ? "centered_tinted_glass_pane"
+                    : color.suffix.isEmpty()
                     ? "centered_glass_pane"
                     : "centered_${color.suffix}_stained_glass_pane"
-            String vanillaPaneName = color.suffix.isEmpty()
+            String vanillaPaneName = tinted
+                    ? "tinted_glass_pane"
+                    : color.suffix.isEmpty()
                     ? "glass_pane"
                     : "${color.suffix}_stained_glass_pane"
             String customItemName = "ultimate_${vanillaPaneName}"
@@ -380,27 +388,41 @@ tasks.register("generatePaneResources") {
                     ]
             )
 
-            writeJson(
-                    "data/ultimateglass/recipe/${customItemName}.json",
-                    [
-                            type: "minecraft:crafting_shapeless",
-                            category: "building",
-                            group: "ultimate_glass_panes",
-                            ingredients: ["minecraft:${vanillaPaneName}"],
-                            result: [id: "ultimateglass:${customItemName}"]
-                    ]
-            )
+            if (tinted) {
+                writeJson(
+                        "data/ultimateglass/recipe/${customItemName}.json",
+                        [
+                                type: "minecraft:crafting_shaped",
+                                category: "building",
+                                group: "ultimate_glass_panes",
+                                pattern: ["###", "###"],
+                                key: ["#": "minecraft:tinted_glass"],
+                                result: [id: "ultimateglass:${customItemName}", count: 16]
+                        ]
+                )
+            } else {
+                writeJson(
+                        "data/ultimateglass/recipe/${customItemName}.json",
+                        [
+                                type: "minecraft:crafting_shapeless",
+                                category: "building",
+                                group: "ultimate_glass_panes",
+                                ingredients: ["minecraft:${vanillaPaneName}"],
+                                result: [id: "ultimateglass:${customItemName}"]
+                        ]
+                )
 
-            writeJson(
-                    "data/ultimateglass/recipe/${vanillaPaneName}_from_${customItemName}.json",
-                    [
-                            type: "minecraft:crafting_shapeless",
-                            category: "building",
-                            group: "vanilla_glass_panes",
-                            ingredients: ["ultimateglass:${customItemName}"],
-                            result: [id: "minecraft:${vanillaPaneName}"]
-                    ]
-            )
+                writeJson(
+                        "data/ultimateglass/recipe/${vanillaPaneName}_from_${customItemName}.json",
+                        [
+                                type: "minecraft:crafting_shapeless",
+                                category: "building",
+                                group: "vanilla_glass_panes",
+                                ingredients: ["ultimateglass:${customItemName}"],
+                                result: [id: "minecraft:${vanillaPaneName}"]
+                        ]
+                )
+            }
 
             [blockName, centeredBlockName].each { customBlockName ->
                 writeJson(

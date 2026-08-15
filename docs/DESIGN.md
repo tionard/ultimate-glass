@@ -15,7 +15,7 @@ The 0.2 architecture separates a pane's appearance from its physical geometry:
 - `UltimatePane` lets render and fluid paths consume appearance and geometry without duplicating
   block-specific state decoding.
 
-Ordinary clear and stained panes continue to be normal blocks. No BlockEntity or ticker is used.
+Ordinary clear, stained, and tinted panes continue to be normal blocks. No BlockEntity or ticker is used.
 Registered IDs and the compatibility-sensitive `FACING`, connection, `AXIS`, and `WATERLOGGED`
 properties remain unchanged from 0.1.8.
 
@@ -30,6 +30,11 @@ Each clear/stained family contains three blocks:
 Only the two mod-owned geometries belong to the tool toggle. A separate Ultimate Glass Pane item places the outside-face block. Vanilla pane items place vanilla blocks and never enter the toggle cycle.
 
 Every vanilla pane has a reversible shapeless conversion recipe at a one-to-one ratio. Both custom block geometries map back to the same Ultimate Glass Pane item when harvested intact. The family also owns one shared `PaneAppearance`, and lookups are available by vanilla block, custom block, or `PaneMaterial`.
+
+Tinted glass is a distinct family without a nonexistent vanilla-pane counterpart. Six tinted glass
+blocks craft 16 Ultimate Tinted Glass Panes, with no lossy reverse recipe. Both tinted geometries
+return that item when harvested and override skylight propagation/light dampening to match vanilla
+tinted glass while continuing to use the shared pane geometry.
 
 ## Placement
 

@@ -1,6 +1,8 @@
 package com.github.tionard.ultimateglass.render;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -18,6 +20,7 @@ final class GeneratedPaneModelTest {
     private static final Path MODEL_ROOT = Path.of(
             "build/generated/ultimateGlassPaneResources/assets/ultimateglass/models/block"
     );
+    private static final Path GENERATED_ROOT = Path.of("build/generated/ultimateGlassPaneResources");
 
     @Test
     void singleEdgePaneProvidesInteriorSamplesForEveryBoundarySection() throws IOException {
@@ -38,6 +41,26 @@ final class GeneratedPaneModelTest {
     void everyEdgeSeamReplacementSamplesThePaneTextureCenter() throws IOException {
         for (int mask = 0; mask < 16; mask++) {
             paneElementCounts("edge_pane_shape_" + mask + "_base.json");
+        }
+    }
+
+    @Test
+    void tintedFamilyGeneratesBothGeometriesAndNonLossyRecipe() throws IOException {
+        Path assets = GENERATED_ROOT.resolve("assets/ultimateglass");
+        assertTrue(Files.exists(assets.resolve("blockstates/edge_tinted_glass_pane.json")));
+        assertTrue(Files.exists(assets.resolve("blockstates/centered_tinted_glass_pane.json")));
+
+        Path recipeRoot = GENERATED_ROOT.resolve("data/ultimateglass/recipe");
+        JsonObject recipe = readJson(recipeRoot.resolve("ultimate_tinted_glass_pane.json"));
+        assertEquals("minecraft:crafting_shaped", recipe.get("type").getAsString());
+        assertEquals(16, recipe.getAsJsonObject("result").get("count").getAsInt());
+        assertFalse(Files.exists(recipeRoot.resolve(
+                "tinted_glass_pane_from_ultimate_tinted_glass_pane.json")));
+    }
+
+    private static JsonObject readJson(Path path) throws IOException {
+        try (Reader reader = Files.newBufferedReader(path)) {
+            return JsonParser.parseReader(reader).getAsJsonObject();
         }
     }
 

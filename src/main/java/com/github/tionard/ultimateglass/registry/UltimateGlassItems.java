@@ -70,8 +70,7 @@ public final class UltimateGlassItems {
     }
 
     private static void registerPaneItem(PaneFamily family) {
-        String vanillaName = BuiltInRegistries.BLOCK.getKey(family.vanillaPane()).getPath();
-        ResourceKey<Item> key = key("ultimate_" + vanillaName);
+        ResourceKey<Item> key = key(family.itemPath());
         BlockItem item = new BlockItem(family.edgePane(), new Item.Properties().setId(key));
         Registry.register(BuiltInRegistries.ITEM, key, item);
 

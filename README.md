@@ -2,17 +2,18 @@
 
 Ultimate Glass is a Fabric mod for Minecraft Java 26.2 that gives builders precise edge-aligned glass panes, rotatable centred full sheets, connected corners, and tiered glassworking tools.
 
-## Version 0.2.0-beta.1
+## Version 0.2.0-beta.2
 
-The first 0.2 beta is primarily an architecture release. It retains the complete 0.1.8 feature set and
-registered IDs while introducing shared material, appearance, pane-plane, geometry, rotation, and
-connection concepts for later 0.2 features. It also fixes a carry-over seamless-rendering defect
-that gave internal stained-glass edges the wrong colour and opacity.
+Beta.2 adds Ultimate Tinted Glass Panes to the beta.1 architecture. Tinted panes support the same
+edge, centred, corner, rotation, waterlogging, seamless-rendering, and tool behavior as every other
+Ultimate pane while retaining vanilla tinted glass's complete block-light and skylight dampening.
 
 ### Gameplay features
 
 - Vanilla glass panes remain fully vanilla and place with their normal connected geometry.
 - Clear and all 16 stained variants have separate Ultimate Glass Pane items.
+- Tinted glass has a distinct Ultimate Tinted Glass Pane item and is not treated as a stain colour.
+- Six tinted glass blocks craft 16 Ultimate Tinted Glass Panes in the vanilla pane pattern.
 - One vanilla pane converts to one matching Ultimate Glass Pane in any crafting grid, and the recipe works in reverse.
 - Ultimate Glass Panes initially place against an outside face of the block space.
 - Normal placement selects the side farthest from the player; Shift placement can copy an existing orientation or use the configured clicked-face/near-player fallback.
@@ -66,8 +67,8 @@ Ultimate Glass does not add properties to vanilla pane block states or intercept
 Ordinary panes remain normal blocks with no BlockEntities. Both edge and centred blocks expose a
 common pane appearance and produce a `PaneGeometry` made from immutable `PanePlane` values. The
 same geometry now drives outline/collision shapes, seamless continuation checks, rotation, and
-edge-water clipping. `PaneMaterial` keeps clear, stained, and tinted glass logically separate;
-tinted is reserved for beta.2 and is not registered by beta.1.
+edge-water clipping. `PaneMaterial` keeps clear, stained, and tinted glass logically separate.
+Tinted panes remain ordinary blocks and explicitly reproduce vanilla tinted-glass light dampening.
 
 The existing `FACING`, edge connection, `AXIS`, and `WATERLOGGED` properties are unchanged.
 

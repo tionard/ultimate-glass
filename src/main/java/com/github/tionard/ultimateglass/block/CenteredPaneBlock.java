@@ -24,6 +24,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
+import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 
@@ -110,6 +111,19 @@ public final class CenteredPaneBlock extends Block implements SimpleWaterloggedB
     @Override
     protected VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return Shapes.empty();
+    }
+
+    @Override
+    protected boolean propagatesSkylightDown(BlockState state) {
+        return appearance.material() != PaneMaterial.TINTED
+                && super.propagatesSkylightDown(state);
+    }
+
+    @Override
+    protected int getLightDampening(BlockState state) {
+        return appearance.material() == PaneMaterial.TINTED
+                ? 15
+                : super.getLightDampening(state);
     }
 
     @Override
