@@ -23,6 +23,7 @@ import com.github.tionard.ultimateglass.item.DynamicFramedPaneItem;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
 import com.github.tionard.ultimateglass.item.StaticFramedPaneItem;
+import com.github.tionard.ultimateglass.item.TemperedPaneItem;
 import com.github.tionard.ultimateglass.pane.PaneFrame;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
@@ -128,7 +129,7 @@ public final class UltimateGlassItems {
                         new Item.Properties().setId(key)
                 )
                 : family.appearance().frame() == PaneFrame.NONE
-                ? new BlockItem(family.edgePane(), new Item.Properties().setId(key))
+                ? new TemperedPaneItem(family.edgePane(), new Item.Properties().setId(key))
                 : new StaticFramedPaneItem(
                         family.edgePane(),
                         family.appearance().frame(),

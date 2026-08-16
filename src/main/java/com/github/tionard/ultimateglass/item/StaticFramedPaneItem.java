@@ -1,7 +1,6 @@
 package com.github.tionard.ultimateglass.item;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
@@ -9,7 +8,7 @@ import com.github.tionard.ultimateglass.pane.PaneFrame;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 
-public final class StaticFramedPaneItem extends BlockItem {
+public final class StaticFramedPaneItem extends TemperedPaneItem {
     private final PaneFrame frame;
     private final PaneMaterial material;
 

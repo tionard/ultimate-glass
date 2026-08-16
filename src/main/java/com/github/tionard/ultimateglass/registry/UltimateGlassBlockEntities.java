@@ -9,8 +9,18 @@ import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityT
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
+import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 
 public final class UltimateGlassBlockEntities {
+    public static final BlockEntityType<CompositePaneBlockEntity> COMPOSITE_PANE = Registry.register(
+            BuiltInRegistries.BLOCK_ENTITY_TYPE,
+            Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "composite_pane"),
+            FabricBlockEntityTypeBuilder.create(
+                    CompositePaneBlockEntity::new,
+                    UltimateGlassBlocks.COMPOSITE_PANE
+            ).build()
+    );
+
     public static final BlockEntityType<DynamicFrameBlockEntity> DYNAMIC_FRAME = Registry.register(
             BuiltInRegistries.BLOCK_ENTITY_TYPE,
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "dynamic_pane_frame"),

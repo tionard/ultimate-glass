@@ -4,10 +4,24 @@ Tempered Glass (internally `ultimateglass` for world compatibility) is a Fabric 
 Java 26.2. It gives builders edge-aligned glass panes, rotatable centred sheets, connected corners,
 wood framing, and tiered glassworking tools.
 
-## Version 0.2.0-beta.4
+## Version 0.2.0-beta.5
 
-Beta.4 adds wood-framed panes and changes the custom pane progression from crafting conversion to
-tempering in a furnace or blast furnace.
+Beta.5 adds composite panes: a Tempered pane can occupy the open portion of a stair or single slab
+without deleting the original host state. Beta.4's wood framing and furnace/blast-furnace tempering
+remain unchanged.
+
+### Stair and slab composites
+
+- Use any Tempered pane on a stair or non-double slab to install it in the same block cell.
+- Stair facing, half, shape, slab half, waterlogging, pane material, and frame identity are stored.
+- The original host model and pane model are emitted into the cached chunk mesh; composites have no
+  ticking logic and no per-frame BlockEntityRenderer.
+- Collision and outline combine the real host shape with only the pane volume outside that host.
+- Shift + right-click with an iron or diamond Glazier's Tool removes the pane, restores the exact
+  host state, and returns the pane item.
+- Normal breaking evaluates host drops with the original host state. The pane follows the existing
+  diamond-tool recovery rule.
+- Double slabs and hosts with their own BlockEntity are deliberately rejected in this beta.
 
 ### Pane progression
 
@@ -61,8 +75,8 @@ installed on the server and every connecting client.
 
 ## Release plan
 
-- `0.2.0-beta.4`: Tempered naming/progression and universal plank framing (this iteration).
-- `0.2.0-beta.5`: Stair/slab composite panes; final planned feature beta for 0.2.
+- `0.2.0-beta.4`: Tempered naming/progression and universal plank framing.
+- `0.2.0-beta.5`: Stair/slab composite panes; final planned feature beta for 0.2 (this iteration).
 - `0.2.0`: Release after beta.5 validation, with no additional 0.2 feature betas planned.
 - Mosaic foundation, layered mosaics, and the broader integration/performance phase previously
   labelled beta.6-beta.8 move to the next feature release, currently targeted as 0.3.0.
