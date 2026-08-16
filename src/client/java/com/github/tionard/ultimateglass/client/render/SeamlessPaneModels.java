@@ -19,15 +19,19 @@ import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
+import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.DynamicFramedPane;
+import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
+import com.github.tionard.ultimateglass.block.entity.PaneFrameSource;
 import com.github.tionard.ultimateglass.client.UltimateGlassClientConfig;
 import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.PaneSeamPolicy;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
+import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 
 /** Removes frame pieces only where matching Ultimate panes continue the same sheet. */
 public final class SeamlessPaneModels {
@@ -58,10 +62,79 @@ public final class SeamlessPaneModels {
                         || state.getBlock() instanceof CenteredPaneBlock) {
                     return new SeamlessPaneModel(model);
                 }
+                if (state.getBlock() instanceof CompositePaneBlock) {
+                    return new CompositePaneModel(model);
+                }
                 return model;
             });
             context.modifyItemModelAfterBake().register(DynamicFramePaneItemRenderer::wrap);
         });
+    }
+
+    /** Emits both stored models into one cached chunk mesh; no BlockEntityRenderer is involved. */
+    private static final class CompositePaneModel extends WrapperBlockStateModel {
+        private CompositePaneModel(BlockStateModel wrapped) {
+            super(wrapped);
+        }
+
+        @Override
+        public void emitQuads(
+                QuadEmitter emitter,
+                BlockAndTintGetter level,
+                BlockPos pos,
+                BlockState state,
+                RandomSource random,
+                Predicate<Direction> cullTest
+        ) {
+            if (!(level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite)
+                    || composite.hostState().isAir()) {
+                super.emitQuads(emitter, level, pos, state, random, cullTest);
+                return;
+            }
+
+            BlockState paneState = paneState(composite, state);
+            var models = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
+            models.get(composite.hostState()).emitQuads(
+                    emitter, level, pos, composite.hostState(), random, cullTest
+            );
+            models.get(paneState).emitQuads(
+                    emitter, level, pos, paneState, random, cullTest
+            );
+        }
+
+        @Override
+        public Object createGeometryKey(
+                BlockAndTintGetter level,
+                BlockPos pos,
+                BlockState state,
+                RandomSource random
+        ) {
+            if (!(level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite)) {
+                return super.createGeometryKey(level, pos, state, random);
+            }
+            return new CompositeGeometryKey(
+                    composite.hostState(),
+                    composite.appearance(),
+                    composite.paneAxis(),
+                    composite.frameBlockId(),
+                    state.getValue(CompositePaneBlock.WATERLOGGED)
+            );
+        }
+    }
+
+    private static BlockState paneState(CompositePaneBlockEntity composite, BlockState state) {
+        UltimateGlassBlocks.PaneFamily family = UltimateGlassBlocks.familyFor(
+                composite.appearance()
+        );
+        if (family == null) {
+            family = UltimateGlassBlocks.familyFor(com.github.tionard.ultimateglass.pane.PaneMaterial.CLEAR);
+        }
+        return family.centeredPane().defaultBlockState()
+                .setValue(CenteredPaneBlock.AXIS, composite.paneAxis())
+                .setValue(
+                        CenteredPaneBlock.WATERLOGGED,
+                        state.getValue(CompositePaneBlock.WATERLOGGED)
+                );
     }
 
     private static final class SeamlessPaneModel extends WrapperBlockStateModel {
@@ -316,7 +389,7 @@ public final class SeamlessPaneModels {
             BlockState state
     ) {
         if (!(state.getBlock() instanceof DynamicFramedPane)
-                || !(level.getBlockEntity(pos) instanceof DynamicFrameBlockEntity frame)) {
+                || !(level.getBlockEntity(pos) instanceof PaneFrameSource frame)) {
             return null;
         }
         return Minecraft.getInstance()
@@ -331,7 +404,7 @@ public final class SeamlessPaneModels {
             BlockState state
     ) {
         return state.getBlock() instanceof DynamicFramedPane
-                && level.getBlockEntity(pos) instanceof DynamicFrameBlockEntity frame
+                && level.getBlockEntity(pos) instanceof PaneFrameSource frame
                 ? frame.frameBlockId()
                 : null;
     }
@@ -395,5 +468,14 @@ public final class SeamlessPaneModels {
     }
 
     private record GeometryKey(Object wrapped, long continuations, Object frameBlock) {
+    }
+
+    private record CompositeGeometryKey(
+            BlockState hostState,
+            com.github.tionard.ultimateglass.pane.PaneAppearance appearance,
+            Direction.Axis paneAxis,
+            Object frameBlock,
+            boolean waterlogged
+    ) {
     }
 }

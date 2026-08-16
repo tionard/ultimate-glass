@@ -21,7 +21,7 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassBlockEntities;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
 
 /** Stores only the selected plank block; the pane itself is still rendered in the chunk mesh. */
-public final class DynamicFrameBlockEntity extends BlockEntity {
+public final class DynamicFrameBlockEntity extends BlockEntity implements PaneFrameSource {
     public static final Identifier DEFAULT_FRAME = Identifier.withDefaultNamespace("oak_planks");
     private static final String FRAME_KEY = "frame_block";
 
@@ -31,10 +31,12 @@ public final class DynamicFrameBlockEntity extends BlockEntity {
         super(UltimateGlassBlockEntities.DYNAMIC_FRAME, pos, state);
     }
 
+    @Override
     public Identifier frameBlockId() {
         return frameBlockId;
     }
 
+    @Override
     public Block frameBlock() {
         return BuiltInRegistries.BLOCK.getOptional(frameBlockId).orElse(Blocks.OAK_PLANKS);
     }

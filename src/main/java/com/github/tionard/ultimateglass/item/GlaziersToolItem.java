@@ -15,7 +15,9 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
+import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
+import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
@@ -46,6 +48,12 @@ public final class GlaziersToolItem extends Item {
         Level level = context.getLevel();
         BlockState state = level.getBlockState(context.getClickedPos());
         Block block = state.getBlock();
+
+        if (player.isShiftKeyDown()
+                && tier.canTogglePanePosition()
+                && block instanceof CompositePaneBlock) {
+            return removeCompositePane(context);
+        }
 
         if (player.isShiftKeyDown() && tier.canTogglePanePosition()) {
             InteractionResult toggleResult = togglePanePosition(context, state, block);
@@ -85,7 +93,9 @@ public final class GlaziersToolItem extends Item {
 
     @Override
     public float getDestroySpeed(ItemStack stack, BlockState state) {
-        if (!tier.silkTouchesGlass() || collectedStack(state.getBlock()).isEmpty()) {
+        if (!tier.silkTouchesGlass()
+                || (collectedStack(state.getBlock()).isEmpty()
+                && !(state.getBlock() instanceof CompositePaneBlock))) {
             return 1.0F;
         }
         return DIAMOND_GLASS_MINING_SPEED;
@@ -93,7 +103,29 @@ public final class GlaziersToolItem extends Item {
 
     @Override
     public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
-        return tier.silkTouchesGlass() && !collectedStack(state.getBlock()).isEmpty();
+        return tier.silkTouchesGlass()
+                && (!collectedStack(state.getBlock()).isEmpty()
+                || state.getBlock() instanceof CompositePaneBlock);
+    }
+
+    private static InteractionResult removeCompositePane(UseOnContext context) {
+        Level level = context.getLevel();
+        if (!(level.getBlockEntity(context.getClickedPos())
+                instanceof CompositePaneBlockEntity composite)) {
+            return InteractionResult.FAIL;
+        }
+
+        if (!level.isClientSide()) {
+            ItemStack paneStack = composite.paneStack();
+            BlockState hostState = composite.restoredHostState();
+            level.setBlockAndUpdate(context.getClickedPos(), hostState);
+            Player player = context.getPlayer();
+            if (player != null && !player.getAbilities().instabuild && !paneStack.isEmpty()) {
+                Block.popResource(level, context.getClickedPos(), paneStack);
+            }
+            refreshPaneConnections(level, context.getClickedPos());
+        }
+        return InteractionResult.SUCCESS;
     }
 
     private static InteractionResult togglePanePosition(

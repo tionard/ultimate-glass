@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
+import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.DynamicFramedCenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.DynamicFramedEdgePaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
@@ -31,6 +32,8 @@ public final class UltimateGlassBlocks {
 
     /** Connected, centered-geometry-free tinted pane used as the cooking input. */
     public static final TintedGlassPaneBlock TINTED_GLASS_PANE = registerTintedGlassPane();
+    /** Data-backed stair/slab host used only after a tempered pane is installed. */
+    public static final CompositePaneBlock COMPOSITE_PANE = registerCompositePane();
 
     public static final EdgePaneBlock EDGE_GLASS_PANE = registerStatic(PaneMaterial.CLEAR, PaneFrame.NONE).edgePane();
     public static final EdgePaneBlock EDGE_WHITE_STAINED_GLASS_PANE = registerStatic(PaneMaterial.WHITE_STAINED, PaneFrame.NONE).edgePane();
@@ -130,6 +133,14 @@ public final class UltimateGlassBlocks {
         ResourceKey<Block> key = blockKey("tinted_glass_pane");
         TintedGlassPaneBlock block = new TintedGlassPaneBlock(
                 BlockBehaviour.Properties.ofFullCopy(Blocks.TINTED_GLASS).setId(key)
+        );
+        return Registry.register(BuiltInRegistries.BLOCK, key, block);
+    }
+
+    private static CompositePaneBlock registerCompositePane() {
+        ResourceKey<Block> key = blockKey("composite_pane");
+        CompositePaneBlock block = new CompositePaneBlock(
+                BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).setId(key)
         );
         return Registry.register(BuiltInRegistries.BLOCK, key, block);
     }

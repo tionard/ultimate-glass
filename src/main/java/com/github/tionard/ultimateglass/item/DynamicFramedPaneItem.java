@@ -3,7 +3,6 @@ package com.github.tionard.ultimateglass.item;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -14,7 +13,7 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 
 /** One registry item can carry every modded plank frame while retaining an informative name. */
-public final class DynamicFramedPaneItem extends BlockItem {
+public final class DynamicFramedPaneItem extends TemperedPaneItem {
     private static final String PLANKS_SUFFIX_KEY = "frame.ultimateglass.planks_suffix";
 
     private final PaneMaterial material;
