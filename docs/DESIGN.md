@@ -102,6 +102,25 @@ classification.
 The seamless option is client-only. Its model wrapper removes explicitly marked boundary quads,
 does not modify block state or collision, and invalidates compiled chunk geometry when toggled.
 
+## Stair and slab composites
+
+`CompositePaneBlockEntity` stores the complete original host `BlockState`, the `PaneAppearance`, a
+vertical pane axis, and the optional dynamic plank block ID. It has no ticker. The composite block
+state carries only waterlogging and tinted-light flags needed by state-only engine queries.
+
+Tempered pane items intercept use on stairs and non-double slabs. Hosts with a BlockEntity are
+rejected so beta.5 cannot silently discard mod-owned data. Stair panes align with the stair run;
+slab panes use the clicked horizontal face, or the player's horizontal axis for a top/bottom click.
+
+The client wrapper emits the stored host model and the corresponding centred pane model into one
+normal cached chunk mesh. The collision and outline shape is the host shape union the centred pane
+shape after boolean subtraction of the host volume. Opaque host geometry therefore masks the full
+visual pane model while physics contains no duplicate or hidden pane volume.
+
+Shift-use with an iron or diamond Glazier's Tool restores the stored host and returns the exact pane
+stack. Ordinary breaking evaluates host drops from the original state; diamond-tool pane recovery
+retains dynamic frame data. Composite water state is copied back into a waterloggable host.
+
 ## World compatibility
 
 Existing 0.1/earlier-beta custom IDs are retained. Fixed beta.4 vanilla-wood IDs are also retained

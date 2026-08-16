@@ -1,14 +1,38 @@
-# Tempered Glass 0.2.0-beta.4 regression checklist
+# Tempered Glass 0.2.0-beta.5 regression checklist
 
-Beta.4 changes pane acquisition and adds fixed vanilla-wood plus tag-driven modded-wood frames.
-Run this checklist in a new world and a backed-up existing world.
+Beta.5 adds stair/slab composites on top of beta.4's tempering and universal wood frames. Run this
+checklist in a new world and a backed-up existing world.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.0-beta.4.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.0-beta.5.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 `ultimate_*` block/item IDs and saved BlockState property names are unchanged.
+
+## Stair and slab composites
+
+1. Install clear, several stained colours, tinted, fixed-framed, and modded-framed Tempered panes
+   into bottom slabs, top slabs, and stairs. Confirm the host and pane occupy one block cell.
+2. Confirm a double slab rejects installation and normal pane placement is not consumed.
+3. Test every horizontal stair facing, top/bottom half, and straight/inner/outer shape. Confirm the
+   original stair model and correct open-volume pane orientation survive placement.
+4. Inspect collision and outline shapes. The host must keep its normal shape, the exposed pane must
+   collide, and no hidden full-block camera collision may appear.
+5. Waterlog every slab/stair combination, install a pane, bucket water in/out where applicable,
+   save/reload, then remove the pane. Confirm exactly one water source and the restored host state.
+6. Save/reload, cross a chunk boundary, unload/reload chunks, reconnect, and restart a dedicated
+   server. Confirm host facing/half/shape, pane material, axis, and fixed/modded frame identity.
+7. Shift + right-click composites with iron and diamond Glazier's Tools. Confirm the exact original
+   host is restored and exactly one pane item is returned; Creative mode must not duplicate it.
+8. Break composites with representative correct and incorrect host tools. Confirm host drops follow
+   the original host rules. Repeat with the diamond Glazier's Tool and confirm pane recovery follows
+   the normal pane rule, including the modded frame component.
+9. Place composites beside ordinary matching and nonmatching Tempered panes and inspect every seam.
+10. Verify `/data get block` shows a non-ticking data holder and confirm no composite
+    BlockEntityRenderer appears in a client profiler capture.
+11. Try a modded stair/slab with no BlockEntity and record compatibility. Confirm a host that owns a
+    BlockEntity is rejected without changing the block or consuming the pane.
 
 ## Tempering and names
 
