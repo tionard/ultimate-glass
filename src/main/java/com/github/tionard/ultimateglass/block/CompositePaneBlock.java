@@ -20,13 +20,12 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
-import com.github.tionard.ultimateglass.pane.PaneGeometry;
+import com.github.tionard.ultimateglass.pane.CompositePaneGeometry;
 
 /** A stair/slab host plus one centred vertical tempered pane in the same block cell. */
 public final class CompositePaneBlock extends Block implements EntityBlock, SimpleWaterloggedBlock {
@@ -148,13 +147,10 @@ public final class CompositePaneBlock extends Block implements EntityBlock, Simp
         VoxelShape hostShape = hostState.isAir()
                 ? Shapes.empty()
                 : hostState.getShape(level, pos);
-        VoxelShape exposedPane = exposedPaneShape(hostShape, composite.paneAxis());
+        VoxelShape exposedPane = CompositePaneGeometry.exposedPaneShape(
+                hostShape, composite.paneAxis()
+        );
         return Shapes.or(hostShape, exposedPane).optimize();
-    }
-
-    public static VoxelShape exposedPaneShape(VoxelShape hostShape, Direction.Axis paneAxis) {
-        VoxelShape paneShape = PaneGeometry.centered(paneAxis).shape();
-        return Shapes.joinUnoptimized(paneShape, hostShape, BooleanOp.ONLY_FIRST).optimize();
     }
 
     @Nullable
