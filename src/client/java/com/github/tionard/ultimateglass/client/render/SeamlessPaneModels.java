@@ -23,7 +23,6 @@ import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.DynamicFramedPane;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
-import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.block.entity.PaneFrameSource;
 import com.github.tionard.ultimateglass.client.UltimateGlassClientConfig;
 import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
@@ -112,12 +111,16 @@ public final class SeamlessPaneModels {
             if (!(level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite)) {
                 return super.createGeometryKey(level, pos, state, random);
             }
+            BlockState paneState = paneState(composite, state);
             return new CompositeGeometryKey(
                     composite.hostState(),
                     composite.appearance(),
                     composite.paneAxis(),
                     composite.frameBlockId(),
-                    state.getValue(CompositePaneBlock.WATERLOGGED)
+                    state.getValue(CompositePaneBlock.WATERLOGGED),
+                    UltimateGlassClientConfig.seamlessConnectedPanes()
+                            ? continuationMask(level, pos, paneState)
+                            : -1L
             );
         }
     }
@@ -475,7 +478,8 @@ public final class SeamlessPaneModels {
             com.github.tionard.ultimateglass.pane.PaneAppearance appearance,
             Direction.Axis paneAxis,
             Object frameBlock,
-            boolean waterlogged
+            boolean waterlogged,
+            long continuations
     ) {
     }
 }

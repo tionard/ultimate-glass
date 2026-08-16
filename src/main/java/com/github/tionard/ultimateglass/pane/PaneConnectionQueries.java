@@ -7,8 +7,10 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
+import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.DynamicFramedPane;
-import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
+import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
+import com.github.tionard.ultimateglass.block.entity.PaneFrameSource;
 
 /** Stateless connection lookups shared by block-state and rendering code. */
 public final class PaneConnectionQueries {
@@ -62,9 +64,10 @@ public final class PaneConnectionQueries {
 
         BlockPos neighborPos = pos.relative(neighborDirection);
         BlockState neighbor = level.getBlockState(neighborPos);
+        PaneGeometry neighborGeometry = geometryAt(level, neighborPos, neighbor);
         return samePaneVariant(level, pos, state, neighborPos, neighbor)
-                && neighbor.getBlock() instanceof UltimatePane pane
-                && pane.geometry(neighbor).planes().contains(plane);
+                && neighborGeometry != null
+                && neighborGeometry.planes().contains(plane);
     }
 
     /**
@@ -85,8 +88,7 @@ public final class PaneConnectionQueries {
             BlockPos neighborPos = pos.relative(direction);
             BlockState neighbor = level.getBlockState(neighborPos);
             if (samePaneVariant(level, pos, state, neighborPos, neighbor)
-                    && neighbor.getBlock() instanceof CenteredPaneBlock
-                    && neighbor.getValue(CenteredPaneBlock.AXIS) == requestedAxis) {
+                    && primaryCenteredAxisAt(level, neighborPos, neighbor) == requestedAxis) {
                 return true;
             }
         }
@@ -100,16 +102,70 @@ public final class PaneConnectionQueries {
             BlockPos secondPos,
             BlockState second
     ) {
-        if (first.getBlock() != second.getBlock()) {
+        boolean firstComposite = isCompositeAt(level, firstPos);
+        boolean secondComposite = isCompositeAt(level, secondPos);
+        if (!firstComposite && !secondComposite) {
+            if (first.getBlock() != second.getBlock()) {
+                return false;
+            }
+            if (!(first.getBlock() instanceof DynamicFramedPane)) {
+                return true;
+            }
+        }
+
+        PaneAppearance firstAppearance = appearanceAt(level, firstPos, first);
+        PaneAppearance secondAppearance = appearanceAt(level, secondPos, second);
+        if (firstAppearance == null || !firstAppearance.equals(secondAppearance)) {
             return false;
         }
-        if (!(first.getBlock() instanceof DynamicFramedPane)) {
+        if (!firstAppearance.frame().isDynamic()) {
             return true;
         }
-        if (!(level.getBlockEntity(firstPos) instanceof DynamicFrameBlockEntity firstFrame)
-                || !(level.getBlockEntity(secondPos) instanceof DynamicFrameBlockEntity secondFrame)) {
-            return false;
+
+        return level.getBlockEntity(firstPos) instanceof PaneFrameSource firstFrame
+                && level.getBlockEntity(secondPos) instanceof PaneFrameSource secondFrame
+                && firstFrame.frameBlockId().equals(secondFrame.frameBlockId());
+    }
+
+    private static PaneAppearance appearanceAt(
+            BlockGetter level,
+            BlockPos pos,
+            BlockState state
+    ) {
+        if (isCompositeAt(level, pos)
+                && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite) {
+            return composite.appearance();
         }
-        return firstFrame.frameBlockId().equals(secondFrame.frameBlockId());
+        return state.getBlock() instanceof UltimatePane pane ? pane.appearance() : null;
+    }
+
+    private static PaneGeometry geometryAt(
+            BlockGetter level,
+            BlockPos pos,
+            BlockState state
+    ) {
+        if (isCompositeAt(level, pos)
+                && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite) {
+            return PaneGeometry.centered(composite.paneAxis());
+        }
+        return state.getBlock() instanceof UltimatePane pane ? pane.geometry(state) : null;
+    }
+
+    private static Direction.Axis primaryCenteredAxisAt(
+            BlockGetter level,
+            BlockPos pos,
+            BlockState state
+    ) {
+        if (isCompositeAt(level, pos)
+                && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite) {
+            return composite.paneAxis();
+        }
+        return state.getBlock() instanceof CenteredPaneBlock
+                ? state.getValue(CenteredPaneBlock.AXIS)
+                : null;
+    }
+
+    private static boolean isCompositeAt(BlockGetter level, BlockPos pos) {
+        return level.getBlockState(pos).getBlock() instanceof CompositePaneBlock;
     }
 }

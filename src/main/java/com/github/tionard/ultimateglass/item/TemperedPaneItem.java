@@ -16,6 +16,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.SlabType;
 
 import com.github.tionard.ultimateglass.block.CompositePaneBlock;
+import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
+import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
@@ -77,6 +79,8 @@ public class TemperedPaneItem extends BlockItem {
                     paneAxis,
                     dynamicFrameId(context.getItemInHand(), appearance.frame())
             );
+            EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
+            CenteredPaneBlock.refreshConnectionsAround(level, context.getClickedPos());
             if (!player.getAbilities().instabuild) {
                 context.getItemInHand().shrink(1);
             }

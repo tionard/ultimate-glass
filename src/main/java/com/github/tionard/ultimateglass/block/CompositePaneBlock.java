@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
@@ -67,6 +68,19 @@ public final class CompositePaneBlock extends Block implements EntityBlock, Simp
             CollisionContext context
     ) {
         return combinedShape(level, pos);
+    }
+
+    @Override
+    protected float getDestroyProgress(
+            BlockState state,
+            Player player,
+            BlockGetter level,
+            BlockPos pos
+    ) {
+        CompositePaneBlockEntity composite = entity(level, pos);
+        return composite == null || composite.hostState().isAir()
+                ? super.getDestroyProgress(state, player, level, pos)
+                : composite.hostState().getDestroyProgress(player, level, pos);
     }
 
     @Override
