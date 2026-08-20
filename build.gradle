@@ -127,7 +127,7 @@ tasks.register("generatePaneResources") {
                 // Vanilla glass textures draw their outside outline in exactly one pixel even
                 // though the pane itself is two pixels thick. Keep that outline independently so
                 // a horizontal join cannot punch a two-pixel hole in a perpendicular outer edge.
-                (frameMode == "none" ? [1, 15] : [1, 2, 14, 15]).each { cut ->
+                (frameMode == "none" ? [1, 8, 15] : [1, 2, 8, 14, 15]).each { cut ->
                     if (paneFrom[axis] < cut && cut < paneTo[axis]) {
                         axisCuts << cut
                     }
@@ -255,7 +255,18 @@ tasks.register("generatePaneResources") {
 
                     def faces = [:]
                     faces[edgeDirection] = texturedFace("#edge", frameMode == "dynamic")
-                    elements << [from: from, to: to, faces: faces]
+                    def lineCuts = [from[lineAxis]]
+                    if (from[lineAxis] < 8 && 8 < to[lineAxis]) {
+                        lineCuts << 8
+                    }
+                    lineCuts << to[lineAxis]
+                    for (int cut = 0; cut < lineCuts.size() - 1; cut++) {
+                        def segmentFrom = new ArrayList<Integer>(from)
+                        def segmentTo = new ArrayList<Integer>(to)
+                        segmentFrom[lineAxis] = lineCuts[cut]
+                        segmentTo[lineAxis] = lineCuts[cut + 1]
+                        elements << [from: segmentFrom, to: segmentTo, faces: faces]
+                    }
                 }
             }
 
@@ -290,11 +301,22 @@ tasks.register("generatePaneResources") {
                     }
 
                     if (to[lineAxis] > from[lineAxis]) {
-                        elements << [
-                                from: from,
-                                to: to,
-                                faces: allFaces("#edge", frameMode == "dynamic")
-                        ]
+                        def lineCuts = [from[lineAxis]]
+                        if (from[lineAxis] < 8 && 8 < to[lineAxis]) {
+                            lineCuts << 8
+                        }
+                        lineCuts << to[lineAxis]
+                        for (int cut = 0; cut < lineCuts.size() - 1; cut++) {
+                            def segmentFrom = new ArrayList<Integer>(from)
+                            def segmentTo = new ArrayList<Integer>(to)
+                            segmentFrom[lineAxis] = lineCuts[cut]
+                            segmentTo[lineAxis] = lineCuts[cut + 1]
+                            elements << [
+                                    from: segmentFrom,
+                                    to: segmentTo,
+                                    faces: allFaces("#edge", frameMode == "dynamic")
+                            ]
+                        }
                     }
                 }
             }
@@ -362,7 +384,7 @@ tasks.register("generatePaneResources") {
         ]
 
         def centeredRanges = { boolean split ->
-            split ? [[0, 7], [9, 16]] : [[0, 16]]
+            split ? [[0, 7], [9, 16]] : [[0, 8], [8, 16]]
         }
 
         def createCenteredShape = { int mask, String frameMode ->

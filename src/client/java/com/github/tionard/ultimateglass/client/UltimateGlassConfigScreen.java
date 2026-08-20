@@ -10,13 +10,12 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
-import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
 
 public final class UltimateGlassConfigScreen extends Screen {
     private final Screen parent;
     private final Map<GlaziersToolTier, Button> craftingButtons = new EnumMap<>(GlaziersToolTier.class);
-    private Button shiftModeButton;
     private Button seamlessPanesButton;
+    private Button experimentalCompositesButton;
 
     public UltimateGlassConfigScreen(Screen parent) {
         super(Component.translatable("config.ultimateglass.title"));
@@ -41,11 +40,10 @@ public final class UltimateGlassConfigScreen extends Screen {
                         .build()
         );
 
-        shiftModeButton = this.addRenderableWidget(
-                Button.builder(shiftModeButtonText(), button -> {
-                    UltimateGlassClientConfig.toggleShiftPlacementMode();
-                    UltimateGlassClient.syncShiftPlacementMode();
-                    button.setMessage(shiftModeButtonText());
+        experimentalCompositesButton = this.addRenderableWidget(
+                Button.builder(experimentalCompositesButtonText(), button -> {
+                    UltimateGlassClient.requestExperimentalCompositesToggle();
+                    button.setMessage(experimentalCompositesButtonText());
                 })
                         .pos(left, top + 24)
                         .size(buttonWidth, 20)
@@ -67,8 +65,8 @@ public final class UltimateGlassConfigScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (shiftModeButton != null) {
-            shiftModeButton.setMessage(shiftModeButtonText());
+        if (experimentalCompositesButton != null) {
+            experimentalCompositesButton.setMessage(experimentalCompositesButtonText());
         }
         if (seamlessPanesButton != null) {
             seamlessPanesButton.setMessage(seamlessPanesButtonText());
@@ -99,11 +97,11 @@ public final class UltimateGlassConfigScreen extends Screen {
         craftingButtons.put(tier, button);
     }
 
-    private Component shiftModeButtonText() {
+    private Component experimentalCompositesButtonText() {
         return Component.translatable(
-                UltimateGlassClientConfig.shiftPlacementMode() == ShiftPlacementMode.FACE
-                        ? "config.ultimateglass.shift_mode_face"
-                        : "config.ultimateglass.shift_mode_near"
+                UltimateGlassClientConfig.experimentalCompositesEnabled()
+                        ? "config.ultimateglass.experimental_composites_enabled"
+                        : "config.ultimateglass.experimental_composites_disabled"
         );
     }
 

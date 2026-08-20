@@ -77,6 +77,26 @@ public final class PaneGeometry {
         return CENTERED_GEOMETRIES[mask];
     }
 
+    /** Half of a centered plane reaching from one block boundary through the center junction. */
+    public static VoxelShape centeredArm(Direction.Axis planeAxis, Direction sourceDirection) {
+        if (sourceDirection.getAxis() == planeAxis) {
+            throw new IllegalArgumentException("A centered arm must extend within its plane");
+        }
+
+        double[] from = {0.0, 0.0, 0.0};
+        double[] to = {16.0, 16.0, 16.0};
+        from[planeAxis.ordinal()] = 7.0;
+        to[planeAxis.ordinal()] = 9.0;
+        if (sourceDirection.getAxisDirection() == Direction.AxisDirection.NEGATIVE) {
+            to[sourceDirection.getAxis().ordinal()] = 9.0;
+        } else {
+            from[sourceDirection.getAxis().ordinal()] = 7.0;
+        }
+        return net.minecraft.world.level.block.Block.box(
+                from[0], from[1], from[2], to[0], to[1], to[2]
+        );
+    }
+
     public PanePlaneSet planes() {
         return planes;
     }

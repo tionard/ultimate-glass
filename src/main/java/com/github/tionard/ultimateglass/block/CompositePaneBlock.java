@@ -162,7 +162,7 @@ public final class CompositePaneBlock extends Block implements EntityBlock, Simp
                 ? Shapes.empty()
                 : hostState.getShape(level, pos);
         VoxelShape exposedPane = CompositePaneGeometry.exposedPaneShape(
-                hostShape, composite.paneAxis()
+                hostShape, composite.paneFacing()
         );
         return Shapes.or(hostShape, exposedPane).optimize();
     }

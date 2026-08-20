@@ -1,7 +1,8 @@
-# Tempered Glass - Design
+# Ultimate Glass - Design
 
 The mod ID, Java package, configuration paths, and established `ultimate_*` registry IDs remain
-unchanged for compatibility. Tempered Glass is the player-facing name beginning in beta.4.
+unchanged for compatibility. Ultimate Glass is the mod name; its enhanced pane items retain the
+`Tempered ...` naming introduced in beta.4.
 
 ## Shared pane description
 
@@ -79,14 +80,17 @@ intersection, each pair receives one shared frame line, and triple intersections
 2x2x2 corner block.
 
 Centred blocks retain `AXIS` as their primary saved plane. `connect_first` and `connect_second`
-refer to stable perpendicular axes, producing X, Y, Z, XY, XZ, YZ, and XYZ sets. Connections are
-derived only from directly adjacent matching primary planes, preventing ghost propagation. A
-connected multi-plane centred state cannot be destructively toggled to a single edge sheet.
+remain compatibility-sensitive summaries of which perpendicular axes have direct sources. The
+actual collision and client model query each source direction and add only the half-plane from that
+neighbour to the centre junction. One source therefore creates an L rather than a full `+`; two or
+three real sources can still create supported multi-arm and cube-corner geometry. Derived arms
+never source further derived arms, preventing ghost propagation.
 
 ## Placement, rotation, and tools
 
-Normal placement selects a far outside edge relative to the player. Shift placement first copies a
-compatible orientation; otherwise it uses the configured clicked-face or near-player fallback.
+Normal right-click placement uses the player's horizontal direction, matching stair orientation.
+Shift + right-click is a fixed precision override: it always places the pane against the clicked
+face and never copies the orientation of panes, slabs, stairs, trapdoors, or other half-blocks.
 
 The rotation-axis key cycles X, Y, and Z. Copper rotates. Iron also toggles edge/centred geometry.
 Diamond additionally harvests supported glass intact. When a generic modded frame changes geometry,
@@ -105,17 +109,19 @@ does not modify block state or collision, and invalidates compiled chunk geometr
 ## Stair and slab composites
 
 `CompositePaneBlockEntity` stores the complete original host `BlockState`, the `PaneAppearance`, a
-vertical pane axis, and the optional dynamic plank block ID. It has no ticker. The composite block
+vertical edge facing, and the optional dynamic plank block ID. It has no ticker. The composite block
 state carries only waterlogging and tinted-light flags needed by state-only engine queries.
 
-Tempered pane items intercept use on stairs and non-double slabs. Hosts with a BlockEntity are
-rejected so beta.5 cannot silently discard mod-owned data. Stair panes align with the stair run;
-slab panes use the clicked horizontal face, or the player's horizontal axis for a top/bottom click.
+Composite placement is server-authoritative, experimental, and disabled by default. Tempered pane
+items intercept use on stairs and non-double slabs only when it is enabled. Hosts with a
+BlockEntity are rejected so beta.5 cannot silently discard mod-owned data. Normal placement uses
+the same player-facing direction as ordinary panes; Shift uses the clicked vertical host face.
+Horizontal faces and fully occupied stair faces fall through to ordinary pane placement.
 
-The client wrapper emits the stored host model and the corresponding centred pane model into one
-normal cached chunk mesh. The collision and outline shape is the host shape union the centred pane
-shape after boolean subtraction of the host volume. Opaque host geometry therefore masks the full
-visual pane model while physics contains no duplicate or hidden pane volume.
+The client wrapper emits the stored host model and corresponding edge-pane model into one normal
+cached chunk mesh. Generated pane and frame sections are split at half-block boundaries; sections
+whose inward sample lies inside the stored host shape are discarded. Collision and outline use the
+same host-volume subtraction, so glass neither renders nor collides inside the stair/slab body.
 
 Shift-use with an iron or diamond Glazier's Tool restores the stored host and returns the exact pane
 stack. Ordinary breaking evaluates host drops from the original state; diamond-tool pane recovery

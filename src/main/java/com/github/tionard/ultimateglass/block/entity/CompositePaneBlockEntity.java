@@ -31,6 +31,8 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     private static final String HOST_STATE_KEY = "host_state";
     private static final String MATERIAL_KEY = "pane_material";
     private static final String FRAME_KEY = "pane_frame";
+    private static final String FACING_KEY = "pane_facing";
+    /** Read-only migration key written by the original beta.5 composite implementation. */
     private static final String AXIS_KEY = "pane_axis";
     private static final String FRAME_BLOCK_KEY = "frame_block";
 
@@ -46,10 +48,14 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
             name -> Direction.Axis.valueOf(name.toUpperCase(java.util.Locale.ROOT)),
             axis -> axis.getName().toUpperCase(java.util.Locale.ROOT)
     );
+    private static final Codec<Direction> DIRECTION_CODEC = Codec.STRING.xmap(
+            name -> Direction.valueOf(name.toUpperCase(java.util.Locale.ROOT)),
+            direction -> direction.getName().toUpperCase(java.util.Locale.ROOT)
+    );
 
     private BlockState hostState = Blocks.AIR.defaultBlockState();
     private PaneAppearance appearance = new PaneAppearance(PaneMaterial.CLEAR);
-    private Direction.Axis paneAxis = Direction.Axis.Z;
+    private Direction paneFacing = Direction.NORTH;
     private Identifier frameBlockId = DynamicFrameBlockEntity.DEFAULT_FRAME;
 
     public CompositePaneBlockEntity(BlockPos pos, BlockState state) {
@@ -64,8 +70,8 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         return appearance;
     }
 
-    public Direction.Axis paneAxis() {
-        return paneAxis;
+    public Direction paneFacing() {
+        return paneFacing;
     }
 
     @Override
@@ -76,15 +82,15 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     public void setComposite(
             BlockState hostState,
             PaneAppearance appearance,
-            Direction.Axis paneAxis,
+            Direction paneFacing,
             Identifier frameBlockId
     ) {
-        if (paneAxis == Direction.Axis.Y) {
+        if (paneFacing.getAxis() == Direction.Axis.Y) {
             throw new IllegalArgumentException("Composite stair/slab panes must be vertical");
         }
         this.hostState = hostState;
         this.appearance = appearance;
-        this.paneAxis = paneAxis;
+        this.paneFacing = paneFacing;
         this.frameBlockId = frameBlockId == null
                 ? DynamicFrameBlockEntity.DEFAULT_FRAME
                 : frameBlockId;
@@ -125,9 +131,13 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
                 .orElse(PaneMaterial.CLEAR);
         PaneFrame frame = input.read(FRAME_KEY, FRAME_CODEC).orElse(PaneFrame.NONE);
         appearance = new PaneAppearance(material, frame);
-        paneAxis = input.read(AXIS_KEY, AXIS_CODEC).orElse(Direction.Axis.Z);
-        if (paneAxis == Direction.Axis.Y) {
-            paneAxis = Direction.Axis.Z;
+        paneFacing = input.read(FACING_KEY, DIRECTION_CODEC).orElseGet(() -> {
+            Direction.Axis legacyAxis = input.read(AXIS_KEY, AXIS_CODEC)
+                    .orElse(Direction.Axis.Z);
+            return legacyAxis == Direction.Axis.X ? Direction.WEST : Direction.NORTH;
+        });
+        if (paneFacing.getAxis() == Direction.Axis.Y) {
+            paneFacing = Direction.NORTH;
         }
         frameBlockId = input.read(FRAME_BLOCK_KEY, Identifier.CODEC)
                 .orElse(DynamicFrameBlockEntity.DEFAULT_FRAME);
@@ -140,7 +150,8 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         output.store(HOST_STATE_KEY, BlockState.CODEC, hostState);
         output.store(MATERIAL_KEY, MATERIAL_CODEC, appearance.material());
         output.store(FRAME_KEY, FRAME_CODEC, appearance.frame());
-        output.store(AXIS_KEY, AXIS_CODEC, paneAxis);
+        output.store(FACING_KEY, DIRECTION_CODEC, paneFacing);
+        output.store(AXIS_KEY, AXIS_CODEC, paneFacing.getAxis());
         output.store(FRAME_BLOCK_KEY, Identifier.CODEC, frameBlockId);
     }
 

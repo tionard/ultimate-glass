@@ -1,4 +1,4 @@
-# Tempered Glass 0.2.0-beta.5 regression checklist
+# Ultimate Glass 0.2.0-beta.5 regression checklist
 
 Beta.5 adds stair/slab composites on top of beta.4's tempering and universal wood frames. Run this
 checklist in a new world and a backed-up existing world.
@@ -12,31 +12,38 @@ checklist in a new world and a backed-up existing world.
 
 ## Stair and slab composites
 
-1. Install clear, several stained colours, tinted, fixed-framed, and modded-framed Tempered panes
+1. Confirm composites are disabled in a fresh config, enable `Experimental stair/slab panes` in
+   Mod Menu, and reconnect once to verify the server-authoritative value remains synchronized.
+2. Install clear, several stained colours, tinted, fixed-framed, and modded-framed Tempered panes
    into bottom slabs, top slabs, and stairs. Confirm the host and pane occupy one block cell.
-2. Confirm a double slab rejects installation and normal pane placement is not consumed.
-3. Test every horizontal stair facing, top/bottom half, and straight/inner/outer shape. Confirm the
+3. Confirm composites are edge-bound. Test normal player-facing placement and Shift placement on
+   each vertical clicked face.
+4. Confirm a double slab, horizontal clicked face, or fully occupied stair face does not create a
+   composite and leaves ordinary pane placement available.
+5. Test every horizontal stair facing, top/bottom half, and straight/inner/outer shape. Confirm the
    original stair model and correct open-volume pane orientation survive placement.
-4. Inspect collision and outline shapes. The host must keep its normal shape, the exposed pane must
+6. Inspect rendering from both sides. No glass or frame pixel may flicker or bleed through the host.
+7. Inspect collision and outline shapes. The host must keep its normal shape, the exposed pane must
    collide, and no hidden full-block camera collision may appear.
-5. Waterlog every slab/stair combination, install a pane, bucket water in/out where applicable,
+8. Waterlog every slab/stair combination, install a pane, bucket water in/out where applicable,
    save/reload, then remove the pane. Confirm exactly one water source and the restored host state.
-6. Save/reload, cross a chunk boundary, unload/reload chunks, reconnect, and restart a dedicated
-   server. Confirm host facing/half/shape, pane material, axis, and fixed/modded frame identity.
-7. Shift + right-click composites with iron and diamond Glazier's Tools. Confirm the exact original
+9. Save/reload, cross a chunk boundary, unload/reload chunks, reconnect, and restart a dedicated
+   server. Confirm host facing/half/shape, pane material, pane facing, and frame identity.
+10. Shift + right-click composites with iron and diamond Glazier's Tools. Confirm the exact original
    host is restored and exactly one pane item is returned; Creative mode must not duplicate it.
-8. Break composites with representative correct and incorrect host tools. Confirm host drops follow
+11. Break composites with representative correct and incorrect host tools. Confirm host drops follow
    the original host rules. Repeat with the diamond Glazier's Tool and confirm pane recovery follows
    the normal pane rule, including the modded frame component.
-9. Place composites beside ordinary matching and nonmatching Tempered panes and inspect every seam.
-10. Verify `/data get block` shows a non-ticking data holder and confirm no composite
+12. Place composites beside ordinary matching and nonmatching Tempered panes and inspect every seam.
+13. Verify `/data get block` shows a non-ticking data holder and confirm no composite
     BlockEntityRenderer appears in a client profiler capture.
-11. Try a modded stair/slab with no BlockEntity and record compatibility. Confirm a host that owns a
+14. Try a modded stair/slab with no BlockEntity and record compatibility. Confirm a host that owns a
     BlockEntity is rejected without changing the block or consuming the pane.
 
 ## Tempering and names
 
-1. Confirm the mod, settings category, and custom pane names say Tempered rather than Ultimate.
+1. Confirm the mod and settings category say `Ultimate Glass`, while enhanced pane items remain
+   named `Tempered ...`.
 2. Confirm commands and existing saves still recognize the retained `ultimateglass:ultimate_*` IDs.
 3. Smelt and blast-smelt clear plus several stained vanilla panes; verify the matching Tempered item,
    200/100-tick timing, and no colour change.
@@ -92,14 +99,17 @@ checklist in a new world and a backed-up existing world.
 
 ## Geometry and tool regression
 
-1. Place edge panes against all six faces using normal and both Shift modes.
-2. Rotate every edge and centred orientation around X/Y/Z.
-3. Toggle single panes edge/centred; verify material, frame, water, and axis are preserved.
-4. Build/reload edge L and cube corners; verify transparent intersections and shared mullions.
-5. Build/reload centred X/Y/Z, pairwise, and XYZ junctions; verify one line per pair and one centre cube.
-6. Remove source panes and verify connection flags clear without ghost geometry.
-7. Confirm connected multi-plane centred panes refuse destructive conversion until sources are removed.
-8. Verify copper/iron/diamond tier restrictions and legacy-tool compatibility.
+1. Place normally from every horizontal direction and confirm stair-like player-facing orientation.
+2. Shift + right-click all six faces of full blocks, slabs/stairs, and existing Tempered panes;
+   confirm the new pane always lies against the clicked face and never copies source orientation.
+3. Rotate every edge and centred orientation around X/Y/Z.
+4. Toggle single panes edge/centred; verify material, frame, water, and axis are preserved.
+5. Build/reload edge L and cube corners; verify transparent intersections and shared mullions.
+6. Build centred L and cube-corner junctions from one-sided sources. Confirm there are no opposite
+   arms sticking through the centre unless a real pane source exists on that side.
+7. Remove source panes and verify connection flags and one-sided arms clear without ghost geometry.
+8. Confirm connected multi-plane centred panes refuse destructive conversion until sources are removed.
+9. Verify copper/iron/diamond tier restrictions and legacy-tool compatibility.
 
 ## Water and harvesting regression
 

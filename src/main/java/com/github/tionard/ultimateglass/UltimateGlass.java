@@ -27,6 +27,6 @@ public final class UltimateGlass implements ModInitializer {
         UltimateGlassRecipes.initialize();
         UltimateGlassNetworking.initialize();
         UltimateGlassInteractions.initialize();
-        LOGGER.info("Initialized Tempered Glass");
+        LOGGER.info("Initialized Ultimate Glass");
     }
 }

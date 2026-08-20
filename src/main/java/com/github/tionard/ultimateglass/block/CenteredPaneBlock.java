@@ -74,17 +74,17 @@ public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, 
 
     @Override
     protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return shapeForState(state);
+        return shapeForState(state, level, pos);
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shapeForState(state);
+        return shapeForState(state, level, pos);
     }
 
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shapeForState(state);
+        return shapeForState(state, level, pos);
     }
 
     @Override
@@ -219,7 +219,24 @@ public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, 
         }
     }
 
-    private static VoxelShape shapeForState(BlockState state) {
-        return ((CenteredPaneBlock) state.getBlock()).geometry(state).shape();
+    private static VoxelShape shapeForState(BlockState state, BlockGetter level, BlockPos pos) {
+        Direction.Axis primary = state.getValue(AXIS);
+        VoxelShape shape = PaneGeometry.centered(primary).shape();
+        for (Direction.Axis requestedAxis : Direction.Axis.values()) {
+            if (requestedAxis == primary) {
+                continue;
+            }
+            for (Direction sourceDirection : Direction.values()) {
+                if (PaneConnectionQueries.hasCenteredConnectionFrom(
+                        level, pos, state, requestedAxis, sourceDirection
+                )) {
+                    shape = Shapes.or(
+                            shape,
+                            PaneGeometry.centeredArm(requestedAxis, sourceDirection)
+                    );
+                }
+            }
+        }
+        return shape.optimize();
     }
 }

@@ -12,9 +12,9 @@ public final class CompositePaneGeometry {
 
     public static VoxelShape exposedPaneShape(
             VoxelShape hostShape,
-            Direction.Axis paneAxis
+            Direction paneFacing
     ) {
-        VoxelShape paneShape = PaneGeometry.centered(paneAxis).shape();
+        VoxelShape paneShape = PanePlane.edge(paneFacing).shape();
         return Shapes.joinUnoptimized(paneShape, hostShape, BooleanOp.ONLY_FIRST).optimize();
     }
 }
