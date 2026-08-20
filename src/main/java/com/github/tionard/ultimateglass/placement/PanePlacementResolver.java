@@ -12,17 +12,35 @@ public final class PanePlacementResolver {
 
     public static Direction resolve(BlockPlaceContext context) {
         Player player = context.getPlayer();
-        return player != null && player.isShiftKeyDown()
-                ? context.getClickedFace().getOpposite()
-                : horizontalFacing(player);
+        return resolve(
+                player != null && player.isShiftKeyDown(),
+                context.getClickedFace(),
+                horizontalFacing(player),
+                false
+        );
     }
 
     /** Composite panes occupy the clicked host cell, so its clicked face is not inverted. */
     public static Direction resolveComposite(UseOnContext context) {
         Player player = context.getPlayer();
-        return player != null && player.isShiftKeyDown()
-                ? context.getClickedFace()
-                : horizontalFacing(player);
+        return resolve(
+                player != null && player.isShiftKeyDown(),
+                context.getClickedFace(),
+                horizontalFacing(player),
+                true
+        );
+    }
+
+    static Direction resolve(
+            boolean shifted,
+            Direction clickedFace,
+            Direction playerFacing,
+            boolean occupiesClickedCell
+    ) {
+        if (!shifted) {
+            return playerFacing;
+        }
+        return occupiesClickedCell ? clickedFace : clickedFace.getOpposite();
     }
 
     private static Direction horizontalFacing(Player player) {
