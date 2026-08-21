@@ -20,6 +20,10 @@ framing and furnace/blast-furnace tempering remain unchanged.
 - The renderer emits only pane sections outside the host volume, preventing glass from bleeding or
   flickering through stair/slab geometry.
 - Collision and outline combine the real host shape with only the pane volume outside that host.
+- Composite collision is evaluated dynamically, so the stored stair/slab keeps its normal hopper
+  pass-through behaviour instead of being cached as a full cube.
+- Right-click with any Glazier's Tool rotates the installed glass clockwise to the next position
+  with exposed glass, skipping stair faces completely occupied by the host.
 - Shift + right-click with an iron or diamond Glazier's Tool toggles the installed pane between its
   edge-bound and centred forms without replacing the host.
 - Normal breaking always returns the host stair/slab item and the exact pane, including a modded
@@ -67,7 +71,7 @@ Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
 
 ## Controls
 
-- Rotate a pane: right-click with any Glazier's Tool.
+- Rotate a pane: right-click with any Glazier's Tool; composites skip fully hidden positions.
 - Change rotation axis: `V` by default.
 - Toggle edge/centred geometry: Shift + right-click with iron or diamond.
 - Place normally: right-click; the cursor's nearest edge on the clicked face selects the pane edge.

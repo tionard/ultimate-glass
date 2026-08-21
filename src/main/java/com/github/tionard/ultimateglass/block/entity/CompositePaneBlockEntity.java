@@ -126,6 +126,18 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         }
     }
 
+    public void setPaneFacing(Direction paneFacing) {
+        if (paneFacing.getAxis() == Direction.Axis.Y) {
+            throw new IllegalArgumentException("Composite stair/slab panes must be vertical");
+        }
+        this.paneFacing = paneFacing;
+        setChanged();
+        if (level != null) {
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_ALL);
+        }
+    }
+
     public BlockState restoredHostState() {
         if (hostState.hasProperty(BlockStateProperties.WATERLOGGED)
                 && getBlockState().hasProperty(BlockStateProperties.WATERLOGGED)) {

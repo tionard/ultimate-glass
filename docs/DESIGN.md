@@ -124,11 +124,15 @@ The client wrapper emits the stored host model and corresponding edge-pane model
 cached chunk mesh. Generated pane and frame sections are split at half-block boundaries; sections
 whose inward sample lies inside the stored host shape are discarded. Collision and outline use the
 same host-volume subtraction, so glass neither renders nor collides inside the stair/slab body.
+The composite block is explicitly marked as dynamically shaped because its collision depends on
+BlockEntity data. Without that flag Minecraft caches the pre-BlockEntity full-cube fallback, which
+also prevents the hopper below from collecting items through the open half-block volume.
 
-Shift-use with an iron or diamond Glazier's Tool toggles the installed pane between edge and centred
-geometry. Ordinary breaking independently returns the stored host block item and the exact pane
-stack, retaining dynamic frame data, regardless of tool suitability. Composite water state remains
-stored with the composite.
+Normal use with any Glazier's Tool cycles clockwise to the next pane facing whose host-subtracted
+shape is non-empty, skipping fully occupied stair faces. Shift-use with an iron or diamond tool
+toggles the installed pane between edge and centred geometry. Ordinary breaking independently
+returns the stored host block item and the exact pane stack, retaining dynamic frame data,
+regardless of tool suitability. Composite water state remains stored with the composite.
 
 The server config defaults Tempered panes to intact drops for every tool and bare-hand harvest.
 Disabling that option restores the Silk Touch/diamond-tool rule. A separate off-by-default custom

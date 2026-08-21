@@ -140,7 +140,7 @@ public final class UltimateGlassBlocks {
     private static CompositePaneBlock registerCompositePane() {
         ResourceKey<Block> key = blockKey("composite_pane");
         CompositePaneBlock block = new CompositePaneBlock(
-                BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).setId(key)
+                BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).dynamicShape().setId(key)
         );
         return Registry.register(BuiltInRegistries.BLOCK, key, block);
     }

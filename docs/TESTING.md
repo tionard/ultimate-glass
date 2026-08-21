@@ -31,13 +31,18 @@ checklist in a new world and a backed-up existing world.
    server. Confirm host facing/half/shape, pane material, pane facing, and frame identity.
 10. Shift + right-click composites with iron and diamond Glazier's Tools. Confirm each use toggles
     edge/centred geometry, preserves host/pane/water/frame data, and returns no item.
-11. Break composites with representative correct and incorrect host tools, including bare hands.
+11. Right-click composites with every Glazier's Tool. Confirm each use advances to the next exposed
+    position and skips stair faces whose pane would be completely hidden inside the host.
+12. Place bottom/top slabs and representative stairs containing glass directly above hoppers. Drop
+    items onto every open host section and confirm the hopper collects them as it does through the
+    original half-block, while the visible glass still has collision.
+13. Break composites with representative correct and incorrect host tools, including bare hands.
     Confirm exactly one host block item and one pane always drop, including the modded frame
     component.
-12. Place composites beside ordinary matching and nonmatching Tempered panes and inspect every seam.
-13. Verify `/data get block` shows a non-ticking data holder and confirm no composite
+14. Place composites beside ordinary matching and nonmatching Tempered panes and inspect every seam.
+15. Verify `/data get block` shows a non-ticking data holder and confirm no composite
     BlockEntityRenderer appears in a client profiler capture.
-14. Try a modded stair/slab with no BlockEntity and record compatibility. Confirm a host that owns a
+16. Try a modded stair/slab with no BlockEntity and record compatibility. Confirm a host that owns a
     BlockEntity is rejected without changing the block or consuming the pane.
 
 ## Tempering and names
@@ -105,13 +110,15 @@ checklist in a new world and a backed-up existing world.
 2. Shift + right-click all six faces of full blocks, slabs/stairs, and existing Tempered panes;
    confirm the new pane always lies against the clicked face and never copies source orientation.
 3. Rotate every edge and centred orientation around X/Y/Z.
-4. Toggle single panes edge/centred; verify material, frame, water, and axis are preserved.
-5. Build/reload edge L and cube corners; verify transparent intersections and shared mullions.
-6. Build centred L and cube-corner junctions from one-sided sources. Confirm there are no opposite
+4. Rotate edge/centred composites through every valid host opening; verify blocked stair faces are
+   skipped and material, frame, water, and host state are preserved.
+5. Toggle single panes edge/centred; verify material, frame, water, and axis are preserved.
+6. Build/reload edge L and cube corners; verify transparent intersections and shared mullions.
+7. Build centred L and cube-corner junctions from one-sided sources. Confirm there are no opposite
    arms sticking through the centre unless a real pane source exists on that side.
-7. Remove source panes and verify connection flags and one-sided arms clear without ghost geometry.
-8. Confirm connected multi-plane centred panes refuse destructive conversion until sources are removed.
-9. Verify copper/iron/diamond tier restrictions and legacy-tool compatibility.
+8. Remove source panes and verify connection flags and one-sided arms clear without ghost geometry.
+9. Confirm connected multi-plane centred panes refuse destructive conversion until sources are removed.
+10. Verify copper/iron/diamond tier restrictions and legacy-tool compatibility.
 
 ## Water and harvesting regression
 
