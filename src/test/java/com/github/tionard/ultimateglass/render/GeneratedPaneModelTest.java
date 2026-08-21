@@ -214,6 +214,20 @@ final class GeneratedPaneModelTest {
         assertTrue(source.contains("input.ingredientCount() != 1"));
     }
 
+    @Test
+    void intactDropsDefaultOnAndCompositeBreakReturnsBothItems() throws IOException {
+        String config = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/config/UltimateGlassServerConfig.java"
+        ));
+        assertTrue(config.contains("temperedPanesAlwaysDrop = true"));
+
+        String interactions = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/interaction/UltimateGlassInteractions.java"
+        ));
+        assertTrue(interactions.contains("composite.restoredHostState().getBlock().asItem()"));
+        assertTrue(interactions.contains("ItemStack paneDrop = composite.paneStack()"));
+    }
+
     private static boolean hasOnePixelBroadWoodBand(JsonArray elements, boolean dynamic) {
         for (JsonElement value : elements) {
             JsonObject element = value.getAsJsonObject();

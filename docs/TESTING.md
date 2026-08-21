@@ -31,8 +31,9 @@ checklist in a new world and a backed-up existing world.
    server. Confirm host facing/half/shape, pane material, pane facing, and frame identity.
 10. Shift + right-click composites with iron and diamond Glazier's Tools. Confirm each use toggles
     edge/centred geometry, preserves host/pane/water/frame data, and returns no item.
-11. Break composites with representative correct and incorrect host tools. Confirm host drops follow
-    the original host rules and exactly one pane always drops, including the modded frame component.
+11. Break composites with representative correct and incorrect host tools, including bare hands.
+    Confirm exactly one host block item and one pane always drop, including the modded frame
+    component.
 12. Place composites beside ordinary matching and nonmatching Tempered panes and inspect every seam.
 13. Verify `/data get block` shows a non-ticking data holder and confirm no composite
     BlockEntityRenderer appears in a client profiler capture.

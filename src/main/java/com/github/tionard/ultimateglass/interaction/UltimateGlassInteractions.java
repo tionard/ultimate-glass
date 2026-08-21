@@ -25,15 +25,13 @@ public final class UltimateGlassInteractions {
                     && blockEntity instanceof CompositePaneBlockEntity composite) {
                 EdgePaneBlock.refreshConnectionsAround(level, pos);
                 CenteredPaneBlock.refreshConnectionsAround(level, pos);
-                if (!player.getAbilities().instabuild && level instanceof ServerLevel serverLevel) {
-                    Block.getDrops(
-                            composite.restoredHostState(),
-                            serverLevel,
-                            pos,
-                            null,
-                            player,
-                            player.getMainHandItem()
-                    ).forEach(drop -> Block.popResource(level, pos, drop));
+                if (!player.getAbilities().instabuild && level instanceof ServerLevel) {
+                    ItemStack hostDrop = new ItemStack(
+                            composite.restoredHostState().getBlock().asItem()
+                    );
+                    if (!hostDrop.isEmpty()) {
+                        Block.popResource(level, pos, hostDrop);
+                    }
 
                     ItemStack paneDrop = composite.paneStack();
                     if (!paneDrop.isEmpty()) {

@@ -22,8 +22,8 @@ framing and furnace/blast-furnace tempering remain unchanged.
 - Collision and outline combine the real host shape with only the pane volume outside that host.
 - Shift + right-click with an iron or diamond Glazier's Tool toggles the installed pane between its
   edge-bound and centred forms without replacing the host.
-- Normal breaking evaluates host drops with the original host state and also returns the exact pane,
-  including a modded frame identity.
+- Normal breaking always returns the host stair/slab item and the exact pane, including a modded
+  frame identity, regardless of the tool used.
 - Double slabs and hosts with their own BlockEntity are deliberately rejected in this beta.
 
 ### Pane progression

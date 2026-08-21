@@ -126,9 +126,9 @@ whose inward sample lies inside the stored host shape are discarded. Collision a
 same host-volume subtraction, so glass neither renders nor collides inside the stair/slab body.
 
 Shift-use with an iron or diamond Glazier's Tool toggles the installed pane between edge and centred
-geometry. Ordinary breaking evaluates host drops from the original state and independently returns
-the exact pane stack, retaining dynamic frame data. Composite water state remains stored with the
-composite.
+geometry. Ordinary breaking independently returns the stored host block item and the exact pane
+stack, retaining dynamic frame data, regardless of tool suitability. Composite water state remains
+stored with the composite.
 
 The server config defaults Tempered panes to intact drops for every tool and bare-hand harvest.
 Disabling that option restores the Silk Touch/diamond-tool rule. A separate off-by-default custom
