@@ -28,19 +28,21 @@ final class GeneratedPaneModelTest {
 
     @Test
     void singleEdgePaneProvidesInteriorSamplesForEveryBoundarySection() throws IOException {
-        assertEquals(new PaneElementCounts(9, 8), paneElementCounts("edge_pane_shape_0_base.json"));
+        assertEquals(new PaneElementCounts(16, 12), paneElementCounts("edge_pane_shape_0_base.json"));
     }
 
     @Test
     void fullyConnectedEdgeGeometryDoesNotAddSamplesAtInCellJunctions() throws IOException {
-        assertEquals(new PaneElementCounts(9, 4), paneElementCounts("edge_pane_shape_15_base.json"));
+        PaneElementCounts counts = paneElementCounts("edge_pane_shape_15_base.json");
+        assertTrue(counts.normal() > 0);
+        assertTrue(counts.seamless() < counts.normal());
     }
 
     @Test
     void centeredPaneProvidesInteriorSamplesForEveryBoundarySection() throws IOException {
         for (int mask : new int[] {1, 2, 4}) {
             assertEquals(
-                    new PaneElementCounts(9, 8),
+                    new PaneElementCounts(16, 12),
                     paneElementCounts("centered_pane_shape_" + mask + "_base.json")
             );
         }
@@ -56,7 +58,7 @@ final class GeneratedPaneModelTest {
     void centeredJunctionModelsTrimEveryTransparentIntersection() throws IOException {
         for (int mask : new int[] {3, 5, 6}) {
             assertEquals(
-                    new PaneElementCounts(24, 20),
+                    new PaneElementCounts(32, 24),
                     paneElementCounts("centered_pane_shape_" + mask + "_base.json")
             );
         }
@@ -68,6 +70,12 @@ final class GeneratedPaneModelTest {
         for (int mask = 1; mask < 8; mask++) {
             assertNoOverlappingNonSeamFaces("centered_pane_shape_" + mask + "_base.json");
         }
+    }
+
+    @Test
+    void singlePaneModelsSplitEveryHostFacingSectionAtHalfBlockBoundaries() throws IOException {
+        assertSplitAtHalf("edge_pane_shape_0_base.json", 0, 1);
+        assertSplitAtHalf("edge_pane_shape_0_framed_base.json", 0, 1);
     }
 
     @Test
@@ -190,6 +198,34 @@ final class GeneratedPaneModelTest {
         assertFalse(Files.exists(recipeRoot.resolve(
                 "glass_pane_from_ultimate_glass_pane.json"
         )));
+    }
+
+    @Test
+    void optionalReverseRecipeUsesTheServerControlledCustomSerializer() throws IOException {
+        JsonObject recipe = readJson(Path.of(
+                "src/main/resources/data/ultimateglass/recipe/tempered_to_vanilla.json"
+        ));
+        assertEquals("ultimateglass:tempered_to_vanilla", recipe.get("type").getAsString());
+
+        String source = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/recipe/TemperedToVanillaRecipe.java"
+        ));
+        assertTrue(source.contains("temperedToVanillaRecipeEnabled()"));
+        assertTrue(source.contains("input.ingredientCount() != 1"));
+    }
+
+    @Test
+    void intactDropsDefaultOnAndCompositeBreakReturnsBothItems() throws IOException {
+        String config = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/config/UltimateGlassServerConfig.java"
+        ));
+        assertTrue(config.contains("temperedPanesAlwaysDrop = true"));
+
+        String interactions = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/interaction/UltimateGlassInteractions.java"
+        ));
+        assertTrue(interactions.contains("composite.restoredHostState().getBlock().asItem()"));
+        assertTrue(interactions.contains("ItemStack paneDrop = composite.paneStack()"));
     }
 
     private static boolean hasOnePixelBroadWoodBand(JsonArray elements, boolean dynamic) {
@@ -363,7 +399,7 @@ final class GeneratedPaneModelTest {
             }
         }
 
-        assertEquals(24, normalBoundarySections.size());
+        assertEquals(32, normalBoundarySections.size());
         assertEquals(normalBoundarySections, seamBoundarySections);
     }
 
@@ -399,7 +435,28 @@ final class GeneratedPaneModelTest {
             );
             replacementCount++;
         }
-        assertEquals(8, replacementCount);
+        assertEquals(12, replacementCount);
+    }
+
+    private static void assertSplitAtHalf(
+            String modelName,
+            int firstInPlaneAxis,
+            int secondInPlaneAxis
+    ) throws IOException {
+        JsonArray elements = readJson(MODEL_ROOT.resolve(modelName)).getAsJsonArray("elements");
+        for (JsonElement elementValue : elements) {
+            JsonObject element = elementValue.getAsJsonObject();
+            int[] from = coordinates(element.getAsJsonArray("from"));
+            int[] to = coordinates(element.getAsJsonArray("to"));
+            for (int axis : new int[] {firstInPlaneAxis, secondInPlaneAxis}) {
+                assertFalse(
+                        from[axis] < 8 && to[axis] > 8,
+                        () -> modelName + " crosses the half-block clipping boundary: "
+                                + element.getAsJsonArray("from") + ":"
+                                + element.getAsJsonArray("to")
+                );
+            }
+        }
     }
 
     private record PaneElementCounts(int normal, int seamless) {

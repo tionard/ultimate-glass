@@ -19,6 +19,7 @@ import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
+import com.github.tionard.ultimateglass.pane.CompositePaneGeometry;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
@@ -52,7 +53,11 @@ public final class GlaziersToolItem extends Item {
         if (player.isShiftKeyDown()
                 && tier.canTogglePanePosition()
                 && block instanceof CompositePaneBlock) {
-            return removeCompositePane(context);
+            return toggleCompositePane(context);
+        }
+
+        if (block instanceof CompositePaneBlock) {
+            return rotateCompositePane(context);
         }
 
         if (player.isShiftKeyDown() && tier.canTogglePanePosition()) {
@@ -108,7 +113,7 @@ public final class GlaziersToolItem extends Item {
                 || state.getBlock() instanceof CompositePaneBlock);
     }
 
-    private static InteractionResult removeCompositePane(UseOnContext context) {
+    private static InteractionResult toggleCompositePane(UseOnContext context) {
         Level level = context.getLevel();
         if (!(level.getBlockEntity(context.getClickedPos())
                 instanceof CompositePaneBlockEntity composite)) {
@@ -116,14 +121,29 @@ public final class GlaziersToolItem extends Item {
         }
 
         if (!level.isClientSide()) {
-            ItemStack paneStack = composite.paneStack();
-            BlockState hostState = composite.restoredHostState();
-            level.setBlockAndUpdate(context.getClickedPos(), hostState);
-            Player player = context.getPlayer();
-            if (player != null && !player.getAbilities().instabuild && !paneStack.isEmpty()) {
-                Block.popResource(level, context.getClickedPos(), paneStack);
-            }
+            composite.toggleCentered();
             refreshPaneConnections(level, context.getClickedPos());
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    private static InteractionResult rotateCompositePane(UseOnContext context) {
+        Level level = context.getLevel();
+        if (!(level.getBlockEntity(context.getClickedPos())
+                instanceof CompositePaneBlockEntity composite)) {
+            return InteractionResult.FAIL;
+        }
+
+        if (!level.isClientSide()) {
+            Direction nextFacing = CompositePaneGeometry.nextAvailableFacing(
+                    composite.hostState().getShape(level, context.getClickedPos()),
+                    composite.paneFacing(),
+                    composite.centered()
+            );
+            if (nextFacing != composite.paneFacing()) {
+                composite.setPaneFacing(nextFacing);
+                refreshPaneConnections(level, context.getClickedPos());
+            }
         }
         return InteractionResult.SUCCESS;
     }

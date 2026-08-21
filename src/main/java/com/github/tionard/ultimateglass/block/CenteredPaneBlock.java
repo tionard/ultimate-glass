@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -31,6 +32,8 @@ import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
+import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
+import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 
 /** A full glass sheet centred in its block space on one of the three axes. */
 public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
@@ -74,17 +77,17 @@ public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, 
 
     @Override
     protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return shapeForState(state);
+        return shapeForState(state, level, pos);
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shapeForState(state);
+        return shapeForState(state, level, pos);
     }
 
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return shapeForState(state);
+        return shapeForState(state, level, pos);
     }
 
     @Override
@@ -150,6 +153,15 @@ public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, 
         return appearance.material() == PaneMaterial.TINTED
                 ? 15
                 : super.getLightDampening(state);
+    }
+
+    @Override
+    protected java.util.List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        if (!UltimateGlassServerConfig.temperedPanesAlwaysDrop()) {
+            return super.getDrops(state, builder);
+        }
+        ItemStack drop = GlaziersToolItem.collectedStack(this);
+        return drop.isEmpty() ? java.util.List.of() : java.util.List.of(drop);
     }
 
     @Override
@@ -219,7 +231,24 @@ public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, 
         }
     }
 
-    private static VoxelShape shapeForState(BlockState state) {
-        return ((CenteredPaneBlock) state.getBlock()).geometry(state).shape();
+    private static VoxelShape shapeForState(BlockState state, BlockGetter level, BlockPos pos) {
+        Direction.Axis primary = state.getValue(AXIS);
+        VoxelShape shape = PaneGeometry.centered(primary).shape();
+        for (Direction.Axis requestedAxis : Direction.Axis.values()) {
+            if (requestedAxis == primary) {
+                continue;
+            }
+            for (Direction sourceDirection : Direction.values()) {
+                if (PaneConnectionQueries.hasCenteredConnectionFrom(
+                        level, pos, state, requestedAxis, sourceDirection
+                )) {
+                    shape = Shapes.or(
+                            shape,
+                            PaneGeometry.centeredArm(requestedAxis, sourceDirection)
+                    );
+                }
+            }
+        }
+        return shape.optimize();
     }
 }

@@ -24,6 +24,9 @@ public final class UltimateGlassServerConfig {
     private static volatile boolean copperCraftingEnabled = true;
     private static volatile boolean ironCraftingEnabled = true;
     private static volatile boolean diamondCraftingEnabled = true;
+    private static volatile boolean experimentalCompositesEnabled = false;
+    private static volatile boolean temperedPanesAlwaysDrop = true;
+    private static volatile boolean temperedToVanillaRecipeEnabled = false;
 
     private UltimateGlassServerConfig() {
     }
@@ -37,11 +40,19 @@ public final class UltimateGlassServerConfig {
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             ConfigData data = GSON.fromJson(reader, ConfigData.class);
             if (data != null) {
-                apply(data.copperCraftingEnabled, data.ironCraftingEnabled, data.diamondCraftingEnabled, false);
+                apply(
+                        data.copperCraftingEnabled,
+                        data.ironCraftingEnabled,
+                        data.diamondCraftingEnabled,
+                        data.experimentalCompositesEnabled,
+                        data.temperedPanesAlwaysDrop == null || data.temperedPanesAlwaysDrop,
+                        Boolean.TRUE.equals(data.temperedToVanillaRecipeEnabled),
+                        false
+                );
             }
         } catch (IOException | RuntimeException exception) {
             UltimateGlass.LOGGER.warn("Could not read server configuration; using defaults", exception);
-            apply(true, true, true, false);
+            apply(true, true, true, false, true, false, false);
         }
     }
 
@@ -65,10 +76,33 @@ public final class UltimateGlassServerConfig {
         return diamondCraftingEnabled;
     }
 
-    public static void apply(boolean copper, boolean iron, boolean diamond, boolean save) {
+    public static boolean experimentalCompositesEnabled() {
+        return experimentalCompositesEnabled;
+    }
+
+    public static boolean temperedPanesAlwaysDrop() {
+        return temperedPanesAlwaysDrop;
+    }
+
+    public static boolean temperedToVanillaRecipeEnabled() {
+        return temperedToVanillaRecipeEnabled;
+    }
+
+    public static void apply(
+            boolean copper,
+            boolean iron,
+            boolean diamond,
+            boolean experimentalComposites,
+            boolean alwaysDropTemperedPanes,
+            boolean temperedToVanillaRecipe,
+            boolean save
+    ) {
         copperCraftingEnabled = copper;
         ironCraftingEnabled = iron;
         diamondCraftingEnabled = diamond;
+        experimentalCompositesEnabled = experimentalComposites;
+        temperedPanesAlwaysDrop = alwaysDropTemperedPanes;
+        temperedToVanillaRecipeEnabled = temperedToVanillaRecipe;
         if (save) {
             save();
         }
@@ -81,7 +115,10 @@ public final class UltimateGlassServerConfig {
                 GSON.toJson(new ConfigData(
                         copperCraftingEnabled,
                         ironCraftingEnabled,
-                        diamondCraftingEnabled
+                        diamondCraftingEnabled,
+                        experimentalCompositesEnabled,
+                        temperedPanesAlwaysDrop,
+                        temperedToVanillaRecipeEnabled
                 ), writer);
             }
         } catch (IOException exception) {
@@ -93,14 +130,27 @@ public final class UltimateGlassServerConfig {
         private boolean copperCraftingEnabled = true;
         private boolean ironCraftingEnabled = true;
         private boolean diamondCraftingEnabled = true;
+        private boolean experimentalCompositesEnabled = false;
+        private Boolean temperedPanesAlwaysDrop = true;
+        private Boolean temperedToVanillaRecipeEnabled = false;
 
         private ConfigData() {
         }
 
-        private ConfigData(boolean copper, boolean iron, boolean diamond) {
+        private ConfigData(
+                boolean copper,
+                boolean iron,
+                boolean diamond,
+                boolean experimentalComposites,
+                boolean alwaysDropTemperedPanes,
+                boolean temperedToVanillaRecipe
+        ) {
             this.copperCraftingEnabled = copper;
             this.ironCraftingEnabled = iron;
             this.diamondCraftingEnabled = diamond;
+            this.experimentalCompositesEnabled = experimentalComposites;
+            this.temperedPanesAlwaysDrop = alwaysDropTemperedPanes;
+            this.temperedToVanillaRecipeEnabled = temperedToVanillaRecipe;
         }
     }
 }

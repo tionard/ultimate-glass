@@ -8,8 +8,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
-import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
-import com.github.tionard.ultimateglass.placement.ShiftPlacementModeState;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
 public final class UltimateGlassNetworking {
@@ -18,7 +16,6 @@ public final class UltimateGlassNetworking {
 
     public static void initialize() {
         PayloadTypeRegistry.serverboundPlay().register(RotationAxisPayload.TYPE, RotationAxisPayload.CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(ShiftPlacementModePayload.TYPE, ShiftPlacementModePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ToolCraftingConfigPayload.TYPE, ToolCraftingConfigPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ToolCraftingConfigPayload.TYPE, ToolCraftingConfigPayload.CODEC);
 
@@ -27,14 +24,6 @@ public final class UltimateGlassNetworking {
                 (payload, context) -> RotationAxisState.set(
                         context.player(),
                         RotationAxisState.fromOrdinal(payload.axisOrdinal())
-                )
-        );
-
-        ServerPlayNetworking.registerGlobalReceiver(
-                ShiftPlacementModePayload.TYPE,
-                (payload, context) -> ShiftPlacementModeState.set(
-                        context.player(),
-                        ShiftPlacementMode.fromOrdinal(payload.modeOrdinal())
                 )
         );
 
@@ -54,6 +43,9 @@ public final class UltimateGlassNetworking {
                             payload.copperEnabled(),
                             payload.ironEnabled(),
                             payload.diamondEnabled(),
+                            payload.experimentalCompositesEnabled(),
+                            payload.temperedPanesAlwaysDrop(),
+                            payload.temperedToVanillaRecipeEnabled(),
                             true
                     );
                     ToolCraftingConfigPayload current = ToolCraftingConfigPayload.current();
@@ -65,9 +57,6 @@ public final class UltimateGlassNetworking {
 
         ServerPlayConnectionEvents.JOIN.register((listener, sender, server) ->
                 ServerPlayNetworking.send(listener.player, ToolCraftingConfigPayload.current())
-        );
-        ServerPlayConnectionEvents.DISCONNECT.register((listener, server) ->
-                ShiftPlacementModeState.remove(listener.player)
         );
     }
 }

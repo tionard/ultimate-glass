@@ -67,6 +67,19 @@ final class PaneGeometryTest {
     }
 
     @Test
+    void centeredDerivedArmsStopAtTheJunctionInsteadOfFormingAFullCross() {
+        var northArm = PaneGeometry.centeredArm(Direction.Axis.X, Direction.NORTH).bounds();
+        assertEquals(0.0, northArm.minZ);
+        assertEquals(9.0 / 16.0, northArm.maxZ);
+        assertEquals(7.0 / 16.0, northArm.minX);
+        assertEquals(9.0 / 16.0, northArm.maxX);
+
+        var southArm = PaneGeometry.centeredArm(Direction.Axis.X, Direction.SOUTH).bounds();
+        assertEquals(7.0 / 16.0, southArm.minZ);
+        assertEquals(1.0, southArm.maxZ);
+    }
+
+    @Test
     void multiPlaneCenteredGeometryRotatesAsOneSet() {
         PaneGeometry xy = PaneGeometry.centered(Direction.Axis.X, true, false);
         PaneGeometry xz = xy.rotateAround(Direction.Axis.X);

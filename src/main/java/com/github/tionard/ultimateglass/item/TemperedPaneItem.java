@@ -20,11 +20,14 @@ import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
+import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
+import com.github.tionard.ultimateglass.pane.CompositePaneGeometry;
 import com.github.tionard.ultimateglass.pane.PaneFrame;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.placement.PanePlacementResolver;
 
 /** Common pane item behavior, including installation into stair and slab host blocks. */
 public class TemperedPaneItem extends BlockItem {
@@ -41,6 +44,10 @@ public class TemperedPaneItem extends BlockItem {
     }
 
     private InteractionResult installComposite(UseOnContext context) {
+        if (!UltimateGlassServerConfig.experimentalCompositesEnabled()) {
+            return InteractionResult.PASS;
+        }
+
         Level level = context.getLevel();
         BlockState hostState = level.getBlockState(context.getClickedPos());
         if (!isSupportedHost(hostState) || level.getBlockEntity(context.getClickedPos()) != null) {
@@ -57,7 +64,16 @@ public class TemperedPaneItem extends BlockItem {
             return InteractionResult.PASS;
         }
 
-        Direction.Axis paneAxis = paneAxis(context, hostState);
+        Direction paneFacing = PanePlacementResolver.resolveComposite(context);
+        if (paneFacing.getAxis() == Direction.Axis.Y) {
+            return InteractionResult.PASS;
+        }
+        if (CompositePaneGeometry.exposedPaneShape(
+                hostState.getShape(level, context.getClickedPos()),
+                paneFacing
+        ).isEmpty()) {
+            return InteractionResult.PASS;
+        }
         boolean waterlogged = hostState.hasProperty(BlockStateProperties.WATERLOGGED)
                 ? hostState.getValue(BlockStateProperties.WATERLOGGED)
                 : level.getFluidState(context.getClickedPos()).is(net.minecraft.world.level.material.Fluids.WATER);
@@ -76,7 +92,7 @@ public class TemperedPaneItem extends BlockItem {
             composite.setComposite(
                     hostState,
                     appearance,
-                    paneAxis,
+                    paneFacing,
                     dynamicFrameId(context.getItemInHand(), appearance.frame())
             );
             EdgePaneBlock.refreshConnectionsAround(level, context.getClickedPos());
@@ -100,27 +116,6 @@ public class TemperedPaneItem extends BlockItem {
                     || state.getValue(BlockStateProperties.SLAB_TYPE) != SlabType.DOUBLE;
         }
         return state.getBlock() instanceof StairBlock;
-    }
-
-    static Direction.Axis paneAxis(UseOnContext context, BlockState hostState) {
-        if (hostState.getBlock() instanceof StairBlock
-                && hostState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-            Direction.Axis facingAxis = hostState.getValue(
-                    BlockStateProperties.HORIZONTAL_FACING
-            ).getAxis();
-            return facingAxis == Direction.Axis.X ? Direction.Axis.Z : Direction.Axis.X;
-        }
-
-        Direction clickedFace = context.getClickedFace();
-        if (clickedFace.getAxis().isHorizontal()) {
-            return clickedFace.getAxis();
-        }
-
-        Player player = context.getPlayer();
-        Direction.Axis playerAxis = player == null
-                ? Direction.Axis.Z
-                : player.getDirection().getAxis();
-        return playerAxis == Direction.Axis.Y ? Direction.Axis.Z : playerAxis;
     }
 
     private static Identifier dynamicFrameId(ItemStack stack, PaneFrame frame) {

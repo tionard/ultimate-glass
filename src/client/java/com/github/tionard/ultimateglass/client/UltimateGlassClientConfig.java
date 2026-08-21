@@ -14,7 +14,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
-import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
 
 public final class UltimateGlassClientConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -22,7 +21,6 @@ public final class UltimateGlassClientConfig {
             .getConfigDir()
             .resolve("ultimate-glass-client.json");
 
-    private static ShiftPlacementMode shiftPlacementMode = ShiftPlacementMode.FACE;
     private static volatile boolean seamlessConnectedPanes = true;
 
     private UltimateGlassClientConfig() {
@@ -37,27 +35,13 @@ public final class UltimateGlassClientConfig {
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             ConfigData data = GSON.fromJson(reader, ConfigData.class);
             if (data != null) {
-                if (data.shiftPlacementMode != null) {
-                    shiftPlacementMode = data.shiftPlacementMode;
-                }
                 seamlessConnectedPanes = data.seamlessConnectedPanes == null
                         || data.seamlessConnectedPanes;
             }
         } catch (IOException | RuntimeException exception) {
             UltimateGlass.LOGGER.warn("Could not read client configuration; using defaults", exception);
-            shiftPlacementMode = ShiftPlacementMode.FACE;
             seamlessConnectedPanes = true;
         }
-    }
-
-    public static ShiftPlacementMode shiftPlacementMode() {
-        return shiftPlacementMode;
-    }
-
-    public static ShiftPlacementMode toggleShiftPlacementMode() {
-        shiftPlacementMode = shiftPlacementMode.next();
-        save();
-        return shiftPlacementMode;
     }
 
     public static boolean seamlessConnectedPanes() {
@@ -74,8 +58,23 @@ public final class UltimateGlassClientConfig {
         return UltimateGlassServerConfig.isCraftingEnabled(tier);
     }
 
-    public static void applyServerCraftingConfig(boolean copper, boolean iron, boolean diamond) {
-        UltimateGlassServerConfig.apply(copper, iron, diamond, false);
+    public static void applyServerConfig(
+            boolean copper,
+            boolean iron,
+            boolean diamond,
+            boolean experimentalComposites,
+            boolean alwaysDropTemperedPanes,
+            boolean temperedToVanillaRecipe
+    ) {
+        UltimateGlassServerConfig.apply(
+                copper,
+                iron,
+                diamond,
+                experimentalComposites,
+                alwaysDropTemperedPanes,
+                temperedToVanillaRecipe,
+                false
+        );
     }
 
     public static void setCraftingEnabledLocally(GlaziersToolTier tier, boolean enabled) {
@@ -87,14 +86,70 @@ public final class UltimateGlassClientConfig {
             case IRON -> iron = enabled;
             case DIAMOND -> diamond = enabled;
         }
-        UltimateGlassServerConfig.apply(copper, iron, diamond, false);
+        UltimateGlassServerConfig.apply(
+                copper,
+                iron,
+                diamond,
+                UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                false
+        );
+    }
+
+    public static boolean experimentalCompositesEnabled() {
+        return UltimateGlassServerConfig.experimentalCompositesEnabled();
+    }
+
+    public static void setExperimentalCompositesEnabledLocally(boolean enabled) {
+        UltimateGlassServerConfig.apply(
+                UltimateGlassServerConfig.copperCraftingEnabled(),
+                UltimateGlassServerConfig.ironCraftingEnabled(),
+                UltimateGlassServerConfig.diamondCraftingEnabled(),
+                enabled,
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                false
+        );
+    }
+
+    public static boolean temperedPanesAlwaysDrop() {
+        return UltimateGlassServerConfig.temperedPanesAlwaysDrop();
+    }
+
+    public static void setTemperedPanesAlwaysDropLocally(boolean enabled) {
+        UltimateGlassServerConfig.apply(
+                UltimateGlassServerConfig.copperCraftingEnabled(),
+                UltimateGlassServerConfig.ironCraftingEnabled(),
+                UltimateGlassServerConfig.diamondCraftingEnabled(),
+                UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                enabled,
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                false
+        );
+    }
+
+    public static boolean temperedToVanillaRecipeEnabled() {
+        return UltimateGlassServerConfig.temperedToVanillaRecipeEnabled();
+    }
+
+    public static void setTemperedToVanillaRecipeEnabledLocally(boolean enabled) {
+        UltimateGlassServerConfig.apply(
+                UltimateGlassServerConfig.copperCraftingEnabled(),
+                UltimateGlassServerConfig.ironCraftingEnabled(),
+                UltimateGlassServerConfig.diamondCraftingEnabled(),
+                UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                enabled,
+                false
+        );
     }
 
     private static void save() {
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
-                GSON.toJson(new ConfigData(shiftPlacementMode, seamlessConnectedPanes), writer);
+                GSON.toJson(new ConfigData(seamlessConnectedPanes), writer);
             }
         } catch (IOException exception) {
             UltimateGlass.LOGGER.warn("Could not save client configuration", exception);
@@ -102,14 +157,12 @@ public final class UltimateGlassClientConfig {
     }
 
     private static final class ConfigData {
-        private ShiftPlacementMode shiftPlacementMode = ShiftPlacementMode.FACE;
         private Boolean seamlessConnectedPanes = true;
 
         private ConfigData() {
         }
 
-        private ConfigData(ShiftPlacementMode shiftPlacementMode, boolean seamlessConnectedPanes) {
-            this.shiftPlacementMode = shiftPlacementMode;
+        private ConfigData(boolean seamlessConnectedPanes) {
             this.seamlessConnectedPanes = seamlessConnectedPanes;
         }
     }

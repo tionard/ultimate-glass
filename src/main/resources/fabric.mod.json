@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "ultimateglass",
   "version": "${version}",
-  "name": "Tempered Glass",
-  "description": "Tempered and framed glass pane placement with precision glassworking tools.",
+  "name": "Ultimate Glass",
+  "description": "Expanded tempered and framed glass pane placement with precision glassworking tools.",
   "authors": ["tionard"],
   "contact": {
     "sources": "https://github.com/tionard/ultimate-glass",

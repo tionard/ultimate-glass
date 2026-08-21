@@ -81,18 +81,31 @@ public final class PaneConnectionQueries {
             Direction.Axis requestedAxis
     ) {
         for (Direction direction : Direction.values()) {
-            if (direction.getAxis() == requestedAxis) {
-                continue;
-            }
-
-            BlockPos neighborPos = pos.relative(direction);
-            BlockState neighbor = level.getBlockState(neighborPos);
-            if (samePaneVariant(level, pos, state, neighborPos, neighbor)
-                    && primaryCenteredAxisAt(level, neighborPos, neighbor) == requestedAxis) {
+            if (hasCenteredConnectionFrom(
+                    level, pos, state, requestedAxis, direction
+            )) {
                 return true;
             }
         }
         return false;
+    }
+
+    /** Exact source direction for a one-sided derived centered arm. */
+    public static boolean hasCenteredConnectionFrom(
+            BlockGetter level,
+            BlockPos pos,
+            BlockState state,
+            Direction.Axis requestedAxis,
+            Direction sourceDirection
+    ) {
+        if (sourceDirection.getAxis() == requestedAxis) {
+            return false;
+        }
+
+        BlockPos neighborPos = pos.relative(sourceDirection);
+        BlockState neighbor = level.getBlockState(neighborPos);
+        return samePaneVariant(level, pos, state, neighborPos, neighbor)
+                && primaryCenteredAxisAt(level, neighborPos, neighbor) == requestedAxis;
     }
 
     public static boolean samePaneVariant(
@@ -146,7 +159,7 @@ public final class PaneConnectionQueries {
     ) {
         if (isCompositeAt(level, pos)
                 && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite) {
-            return PaneGeometry.centered(composite.paneAxis());
+            return composite.paneGeometry();
         }
         return state.getBlock() instanceof UltimatePane pane ? pane.geometry(state) : null;
     }
@@ -156,13 +169,15 @@ public final class PaneConnectionQueries {
             BlockPos pos,
             BlockState state
     ) {
-        if (isCompositeAt(level, pos)
-                && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite) {
-            return composite.paneAxis();
+        if (state.getBlock() instanceof CenteredPaneBlock) {
+            return state.getValue(CenteredPaneBlock.AXIS);
         }
-        return state.getBlock() instanceof CenteredPaneBlock
-                ? state.getValue(CenteredPaneBlock.AXIS)
-                : null;
+        if (isCompositeAt(level, pos)
+                && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite
+                && composite.centered()) {
+            return composite.paneFacing().getAxis();
+        }
+        return null;
     }
 
     private static boolean isCompositeAt(BlockGetter level, BlockPos pos) {

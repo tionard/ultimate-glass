@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -32,6 +33,8 @@ import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.placement.PanePlacementResolver;
+import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
+import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 
 /** A glass pane aligned to one of the six outside faces of its block space. */
 public class EdgePaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
@@ -157,6 +160,15 @@ public class EdgePaneBlock extends Block implements SimpleWaterloggedBlock, Ulti
         return appearance.material() == PaneMaterial.TINTED
                 ? 15
                 : super.getLightDampening(state);
+    }
+
+    @Override
+    protected java.util.List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        if (!UltimateGlassServerConfig.temperedPanesAlwaysDrop()) {
+            return super.getDrops(state, builder);
+        }
+        ItemStack drop = GlaziersToolItem.collectedStack(this);
+        return drop.isEmpty() ? java.util.List.of() : java.util.List.of(drop);
     }
 
     @Override

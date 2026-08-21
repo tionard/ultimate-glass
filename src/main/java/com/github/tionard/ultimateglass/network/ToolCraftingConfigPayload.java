@@ -11,7 +11,10 @@ import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 public record ToolCraftingConfigPayload(
         boolean copperEnabled,
         boolean ironEnabled,
-        boolean diamondEnabled
+        boolean diamondEnabled,
+        boolean experimentalCompositesEnabled,
+        boolean temperedPanesAlwaysDrop,
+        boolean temperedToVanillaRecipeEnabled
 ) implements CustomPacketPayload {
     public static final Type<ToolCraftingConfigPayload> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "tool_crafting_config")
@@ -22,8 +25,14 @@ public record ToolCraftingConfigPayload(
                         buffer.writeBoolean(payload.copperEnabled());
                         buffer.writeBoolean(payload.ironEnabled());
                         buffer.writeBoolean(payload.diamondEnabled());
+                        buffer.writeBoolean(payload.experimentalCompositesEnabled());
+                        buffer.writeBoolean(payload.temperedPanesAlwaysDrop());
+                        buffer.writeBoolean(payload.temperedToVanillaRecipeEnabled());
                     },
                     buffer -> new ToolCraftingConfigPayload(
+                            buffer.readBoolean(),
+                            buffer.readBoolean(),
+                            buffer.readBoolean(),
                             buffer.readBoolean(),
                             buffer.readBoolean(),
                             buffer.readBoolean()
@@ -34,7 +43,10 @@ public record ToolCraftingConfigPayload(
         return new ToolCraftingConfigPayload(
                 UltimateGlassServerConfig.copperCraftingEnabled(),
                 UltimateGlassServerConfig.ironCraftingEnabled(),
-                UltimateGlassServerConfig.diamondCraftingEnabled()
+                UltimateGlassServerConfig.diamondCraftingEnabled(),
+                UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled()
         );
     }
 

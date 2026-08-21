@@ -22,9 +22,7 @@ import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.client.render.SeamlessPaneModels;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
 import com.github.tionard.ultimateglass.network.RotationAxisPayload;
-import com.github.tionard.ultimateglass.network.ShiftPlacementModePayload;
 import com.github.tionard.ultimateglass.network.ToolCraftingConfigPayload;
-import com.github.tionard.ultimateglass.placement.ShiftPlacementMode;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
@@ -38,15 +36,6 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     "key.ultimateglass.change_rotation_axis",
                     InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_V,
-                    CATEGORY
-            )
-    );
-
-    private static final KeyMapping TOGGLE_SHIFT_PLACEMENT_MODE = KeyMappingHelper.registerKeyMapping(
-            new KeyMapping(
-                    "key.ultimateglass.toggle_shift_placement_mode",
-                    InputConstants.Type.KEYSYM,
-                    -1,
                     CATEGORY
             )
     );
@@ -68,10 +57,13 @@ public final class UltimateGlassClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(
                 ToolCraftingConfigPayload.TYPE,
                 (payload, context) -> context.client().execute(() ->
-                        UltimateGlassClientConfig.applyServerCraftingConfig(
+                        UltimateGlassClientConfig.applyServerConfig(
                                 payload.copperEnabled(),
                                 payload.ironEnabled(),
-                                payload.diamondEnabled()
+                                payload.diamondEnabled(),
+                                payload.experimentalCompositesEnabled(),
+                                payload.temperedPanesAlwaysDrop(),
+                                payload.temperedToVanillaRecipeEnabled()
                         )
                 )
         );
@@ -84,9 +76,6 @@ public final class UltimateGlassClient implements ClientModInitializer {
             if (client.player != currentPlayer) {
                 currentPlayer = client.player;
                 selectedAxis = RotationAxisState.DEFAULT_AXIS;
-                if (currentPlayer != null && client.getConnection() != null) {
-                    syncShiftPlacementMode();
-                }
             }
 
             while (CHANGE_ROTATION_AXIS.consumeClick()) {
@@ -99,27 +88,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 client.player.sendSystemMessage(Component.translatable(axisMessageKey(selectedAxis)));
             }
 
-            while (TOGGLE_SHIFT_PLACEMENT_MODE.consumeClick()) {
-                if (client.player == null || client.getConnection() == null) {
-                    continue;
-                }
-
-                ShiftPlacementMode mode = UltimateGlassClientConfig.toggleShiftPlacementMode();
-                syncShiftPlacementMode();
-                client.player.sendSystemMessage(Component.translatable(shiftModeMessageKey(mode)));
-            }
         });
-    }
-
-    public static void syncShiftPlacementMode() {
-        Minecraft client = Minecraft.getInstance();
-        if (client.getConnection() == null) {
-            return;
-        }
-
-        ClientPlayNetworking.send(new ShiftPlacementModePayload(
-                UltimateGlassClientConfig.shiftPlacementMode().ordinal()
-        ));
     }
 
     public static void requestCraftingToggle(GlaziersToolTier tier) {
@@ -132,6 +101,9 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     UltimateGlassServerConfig.copperCraftingEnabled(),
                     UltimateGlassServerConfig.ironCraftingEnabled(),
                     UltimateGlassServerConfig.diamondCraftingEnabled(),
+                    UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                    UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                    UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
                     true
             );
             return;
@@ -140,8 +112,61 @@ public final class UltimateGlassClient implements ClientModInitializer {
         ClientPlayNetworking.send(new ToolCraftingConfigPayload(
                 UltimateGlassServerConfig.copperCraftingEnabled(),
                 UltimateGlassServerConfig.ironCraftingEnabled(),
-                UltimateGlassServerConfig.diamondCraftingEnabled()
+                UltimateGlassServerConfig.diamondCraftingEnabled(),
+                UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled()
         ));
+    }
+
+    public static void requestExperimentalCompositesToggle() {
+        boolean enabled = !UltimateGlassClientConfig.experimentalCompositesEnabled();
+        UltimateGlassClientConfig.setExperimentalCompositesEnabledLocally(enabled);
+
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null || client.player == null) {
+            UltimateGlassServerConfig.apply(
+                    UltimateGlassServerConfig.copperCraftingEnabled(),
+                    UltimateGlassServerConfig.ironCraftingEnabled(),
+                    UltimateGlassServerConfig.diamondCraftingEnabled(),
+                    enabled,
+                    UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                    UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                    true
+            );
+            return;
+        }
+
+        ClientPlayNetworking.send(ToolCraftingConfigPayload.current());
+    }
+
+    public static void requestTemperedPanesAlwaysDropToggle() {
+        boolean enabled = !UltimateGlassClientConfig.temperedPanesAlwaysDrop();
+        UltimateGlassClientConfig.setTemperedPanesAlwaysDropLocally(enabled);
+        saveOrSendServerConfig();
+    }
+
+    public static void requestTemperedToVanillaRecipeToggle() {
+        boolean enabled = !UltimateGlassClientConfig.temperedToVanillaRecipeEnabled();
+        UltimateGlassClientConfig.setTemperedToVanillaRecipeEnabledLocally(enabled);
+        saveOrSendServerConfig();
+    }
+
+    private static void saveOrSendServerConfig() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null || client.player == null) {
+            UltimateGlassServerConfig.apply(
+                    UltimateGlassServerConfig.copperCraftingEnabled(),
+                    UltimateGlassServerConfig.ironCraftingEnabled(),
+                    UltimateGlassServerConfig.diamondCraftingEnabled(),
+                    UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                    UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                    UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                    true
+            );
+            return;
+        }
+        ClientPlayNetworking.send(ToolCraftingConfigPayload.current());
     }
 
     public static void toggleSeamlessConnectedPanes() {
@@ -166,10 +191,4 @@ public final class UltimateGlassClient implements ClientModInitializer {
         };
     }
 
-    private static String shiftModeMessageKey(ShiftPlacementMode mode) {
-        return switch (mode) {
-            case FACE -> "message.ultimateglass.shift_mode_face";
-            case NEAR -> "message.ultimateglass.shift_mode_near";
-        };
-    }
 }

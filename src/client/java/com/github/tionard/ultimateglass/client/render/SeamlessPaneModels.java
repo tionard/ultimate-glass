@@ -12,6 +12,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
@@ -96,9 +98,17 @@ public final class SeamlessPaneModels {
             models.get(composite.hostState()).emitQuads(
                     emitter, level, pos, composite.hostState(), random, cullTest
             );
-            models.get(paneState).emitQuads(
-                    emitter, level, pos, paneState, random, cullTest
-            );
+            VoxelShape hostShape = composite.hostState().getShape(level, pos);
+            emitter.pushTransform(quad -> compositePaneQuadVisible(
+                    quad, hostShape, composite.paneFacing(), composite.centered()
+            ));
+            try {
+                models.get(paneState).emitQuads(
+                        emitter, level, pos, paneState, random, cullTest
+                );
+            } finally {
+                emitter.popTransform();
+            }
         }
 
         @Override
@@ -115,7 +125,8 @@ public final class SeamlessPaneModels {
             return new CompositeGeometryKey(
                     composite.hostState(),
                     composite.appearance(),
-                    composite.paneAxis(),
+                    composite.paneFacing(),
+                    composite.centered(),
                     composite.frameBlockId(),
                     state.getValue(CompositePaneBlock.WATERLOGGED),
                     UltimateGlassClientConfig.seamlessConnectedPanes()
@@ -132,12 +143,53 @@ public final class SeamlessPaneModels {
         if (family == null) {
             family = UltimateGlassBlocks.familyFor(com.github.tionard.ultimateglass.pane.PaneMaterial.CLEAR);
         }
-        return family.centeredPane().defaultBlockState()
-                .setValue(CenteredPaneBlock.AXIS, composite.paneAxis())
+        if (composite.centered()) {
+            return family.centeredPane().defaultBlockState()
+                    .setValue(CenteredPaneBlock.AXIS, composite.paneFacing().getAxis())
+                    .setValue(
+                            CenteredPaneBlock.WATERLOGGED,
+                            state.getValue(CompositePaneBlock.WATERLOGGED)
+                    );
+        }
+        return family.edgePane().defaultBlockState()
+                .setValue(EdgePaneBlock.FACING, composite.paneFacing())
                 .setValue(
-                        CenteredPaneBlock.WATERLOGGED,
+                        EdgePaneBlock.WATERLOGGED,
                         state.getValue(CompositePaneBlock.WATERLOGGED)
                 );
+    }
+
+    private static boolean compositePaneQuadVisible(
+            MutableQuadView quad,
+            VoxelShape hostShape,
+            Direction paneFacing,
+            boolean centered
+    ) {
+        float x = 0.0F;
+        float y = 0.0F;
+        float z = 0.0F;
+        for (int vertex = 0; vertex < 4; vertex++) {
+            x += quad.x(vertex);
+            y += quad.y(vertex);
+            z += quad.z(vertex);
+        }
+        x /= 4.0F;
+        y /= 4.0F;
+        z /= 4.0F;
+        if (!centered) {
+            Direction inward = paneFacing.getOpposite();
+            x += inward.getStepX() * EPSILON;
+            y += inward.getStepY() * EPSILON;
+            z += inward.getStepZ() * EPSILON;
+        }
+        for (AABB box : hostShape.toAabbs()) {
+            if (x >= box.minX - EPSILON && x <= box.maxX + EPSILON
+                    && y >= box.minY - EPSILON && y <= box.maxY + EPSILON
+                    && z >= box.minZ - EPSILON && z <= box.maxZ + EPSILON) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static final class SeamlessPaneModel extends WrapperBlockStateModel {
@@ -175,15 +227,17 @@ public final class SeamlessPaneModels {
         ) {
             Object wrappedKey = super.createGeometryKey(level, pos, state, random);
             Object frameBlock = dynamicFrameId(level, pos, state);
+            long centeredSources = centeredSourceMask(level, pos, state);
             if (!UltimateGlassClientConfig.seamlessConnectedPanes()) {
-                return frameBlock == null
+                return frameBlock == null && centeredSources == 0L
                         ? wrappedKey
-                        : new GeometryKey(wrappedKey, 0L, frameBlock);
+                        : new GeometryKey(wrappedKey, 0L, frameBlock, centeredSources);
             }
             return new GeometryKey(
                     wrappedKey,
                     continuationMask(level, pos, state),
-                    frameBlock
+                    frameBlock,
+                    centeredSources
             );
         }
     }
@@ -207,6 +261,10 @@ public final class SeamlessPaneModels {
         if (isModelMarker(marker)) {
             // These tint values are baked-model metadata, never a request for item/block tinting.
             quad.tintIndex(-1);
+        }
+        if (state.getBlock() instanceof CenteredPaneBlock
+                && !centeredSectionSupported(quad, level, pos, state)) {
+            return false;
         }
         boolean keep = seamless
                 ? keepQuad(quad, level, pos, state, seamFill, framedSurface)
@@ -386,6 +444,88 @@ public final class SeamlessPaneModels {
         return mask;
     }
 
+    private static long centeredSourceMask(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state
+    ) {
+        if (!(state.getBlock() instanceof CenteredPaneBlock)) {
+            return 0L;
+        }
+        long mask = 0L;
+        Direction.Axis primary = state.getValue(CenteredPaneBlock.AXIS);
+        for (Direction.Axis requestedAxis : Direction.Axis.values()) {
+            if (requestedAxis == primary) {
+                continue;
+            }
+            for (Direction sourceDirection : Direction.values()) {
+                if (PaneConnectionQueries.hasCenteredConnectionFrom(
+                        level, pos, state, requestedAxis, sourceDirection
+                )) {
+                    int bit = requestedAxis.ordinal() * Direction.values().length
+                            + sourceDirection.ordinal();
+                    mask |= 1L << bit;
+                }
+            }
+        }
+        return mask;
+    }
+
+    private static boolean centeredSectionSupported(
+            MutableQuadView quad,
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state
+    ) {
+        Direction.Axis primary = state.getValue(CenteredPaneBlock.AXIS);
+        PaneGeometry geometry = ((CenteredPaneBlock) state.getBlock()).geometry(state);
+        for (PanePlane plane : geometry.planes()) {
+            if (!plane.isCentered() || plane.axis() == primary
+                    || !insideCenteredSlab(quad, plane.axis())) {
+                continue;
+            }
+            if (!derivedSectionSupported(
+                    quad, level, pos, state, plane.axis()
+            )) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean derivedSectionSupported(
+            MutableQuadView quad,
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            Direction.Axis requestedAxis
+    ) {
+        for (Direction sourceDirection : Direction.values()) {
+            if (PaneConnectionQueries.hasCenteredConnectionFrom(
+                    level, pos, state, requestedAxis, sourceDirection
+            ) && quadInsideCenteredArm(quad, sourceDirection)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean quadInsideCenteredArm(
+            MutableQuadView quad,
+            Direction sourceDirection
+    ) {
+        float minimum = Float.POSITIVE_INFINITY;
+        float maximum = Float.NEGATIVE_INFINITY;
+        for (int vertex = 0; vertex < 4; vertex++) {
+            float value = coordinate(quad, vertex, sourceDirection.getAxis());
+            minimum = Math.min(minimum, value);
+            maximum = Math.max(maximum, value);
+        }
+        return sourceDirection.getAxisDirection() == Direction.AxisDirection.NEGATIVE
+                ? maximum <= CENTER_MAX + EPSILON
+                : minimum >= CENTER_MIN - EPSILON;
+    }
+
     private static Material.Baked dynamicFrameMaterial(
             BlockAndTintGetter level,
             BlockPos pos,
@@ -470,13 +610,19 @@ public final class SeamlessPaneModels {
         };
     }
 
-    private record GeometryKey(Object wrapped, long continuations, Object frameBlock) {
+    private record GeometryKey(
+            Object wrapped,
+            long continuations,
+            Object frameBlock,
+            long centeredSources
+    ) {
     }
 
     private record CompositeGeometryKey(
             BlockState hostState,
             com.github.tionard.ultimateglass.pane.PaneAppearance appearance,
-            Direction.Axis paneAxis,
+            Direction paneFacing,
+            boolean centered,
             Object frameBlock,
             boolean waterlogged,
             long continuations

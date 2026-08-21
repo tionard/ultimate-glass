@@ -1,26 +1,33 @@
-# Tempered Glass
+# Ultimate Glass
 
-Tempered Glass (internally `ultimateglass` for world compatibility) is a Fabric mod for Minecraft
-Java 26.2. It gives builders edge-aligned glass panes, rotatable centred sheets, connected corners,
-wood framing, and tiered glassworking tools.
+Ultimate Glass is a Fabric mod for Minecraft Java 26.2. It gives builders edge-aligned Tempered
+Glass Panes, rotatable centred sheets, connected corners, wood framing, and tiered glassworking
+tools.
 
 ## Version 0.2.0-beta.5
 
-Beta.5 adds composite panes: a Tempered pane can occupy the open portion of a stair or single slab
-without deleting the original host state. Beta.4's wood framing and furnace/blast-furnace tempering
-remain unchanged.
+Beta.5 adds experimental composite panes and refines placement and centred junctions. Beta.4's wood
+framing and furnace/blast-furnace tempering remain unchanged.
 
 ### Stair and slab composites
 
-- Use any Tempered pane on a stair or non-double slab to install it in the same block cell.
+- Enable `Experimental stair/slab panes` in Mod Menu (off by default), then use any Tempered pane on
+  a stair or non-double slab to install it in the same block cell.
 - Stair facing, half, shape, slab half, waterlogging, pane material, and frame identity are stored.
-- The original host model and pane model are emitted into the cached chunk mesh; composites have no
-  ticking logic and no per-frame BlockEntityRenderer.
+- Composite panes use edge-bound placement. Normal use selects the nearest edge of the clicked
+  face; Shift use copies the clicked face exactly. Fully occupied stair faces fall back to ordinary
+  pane placement instead of creating invisible composites.
+- The renderer emits only pane sections outside the host volume, preventing glass from bleeding or
+  flickering through stair/slab geometry.
 - Collision and outline combine the real host shape with only the pane volume outside that host.
-- Shift + right-click with an iron or diamond Glazier's Tool removes the pane, restores the exact
-  host state, and returns the pane item.
-- Normal breaking evaluates host drops with the original host state. The pane follows the existing
-  diamond-tool recovery rule.
+- Composite collision is evaluated dynamically, so the stored stair/slab keeps its normal hopper
+  pass-through behaviour instead of being cached as a full cube.
+- Right-click with any Glazier's Tool rotates the installed glass clockwise to the next position
+  with exposed glass, skipping stair faces completely occupied by the host.
+- Shift + right-click with an iron or diamond Glazier's Tool toggles the installed pane between its
+  edge-bound and centred forms without replacing the host.
+- Normal breaking always returns the host stair/slab item and the exact pane, including a modded
+  frame identity, regardless of the tool used.
 - Double slabs and hosts with their own BlockEntity are deliberately rejected in this beta.
 
 ### Pane progression
@@ -30,8 +37,10 @@ remain unchanged.
   vanilla-style connected pane and preserves tinted-glass light blocking.
 - Smelting or blast-smelting any vanilla clear/stained pane produces the matching `Tempered` pane.
 - Smelting or blast-smelting the new tinted pane produces a `Tempered Tinted Glass Pane`.
+- An optional, off-by-default shapeless recipe converts one unframed Tempered pane back to its
+  matching vanilla-style pane at a 1:1 ratio.
 - Internal `ultimate_*` registry IDs are intentionally retained so existing worlds do not lose
-  their blocks or items; only the player-facing branding changed to Tempered.
+  their blocks or items. The mod is Ultimate Glass; the enhanced panes are named Tempered.
 
 ### Wood frames
 
@@ -52,8 +61,9 @@ Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
 - Tempered panes place against any outside face, including horizontal orientations.
 - Adjacent edge panes form merged L-shaped and three-plane corners.
 - Iron and diamond Glazier's Tools toggle panes between outside-face and centred full-sheet forms.
-- Centred sheets support X, Y, Z, pairwise junctions, and XYZ junctions.
-- Copper rotates; iron also toggles geometry; diamond also harvests supported glass intact.
+- Centred sheets support X, Y, Z, one-sided L junctions, and three-plane cube corners. Angled
+  connections stop at the centre instead of adding unsupported arms through the block.
+- Copper rotates; iron also toggles geometry; diamond additionally mines supported glass faster.
 - Edge and centred panes support native source-water waterlogging. Edge water is clipped at every
   active pane face, including connected corners.
 - Seamless rendering removes only matching coplanar borders and keeps each glass material's colour
@@ -61,17 +71,19 @@ Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
 
 ## Controls
 
-- Rotate a pane: right-click with any Glazier's Tool.
+- Rotate a pane: right-click with any Glazier's Tool; composites skip fully hidden positions.
 - Change rotation axis: `V` by default.
 - Toggle edge/centred geometry: Shift + right-click with iron or diamond.
-- Toggle Shift placement mode: unassigned by default.
-- Mine glass intact: use the diamond tool.
+- Place normally: right-click; the cursor's nearest edge on the clicked face selects the pane edge.
+- Force a clicked face: Shift + right-click while holding a Tempered pane.
+- Mine Tempered glass intact: any tool or bare hand by default; this can be disabled in Mod Menu.
 
 ## Configuration
 
-Mod Menu exposes seamless connected panes, Shift placement mode, and server-authoritative crafting
-switches for each Glazier's Tool tier. Mod Menu is optional; Fabric API is required. The mod must be
-installed on the server and every connecting client.
+Mod Menu exposes seamless connected panes, the off-by-default experimental stair/slab feature,
+default-on intact Tempered-pane drops, the off-by-default Tempered-to-vanilla recipe, and
+server-authoritative crafting switches for each Glazier's Tool tier. Mod Menu is optional; Fabric
+API is required. The mod must be installed on the server and every connecting client.
 
 ## Release plan
 
@@ -100,4 +112,4 @@ The remapped JAR is created in `build/libs`.
 
 ## License
 
-Tempered Glass is available under the MIT License. See `LICENSE`.
+Ultimate Glass is available under the MIT License. See `LICENSE`.
