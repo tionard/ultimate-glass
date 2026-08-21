@@ -1,12 +1,12 @@
-# Ultimate Glass 0.2.0-beta.5 regression checklist
+# Ultimate Glass 0.2.0 regression checklist
 
-Beta.5 adds stair/slab composites on top of beta.4's tempering and universal wood frames. Run this
-checklist in a new world and a backed-up existing world.
+Version 0.2.0 includes stair/slab composites on top of tempering and universal wood frames. Run
+this checklist in a new world and a backed-up existing world.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.0-beta.5.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.0.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 `ultimate_*` block/item IDs and saved BlockState property names are unchanged.
 
