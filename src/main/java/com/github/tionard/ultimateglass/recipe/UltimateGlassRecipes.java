@@ -18,6 +18,10 @@ public final class UltimateGlassRecipes {
             "wood_framed_pane",
             new WoodFramedPaneRecipe()
     );
+    public static final RecipeSerializer<TemperedToVanillaRecipe> TEMPERED_TO_VANILLA = registerUnit(
+            "tempered_to_vanilla",
+            new TemperedToVanillaRecipe()
+    );
     public static final RecipeSerializer<GlaziersToolRecipe> COPPER_TOOL = register(
             "copper_glaziers_tool",
             GlaziersToolTier.COPPER

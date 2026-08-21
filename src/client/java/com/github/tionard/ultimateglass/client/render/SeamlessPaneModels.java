@@ -100,7 +100,7 @@ public final class SeamlessPaneModels {
             );
             VoxelShape hostShape = composite.hostState().getShape(level, pos);
             emitter.pushTransform(quad -> compositePaneQuadVisible(
-                    quad, hostShape, composite.paneFacing()
+                    quad, hostShape, composite.paneFacing(), composite.centered()
             ));
             try {
                 models.get(paneState).emitQuads(
@@ -126,6 +126,7 @@ public final class SeamlessPaneModels {
                     composite.hostState(),
                     composite.appearance(),
                     composite.paneFacing(),
+                    composite.centered(),
                     composite.frameBlockId(),
                     state.getValue(CompositePaneBlock.WATERLOGGED),
                     UltimateGlassClientConfig.seamlessConnectedPanes()
@@ -142,6 +143,14 @@ public final class SeamlessPaneModels {
         if (family == null) {
             family = UltimateGlassBlocks.familyFor(com.github.tionard.ultimateglass.pane.PaneMaterial.CLEAR);
         }
+        if (composite.centered()) {
+            return family.centeredPane().defaultBlockState()
+                    .setValue(CenteredPaneBlock.AXIS, composite.paneFacing().getAxis())
+                    .setValue(
+                            CenteredPaneBlock.WATERLOGGED,
+                            state.getValue(CompositePaneBlock.WATERLOGGED)
+                    );
+        }
         return family.edgePane().defaultBlockState()
                 .setValue(EdgePaneBlock.FACING, composite.paneFacing())
                 .setValue(
@@ -153,7 +162,8 @@ public final class SeamlessPaneModels {
     private static boolean compositePaneQuadVisible(
             MutableQuadView quad,
             VoxelShape hostShape,
-            Direction paneFacing
+            Direction paneFacing,
+            boolean centered
     ) {
         float x = 0.0F;
         float y = 0.0F;
@@ -163,10 +173,15 @@ public final class SeamlessPaneModels {
             y += quad.y(vertex);
             z += quad.z(vertex);
         }
-        Direction inward = paneFacing.getOpposite();
-        x = x / 4.0F + inward.getStepX() * EPSILON;
-        y = y / 4.0F + inward.getStepY() * EPSILON;
-        z = z / 4.0F + inward.getStepZ() * EPSILON;
+        x /= 4.0F;
+        y /= 4.0F;
+        z /= 4.0F;
+        if (!centered) {
+            Direction inward = paneFacing.getOpposite();
+            x += inward.getStepX() * EPSILON;
+            y += inward.getStepY() * EPSILON;
+            z += inward.getStepZ() * EPSILON;
+        }
         for (AABB box : hostShape.toAabbs()) {
             if (x >= box.minX - EPSILON && x <= box.maxX + EPSILON
                     && y >= box.minY - EPSILON && y <= box.maxY + EPSILON
@@ -607,6 +622,7 @@ public final class SeamlessPaneModels {
             BlockState hostState,
             com.github.tionard.ultimateglass.pane.PaneAppearance appearance,
             Direction paneFacing,
+            boolean centered,
             Object frameBlock,
             boolean waterlogged,
             long continuations

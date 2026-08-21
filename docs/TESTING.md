@@ -16,8 +16,8 @@ checklist in a new world and a backed-up existing world.
    Mod Menu, and reconnect once to verify the server-authoritative value remains synchronized.
 2. Install clear, several stained colours, tinted, fixed-framed, and modded-framed Tempered panes
    into bottom slabs, top slabs, and stairs. Confirm the host and pane occupy one block cell.
-3. Confirm composites are edge-bound. Test normal player-facing placement and Shift placement on
-   each vertical clicked face.
+3. Confirm composites are edge-bound. On each host face, click near all four edges and verify normal
+   placement uses the nearest edge. Confirm Shift placement copies the clicked face exactly.
 4. Confirm a double slab, horizontal clicked face, or fully occupied stair face does not create a
    composite and leaves ordinary pane placement available.
 5. Test every horizontal stair facing, top/bottom half, and straight/inner/outer shape. Confirm the
@@ -26,14 +26,13 @@ checklist in a new world and a backed-up existing world.
 7. Inspect collision and outline shapes. The host must keep its normal shape, the exposed pane must
    collide, and no hidden full-block camera collision may appear.
 8. Waterlog every slab/stair combination, install a pane, bucket water in/out where applicable,
-   save/reload, then remove the pane. Confirm exactly one water source and the restored host state.
+   save/reload, then break it. Confirm exactly one water source and the correct host drop.
 9. Save/reload, cross a chunk boundary, unload/reload chunks, reconnect, and restart a dedicated
    server. Confirm host facing/half/shape, pane material, pane facing, and frame identity.
-10. Shift + right-click composites with iron and diamond Glazier's Tools. Confirm the exact original
-   host is restored and exactly one pane item is returned; Creative mode must not duplicate it.
+10. Shift + right-click composites with iron and diamond Glazier's Tools. Confirm each use toggles
+    edge/centred geometry, preserves host/pane/water/frame data, and returns no item.
 11. Break composites with representative correct and incorrect host tools. Confirm host drops follow
-   the original host rules. Repeat with the diamond Glazier's Tool and confirm pane recovery follows
-   the normal pane rule, including the modded frame component.
+    the original host rules and exactly one pane always drops, including the modded frame component.
 12. Place composites beside ordinary matching and nonmatching Tempered panes and inspect every seam.
 13. Verify `/data get block` shows a non-ticking data holder and confirm no composite
     BlockEntityRenderer appears in a client profiler capture.
@@ -47,7 +46,8 @@ checklist in a new world and a backed-up existing world.
 2. Confirm commands and existing saves still recognize the retained `ultimateglass:ultimate_*` IDs.
 3. Smelt and blast-smelt clear plus several stained vanilla panes; verify the matching Tempered item,
    200/100-tick timing, and no colour change.
-4. Confirm the former one-pane shapeless forward and reverse recipes no longer produce results.
+4. Confirm the Tempered-to-vanilla recipe is absent by default. Enable it in Mod Menu and verify one
+   unframed Tempered pane returns one matching vanilla-style pane; framed panes must not match.
 5. Craft six tinted-glass blocks in two rows; verify 16 normal `Tinted Glass Pane` items.
 6. Place those tinted panes and verify normal post/side connections, waterlogging, harvesting, and
    complete tinted-glass block/skylight dampening.
@@ -99,7 +99,8 @@ checklist in a new world and a backed-up existing world.
 
 ## Geometry and tool regression
 
-1. Place normally from every horizontal direction and confirm stair-like player-facing orientation.
+1. Click near all four edges of every block face and confirm normal placement chooses the nearest
+   edge, including top/bottom edges on vertical faces and all four directions on horizontal faces.
 2. Shift + right-click all six faces of full blocks, slabs/stairs, and existing Tempered panes;
    confirm the new pane always lies against the clicked face and never copies source orientation.
 3. Rotate every edge and centred orientation around X/Y/Z.
@@ -118,13 +119,15 @@ checklist in a new world and a backed-up existing world.
 3. Inspect all edge orientations plus L/cube corners; water must stop at every active pane face.
 4. Confirm centred panes keep normal full-cell water rendering.
 5. Repeat on Fabric and Sodium/Iris with shaders off/on.
-6. Verify ordinary Silk Touch and the diamond tool produce exactly one item, including the stored
-   frame component for modded planks; Creative mode must produce no extra drops.
+6. With `Tempered panes never shatter` enabled, verify bare hands, wrong tools, Silk Touch, and the
+   diamond tool each produce exactly one item, including the stored modded-frame component. Disable
+   the setting and verify the former Silk Touch/diamond rule returns; Creative mode produces none.
 
 ## Dedicated-server and compatibility checks
 
 1. Join with a client containing Fabric API and optionally Mod Menu; verify registry sync.
-2. Verify server-authoritative tool recipe switches and multiplayer placement.
+2. Verify server-authoritative tool recipe switches, intact-drop and reverse-recipe settings, and
+   multiplayer placement.
 3. Load a representative 0.1.8/beta.3 world and inspect saved orientations, centred connections,
    corners, tinted panes, waterlogging, and legacy tools.
 4. Load a world created with the first beta.4 build and verify its fixed vanilla-wood IDs remain.

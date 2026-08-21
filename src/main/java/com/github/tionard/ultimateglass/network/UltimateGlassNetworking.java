@@ -44,6 +44,8 @@ public final class UltimateGlassNetworking {
                             payload.ironEnabled(),
                             payload.diamondEnabled(),
                             payload.experimentalCompositesEnabled(),
+                            payload.temperedPanesAlwaysDrop(),
+                            payload.temperedToVanillaRecipeEnabled(),
                             true
                     );
                     ToolCraftingConfigPayload current = ToolCraftingConfigPayload.current();

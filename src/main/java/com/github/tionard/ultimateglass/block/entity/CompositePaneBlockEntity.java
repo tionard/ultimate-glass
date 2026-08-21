@@ -20,6 +20,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
 import com.github.tionard.ultimateglass.pane.PaneFrame;
+import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlockEntities;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
@@ -32,6 +33,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     private static final String MATERIAL_KEY = "pane_material";
     private static final String FRAME_KEY = "pane_frame";
     private static final String FACING_KEY = "pane_facing";
+    private static final String CENTERED_KEY = "pane_centered";
     /** Read-only migration key written by the original beta.5 composite implementation. */
     private static final String AXIS_KEY = "pane_axis";
     private static final String FRAME_BLOCK_KEY = "frame_block";
@@ -56,6 +58,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     private BlockState hostState = Blocks.AIR.defaultBlockState();
     private PaneAppearance appearance = new PaneAppearance(PaneMaterial.CLEAR);
     private Direction paneFacing = Direction.NORTH;
+    private boolean centered;
     private Identifier frameBlockId = DynamicFrameBlockEntity.DEFAULT_FRAME;
 
     public CompositePaneBlockEntity(BlockPos pos, BlockState state) {
@@ -72,6 +75,18 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
 
     public Direction paneFacing() {
         return paneFacing;
+    }
+
+    public boolean centered() {
+        return centered;
+    }
+
+    public PaneGeometry paneGeometry() {
+        return centered
+                ? PaneGeometry.centered(paneFacing.getAxis())
+                : PaneGeometry.edge(
+                        paneFacing, false, false, false, false
+                );
     }
 
     @Override
@@ -91,9 +106,19 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         this.hostState = hostState;
         this.appearance = appearance;
         this.paneFacing = paneFacing;
+        this.centered = false;
         this.frameBlockId = frameBlockId == null
                 ? DynamicFrameBlockEntity.DEFAULT_FRAME
                 : frameBlockId;
+        setChanged();
+        if (level != null) {
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_ALL);
+        }
+    }
+
+    public void toggleCentered() {
+        centered = !centered;
         setChanged();
         if (level != null) {
             BlockState state = getBlockState();
@@ -139,6 +164,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         if (paneFacing.getAxis() == Direction.Axis.Y) {
             paneFacing = Direction.NORTH;
         }
+        centered = input.read(CENTERED_KEY, Codec.BOOL).orElse(false);
         frameBlockId = input.read(FRAME_BLOCK_KEY, Identifier.CODEC)
                 .orElse(DynamicFrameBlockEntity.DEFAULT_FRAME);
         requestClientRemesh();
@@ -152,6 +178,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         output.store(FRAME_KEY, FRAME_CODEC, appearance.frame());
         output.store(FACING_KEY, DIRECTION_CODEC, paneFacing);
         output.store(AXIS_KEY, AXIS_CODEC, paneFacing.getAxis());
+        output.store(CENTERED_KEY, Codec.BOOL, centered);
         output.store(FRAME_BLOCK_KEY, Identifier.CODEC, frameBlockId);
     }
 

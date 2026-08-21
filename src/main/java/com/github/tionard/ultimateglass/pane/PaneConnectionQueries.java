@@ -159,7 +159,7 @@ public final class PaneConnectionQueries {
     ) {
         if (isCompositeAt(level, pos)
                 && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite) {
-            return PaneGeometry.edge(composite.paneFacing(), false, false, false, false);
+            return composite.paneGeometry();
         }
         return state.getBlock() instanceof UltimatePane pane ? pane.geometry(state) : null;
     }
@@ -169,9 +169,15 @@ public final class PaneConnectionQueries {
             BlockPos pos,
             BlockState state
     ) {
-        return state.getBlock() instanceof CenteredPaneBlock
-                ? state.getValue(CenteredPaneBlock.AXIS)
-                : null;
+        if (state.getBlock() instanceof CenteredPaneBlock) {
+            return state.getValue(CenteredPaneBlock.AXIS);
+        }
+        if (isCompositeAt(level, pos)
+                && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite
+                && composite.centered()) {
+            return composite.paneFacing().getAxis();
+        }
+        return null;
     }
 
     private static boolean isCompositeAt(BlockGetter level, BlockPos pos) {

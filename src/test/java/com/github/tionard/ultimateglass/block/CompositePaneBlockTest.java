@@ -58,4 +58,30 @@ final class CompositePaneBlockTest {
 
         assertTrue(CompositePaneGeometry.exposedPaneShape(host, Direction.SOUTH).isEmpty());
     }
+
+    @Test
+    void centeredCompositeKeepsOnlyThePaneVolumeOutsideABottomSlab() {
+        VoxelShape host = Block.box(0, 0, 0, 16, 8, 16);
+        VoxelShape exposed = CompositePaneGeometry.exposedPaneShape(
+                host, Direction.NORTH, true
+        );
+
+        assertFalse(exposed.isEmpty());
+        assertFalse(Shapes.joinIsNotEmpty(host, exposed, BooleanOp.AND));
+        assertEquals(0.5, exposed.bounds().minY);
+        assertEquals(7.0 / 16.0, exposed.bounds().minZ);
+        assertEquals(9.0 / 16.0, exposed.bounds().maxZ);
+    }
+
+    @Test
+    void centeredAndEdgeCompositeModesKeepTheSameVerticalOrientation() {
+        VoxelShape host = Block.box(0, 0, 0, 16, 8, 16);
+        VoxelShape edge = CompositePaneGeometry.exposedPaneShape(host, Direction.WEST, false);
+        VoxelShape centered = CompositePaneGeometry.exposedPaneShape(host, Direction.WEST, true);
+
+        assertEquals(0.0, edge.bounds().minX);
+        assertEquals(2.0 / 16.0, edge.bounds().maxX);
+        assertEquals(7.0 / 16.0, centered.bounds().minX);
+        assertEquals(9.0 / 16.0, centered.bounds().maxX);
+    }
 }

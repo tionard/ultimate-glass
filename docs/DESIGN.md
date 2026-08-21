@@ -109,23 +109,31 @@ does not modify block state or collision, and invalidates compiled chunk geometr
 ## Stair and slab composites
 
 `CompositePaneBlockEntity` stores the complete original host `BlockState`, the `PaneAppearance`, a
-vertical edge facing, and the optional dynamic plank block ID. It has no ticker. The composite block
-state carries only waterlogging and tinted-light flags needed by state-only engine queries.
+vertical facing, an edge/centred mode flag, and the optional dynamic plank block ID. It has no
+ticker. The composite block state carries only waterlogging and tinted-light flags needed by
+state-only engine queries.
 
 Composite placement is server-authoritative, experimental, and disabled by default. Tempered pane
 items intercept use on stairs and non-double slabs only when it is enabled. Hosts with a
 BlockEntity are rejected so beta.5 cannot silently discard mod-owned data. Normal placement uses
-the same player-facing direction as ordinary panes; Shift uses the clicked vertical host face.
-Horizontal faces and fully occupied stair faces fall through to ordinary pane placement.
+the nearest edge of the clicked host face; Shift uses the clicked host face exactly. Unsupported
+horizontal composite orientations and fully occupied stair faces fall through to ordinary pane
+placement.
 
 The client wrapper emits the stored host model and corresponding edge-pane model into one normal
 cached chunk mesh. Generated pane and frame sections are split at half-block boundaries; sections
 whose inward sample lies inside the stored host shape are discarded. Collision and outline use the
 same host-volume subtraction, so glass neither renders nor collides inside the stair/slab body.
 
-Shift-use with an iron or diamond Glazier's Tool restores the stored host and returns the exact pane
-stack. Ordinary breaking evaluates host drops from the original state; diamond-tool pane recovery
-retains dynamic frame data. Composite water state is copied back into a waterloggable host.
+Shift-use with an iron or diamond Glazier's Tool toggles the installed pane between edge and centred
+geometry. Ordinary breaking evaluates host drops from the original state and independently returns
+the exact pane stack, retaining dynamic frame data. Composite water state remains stored with the
+composite.
+
+The server config defaults Tempered panes to intact drops for every tool and bare-hand harvest.
+Disabling that option restores the Silk Touch/diamond-tool rule. A separate off-by-default custom
+recipe converts exactly one unframed Tempered pane into its matching vanilla-style pane; framed
+panes are deliberately excluded so crafting cannot silently discard their frame material.
 
 ## World compatibility
 

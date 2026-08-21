@@ -200,6 +200,20 @@ final class GeneratedPaneModelTest {
         )));
     }
 
+    @Test
+    void optionalReverseRecipeUsesTheServerControlledCustomSerializer() throws IOException {
+        JsonObject recipe = readJson(Path.of(
+                "src/main/resources/data/ultimateglass/recipe/tempered_to_vanilla.json"
+        ));
+        assertEquals("ultimateglass:tempered_to_vanilla", recipe.get("type").getAsString());
+
+        String source = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/recipe/TemperedToVanillaRecipe.java"
+        ));
+        assertTrue(source.contains("temperedToVanillaRecipeEnabled()"));
+        assertTrue(source.contains("input.ingredientCount() != 1"));
+    }
+
     private static boolean hasOnePixelBroadWoodBand(JsonArray elements, boolean dynamic) {
         for (JsonElement value : elements) {
             JsonObject element = value.getAsJsonObject();

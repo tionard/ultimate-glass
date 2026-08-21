@@ -14,7 +14,17 @@ public final class CompositePaneGeometry {
             VoxelShape hostShape,
             Direction paneFacing
     ) {
-        VoxelShape paneShape = PanePlane.edge(paneFacing).shape();
+        return exposedPaneShape(hostShape, paneFacing, false);
+    }
+
+    public static VoxelShape exposedPaneShape(
+            VoxelShape hostShape,
+            Direction paneFacing,
+            boolean centered
+    ) {
+        VoxelShape paneShape = centered
+                ? PanePlane.centered(paneFacing.getAxis()).shape()
+                : PanePlane.edge(paneFacing).shape();
         return Shapes.joinUnoptimized(paneShape, hostShape, BooleanOp.ONLY_FIRST).optimize();
     }
 }

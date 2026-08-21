@@ -16,6 +16,8 @@ public final class UltimateGlassConfigScreen extends Screen {
     private final Map<GlaziersToolTier, Button> craftingButtons = new EnumMap<>(GlaziersToolTier.class);
     private Button seamlessPanesButton;
     private Button experimentalCompositesButton;
+    private Button alwaysDropPanesButton;
+    private Button reverseRecipeButton;
 
     public UltimateGlassConfigScreen(Screen parent) {
         super(Component.translatable("config.ultimateglass.title"));
@@ -28,7 +30,7 @@ public final class UltimateGlassConfigScreen extends Screen {
 
         int buttonWidth = 260;
         int left = this.width / 2 - buttonWidth / 2;
-        int top = this.height / 2 - 66;
+        int top = Math.max(32, this.height / 2 - 84);
 
         seamlessPanesButton = this.addRenderableWidget(
                 Button.builder(seamlessPanesButtonText(), button -> {
@@ -50,9 +52,29 @@ public final class UltimateGlassConfigScreen extends Screen {
                         .build()
         );
 
-        addCraftingButton(left, top + 48, buttonWidth, GlaziersToolTier.COPPER);
-        addCraftingButton(left, top + 72, buttonWidth, GlaziersToolTier.IRON);
-        addCraftingButton(left, top + 96, buttonWidth, GlaziersToolTier.DIAMOND);
+        alwaysDropPanesButton = this.addRenderableWidget(
+                Button.builder(alwaysDropPanesButtonText(), button -> {
+                    UltimateGlassClient.requestTemperedPanesAlwaysDropToggle();
+                    button.setMessage(alwaysDropPanesButtonText());
+                })
+                        .pos(left, top + 48)
+                        .size(buttonWidth, 20)
+                        .build()
+        );
+
+        reverseRecipeButton = this.addRenderableWidget(
+                Button.builder(reverseRecipeButtonText(), button -> {
+                    UltimateGlassClient.requestTemperedToVanillaRecipeToggle();
+                    button.setMessage(reverseRecipeButtonText());
+                })
+                        .pos(left, top + 72)
+                        .size(buttonWidth, 20)
+                        .build()
+        );
+
+        addCraftingButton(left, top + 96, buttonWidth, GlaziersToolTier.COPPER);
+        addCraftingButton(left, top + 120, buttonWidth, GlaziersToolTier.IRON);
+        addCraftingButton(left, top + 144, buttonWidth, GlaziersToolTier.DIAMOND);
 
         this.addRenderableWidget(
                 Button.builder(CommonComponents.GUI_DONE, button -> returnToParent())
@@ -70,6 +92,12 @@ public final class UltimateGlassConfigScreen extends Screen {
         }
         if (seamlessPanesButton != null) {
             seamlessPanesButton.setMessage(seamlessPanesButtonText());
+        }
+        if (alwaysDropPanesButton != null) {
+            alwaysDropPanesButton.setMessage(alwaysDropPanesButtonText());
+        }
+        if (reverseRecipeButton != null) {
+            reverseRecipeButton.setMessage(reverseRecipeButtonText());
         }
         craftingButtons.forEach((tier, button) -> button.setMessage(craftingButtonText(tier)));
     }
@@ -110,6 +138,22 @@ public final class UltimateGlassConfigScreen extends Screen {
                 UltimateGlassClientConfig.seamlessConnectedPanes()
                         ? "config.ultimateglass.seamless_panes_enabled"
                         : "config.ultimateglass.seamless_panes_disabled"
+        );
+    }
+
+    private Component alwaysDropPanesButtonText() {
+        return Component.translatable(
+                UltimateGlassClientConfig.temperedPanesAlwaysDrop()
+                        ? "config.ultimateglass.always_drop_panes_enabled"
+                        : "config.ultimateglass.always_drop_panes_disabled"
+        );
+    }
+
+    private Component reverseRecipeButtonText() {
+        return Component.translatable(
+                UltimateGlassClientConfig.temperedToVanillaRecipeEnabled()
+                        ? "config.ultimateglass.reverse_recipe_enabled"
+                        : "config.ultimateglass.reverse_recipe_disabled"
         );
     }
 

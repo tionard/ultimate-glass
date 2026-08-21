@@ -13,6 +13,7 @@ import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 
 public final class UltimateGlassInteractions {
     private UltimateGlassInteractions() {
@@ -34,12 +35,9 @@ public final class UltimateGlassInteractions {
                             player.getMainHandItem()
                     ).forEach(drop -> Block.popResource(level, pos, drop));
 
-                    if (player.getMainHandItem().getItem() instanceof GlaziersToolItem tool
-                            && tool.tier().silkTouchesGlass()) {
-                        ItemStack paneDrop = composite.paneStack();
-                        if (!paneDrop.isEmpty()) {
-                            Block.popResource(level, pos, paneDrop);
-                        }
+                    ItemStack paneDrop = composite.paneStack();
+                    if (!paneDrop.isEmpty()) {
+                        Block.popResource(level, pos, paneDrop);
                     }
                 }
                 return;
@@ -52,6 +50,7 @@ public final class UltimateGlassInteractions {
             }
 
             if (player.getAbilities().instabuild
+                    || UltimateGlassServerConfig.temperedPanesAlwaysDrop()
                     || !(player.getMainHandItem().getItem() instanceof GlaziersToolItem tool)
                     || !tool.tier().silkTouchesGlass()) {
                 return;

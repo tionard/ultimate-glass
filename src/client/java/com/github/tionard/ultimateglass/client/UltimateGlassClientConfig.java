@@ -62,10 +62,18 @@ public final class UltimateGlassClientConfig {
             boolean copper,
             boolean iron,
             boolean diamond,
-            boolean experimentalComposites
+            boolean experimentalComposites,
+            boolean alwaysDropTemperedPanes,
+            boolean temperedToVanillaRecipe
     ) {
         UltimateGlassServerConfig.apply(
-                copper, iron, diamond, experimentalComposites, false
+                copper,
+                iron,
+                diamond,
+                experimentalComposites,
+                alwaysDropTemperedPanes,
+                temperedToVanillaRecipe,
+                false
         );
     }
 
@@ -83,6 +91,8 @@ public final class UltimateGlassClientConfig {
                 iron,
                 diamond,
                 UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
                 false
         );
     }
@@ -96,6 +106,40 @@ public final class UltimateGlassClientConfig {
                 UltimateGlassServerConfig.copperCraftingEnabled(),
                 UltimateGlassServerConfig.ironCraftingEnabled(),
                 UltimateGlassServerConfig.diamondCraftingEnabled(),
+                enabled,
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                false
+        );
+    }
+
+    public static boolean temperedPanesAlwaysDrop() {
+        return UltimateGlassServerConfig.temperedPanesAlwaysDrop();
+    }
+
+    public static void setTemperedPanesAlwaysDropLocally(boolean enabled) {
+        UltimateGlassServerConfig.apply(
+                UltimateGlassServerConfig.copperCraftingEnabled(),
+                UltimateGlassServerConfig.ironCraftingEnabled(),
+                UltimateGlassServerConfig.diamondCraftingEnabled(),
+                UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                enabled,
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                false
+        );
+    }
+
+    public static boolean temperedToVanillaRecipeEnabled() {
+        return UltimateGlassServerConfig.temperedToVanillaRecipeEnabled();
+    }
+
+    public static void setTemperedToVanillaRecipeEnabledLocally(boolean enabled) {
+        UltimateGlassServerConfig.apply(
+                UltimateGlassServerConfig.copperCraftingEnabled(),
+                UltimateGlassServerConfig.ironCraftingEnabled(),
+                UltimateGlassServerConfig.diamondCraftingEnabled(),
+                UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                 enabled,
                 false
         );

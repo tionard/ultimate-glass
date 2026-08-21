@@ -61,7 +61,9 @@ public final class UltimateGlassClient implements ClientModInitializer {
                                 payload.copperEnabled(),
                                 payload.ironEnabled(),
                                 payload.diamondEnabled(),
-                                payload.experimentalCompositesEnabled()
+                                payload.experimentalCompositesEnabled(),
+                                payload.temperedPanesAlwaysDrop(),
+                                payload.temperedToVanillaRecipeEnabled()
                         )
                 )
         );
@@ -100,6 +102,8 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     UltimateGlassServerConfig.ironCraftingEnabled(),
                     UltimateGlassServerConfig.diamondCraftingEnabled(),
                     UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                    UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                    UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
                     true
             );
             return;
@@ -109,7 +113,9 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 UltimateGlassServerConfig.copperCraftingEnabled(),
                 UltimateGlassServerConfig.ironCraftingEnabled(),
                 UltimateGlassServerConfig.diamondCraftingEnabled(),
-                UltimateGlassServerConfig.experimentalCompositesEnabled()
+                UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled()
         ));
     }
 
@@ -124,11 +130,42 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     UltimateGlassServerConfig.ironCraftingEnabled(),
                     UltimateGlassServerConfig.diamondCraftingEnabled(),
                     enabled,
+                    UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                    UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
                     true
             );
             return;
         }
 
+        ClientPlayNetworking.send(ToolCraftingConfigPayload.current());
+    }
+
+    public static void requestTemperedPanesAlwaysDropToggle() {
+        boolean enabled = !UltimateGlassClientConfig.temperedPanesAlwaysDrop();
+        UltimateGlassClientConfig.setTemperedPanesAlwaysDropLocally(enabled);
+        saveOrSendServerConfig();
+    }
+
+    public static void requestTemperedToVanillaRecipeToggle() {
+        boolean enabled = !UltimateGlassClientConfig.temperedToVanillaRecipeEnabled();
+        UltimateGlassClientConfig.setTemperedToVanillaRecipeEnabledLocally(enabled);
+        saveOrSendServerConfig();
+    }
+
+    private static void saveOrSendServerConfig() {
+        Minecraft client = Minecraft.getInstance();
+        if (client.getConnection() == null || client.player == null) {
+            UltimateGlassServerConfig.apply(
+                    UltimateGlassServerConfig.copperCraftingEnabled(),
+                    UltimateGlassServerConfig.ironCraftingEnabled(),
+                    UltimateGlassServerConfig.diamondCraftingEnabled(),
+                    UltimateGlassServerConfig.experimentalCompositesEnabled(),
+                    UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
+                    UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                    true
+            );
+            return;
+        }
         ClientPlayNetworking.send(ToolCraftingConfigPayload.current());
     }
 

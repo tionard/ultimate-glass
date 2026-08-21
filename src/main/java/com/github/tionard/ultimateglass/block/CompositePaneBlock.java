@@ -28,7 +28,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.pane.CompositePaneGeometry;
 
-/** A stair/slab host plus one centred vertical tempered pane in the same block cell. */
+/** A stair/slab host plus one edge-bound or centred vertical tempered pane in the same block cell. */
 public final class CompositePaneBlock extends Block implements EntityBlock, SimpleWaterloggedBlock {
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final BooleanProperty TINTED = BooleanProperty.create("tinted");
@@ -162,7 +162,7 @@ public final class CompositePaneBlock extends Block implements EntityBlock, Simp
                 ? Shapes.empty()
                 : hostState.getShape(level, pos);
         VoxelShape exposedPane = CompositePaneGeometry.exposedPaneShape(
-                hostShape, composite.paneFacing()
+                hostShape, composite.paneFacing(), composite.centered()
         );
         return Shapes.or(hostShape, exposedPane).optimize();
     }
