@@ -4,10 +4,10 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2. It gives builders edge-a
 Glass Panes, rotatable centred sheets, connected corners, wood framing, and tiered glassworking
 tools.
 
-## Version 0.2.0-beta.5
+## Version 0.2.0
 
-Beta.5 adds experimental composite panes and refines placement and centred junctions. Beta.4's wood
-framing and furnace/blast-furnace tempering remain unchanged.
+Version 0.2.0 adds experimental composite panes and refines placement and centred junctions. The
+wood framing and furnace/blast-furnace tempering introduced during beta remain unchanged.
 
 ### Stair and slab composites
 
@@ -88,8 +88,8 @@ API is required. The mod must be installed on the server and every connecting cl
 ## Release plan
 
 - `0.2.0-beta.4`: Tempered naming/progression and universal plank framing.
-- `0.2.0-beta.5`: Stair/slab composite panes; final planned feature beta for 0.2 (this iteration).
-- `0.2.0`: Release after beta.5 validation, with no additional 0.2 feature betas planned.
+- `0.2.0-beta.5`: Stair/slab composite panes; final feature beta for 0.2.
+- `0.2.0`: Stable release after beta.5 validation.
 - Mosaic foundation, layered mosaics, and the broader integration/performance phase previously
   labelled beta.6-beta.8 move to the next feature release, currently targeted as 0.3.0.
 
