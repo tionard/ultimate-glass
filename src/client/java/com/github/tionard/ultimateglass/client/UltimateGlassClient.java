@@ -21,9 +21,15 @@ import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.client.render.SeamlessPaneModels;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
+import com.github.tionard.ultimateglass.item.GlaziersToolItem;
+import com.github.tionard.ultimateglass.item.GlassChiselItem;
+import com.github.tionard.ultimateglass.network.PaneSeamEditPayload;
+import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
+import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
 import com.github.tionard.ultimateglass.network.RotationAxisPayload;
 import com.github.tionard.ultimateglass.network.ToolCraftingConfigPayload;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
+import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
 public final class UltimateGlassClient implements ClientModInitializer {
@@ -40,12 +46,48 @@ public final class UltimateGlassClient implements ClientModInitializer {
             )
     );
 
+    private static final KeyMapping TOGGLE_GLASS_CHISEL_MODE = KeyMappingHelper.registerKeyMapping(
+            new KeyMapping(
+                    "key.ultimateglass.toggle_glass_chisel_mode",
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_V,
+                    CATEGORY
+            )
+    );
+
     private static Direction.Axis selectedAxis = RotationAxisState.DEFAULT_AXIS;
     private static Player currentPlayer;
 
     @Override
     public void onInitializeClient() {
         UltimateGlassClientConfig.load();
+        GlassChiselItem.setClientUseHandler((context, state, target, seams) -> {
+            boolean resetAll = context.getPlayer() != null
+                    && context.getPlayer().isShiftKeyDown();
+            PaneSeamOverride result;
+            if (resetAll) {
+                result = PaneSeamOverride.AUTOMATIC;
+            } else {
+                boolean automaticState = UltimateGlassClientConfig.seamlessConnectedPanes()
+                        && PaneConnectionQueries.hasMatchingContinuation(
+                                context.getLevel(),
+                                context.getClickedPos(),
+                                state,
+                                target.boundary(),
+                                target.plane()
+                        );
+                result = seams.seamOverride(
+                        target.plane(), target.boundary()
+                ).oppositeOfCurrent(automaticState);
+            }
+            ClientPlayNetworking.send(PaneSeamEditPayload.of(
+                    context.getClickedPos(),
+                    target,
+                    result,
+                    resetAll,
+                    UltimateGlassClientConfig.singleEdgeChiselMode()
+            ));
+        });
         SeamlessPaneModels.initialize();
         UltimateGlassBlocks.edgePanes().forEach(block ->
                 FluidRenderingRegistry.setBlockTransparency(block, true));
@@ -63,7 +105,8 @@ public final class UltimateGlassClient implements ClientModInitializer {
                                 payload.diamondEnabled(),
                                 payload.experimentalCompositesEnabled(),
                                 payload.temperedPanesAlwaysDrop(),
-                                payload.temperedToVanillaRecipeEnabled()
+                                payload.temperedToVanillaRecipeEnabled(),
+                                payload.glassChiselEnabled()
                         )
                 )
         );
@@ -78,8 +121,20 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 selectedAxis = RotationAxisState.DEFAULT_AXIS;
             }
 
+            while (TOGGLE_GLASS_CHISEL_MODE.consumeClick()) {
+                if (client.player == null
+                        || client.getConnection() == null
+                        || !isGlassChiselActive(client.player)) {
+                    continue;
+                }
+
+                UltimateGlassClientConfig.toggleSingleEdgeChiselMode();
+            }
+
             while (CHANGE_ROTATION_AXIS.consumeClick()) {
-                if (client.player == null || client.getConnection() == null) {
+                if (client.player == null
+                        || client.getConnection() == null
+                        || !isGlaziersToolActive(client.player)) {
                     continue;
                 }
 
@@ -104,6 +159,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     UltimateGlassServerConfig.experimentalCompositesEnabled(),
                     UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                     UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                    UltimateGlassServerConfig.glassChiselEnabled(),
                     true
             );
             return;
@@ -115,7 +171,8 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 UltimateGlassServerConfig.diamondCraftingEnabled(),
                 UltimateGlassServerConfig.experimentalCompositesEnabled(),
                 UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
-                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled()
+                UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                UltimateGlassServerConfig.glassChiselEnabled()
         ));
     }
 
@@ -132,6 +189,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     enabled,
                     UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                     UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                    UltimateGlassServerConfig.glassChiselEnabled(),
                     true
             );
             return;
@@ -152,6 +210,12 @@ public final class UltimateGlassClient implements ClientModInitializer {
         saveOrSendServerConfig();
     }
 
+    public static void requestGlassChiselToggle() {
+        boolean enabled = !UltimateGlassClientConfig.glassChiselEnabled();
+        UltimateGlassClientConfig.setGlassChiselEnabledLocally(enabled);
+        saveOrSendServerConfig();
+    }
+
     private static void saveOrSendServerConfig() {
         Minecraft client = Minecraft.getInstance();
         if (client.getConnection() == null || client.player == null) {
@@ -162,6 +226,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     UltimateGlassServerConfig.experimentalCompositesEnabled(),
                     UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                     UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
+                    UltimateGlassServerConfig.glassChiselEnabled(),
                     true
             );
             return;
@@ -189,6 +254,26 @@ public final class UltimateGlassClient implements ClientModInitializer {
             case Y -> "message.ultimateglass.rotation_axis_y";
             case Z -> "message.ultimateglass.rotation_axis_z";
         };
+    }
+
+    private static boolean isGlassChiselActive(Player player) {
+        if (player.getMainHandItem().is(UltimateGlassItems.GLASS_CHISEL)) {
+            return true;
+        }
+        if (player.getMainHandItem().getItem() instanceof GlaziersToolItem) {
+            return false;
+        }
+        return player.getOffhandItem().is(UltimateGlassItems.GLASS_CHISEL);
+    }
+
+    private static boolean isGlaziersToolActive(Player player) {
+        if (player.getMainHandItem().getItem() instanceof GlaziersToolItem) {
+            return true;
+        }
+        if (player.getMainHandItem().is(UltimateGlassItems.GLASS_CHISEL)) {
+            return false;
+        }
+        return player.getOffhandItem().getItem() instanceof GlaziersToolItem;
     }
 
 }

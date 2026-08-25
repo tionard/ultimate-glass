@@ -15,6 +15,7 @@ public final class UltimateGlassConfigScreen extends Screen {
     private final Screen parent;
     private final Map<GlaziersToolTier, Button> craftingButtons = new EnumMap<>(GlaziersToolTier.class);
     private Button seamlessPanesButton;
+    private Button glassChiselButton;
     private Button experimentalCompositesButton;
     private Button alwaysDropPanesButton;
     private Button reverseRecipeButton;
@@ -30,7 +31,8 @@ public final class UltimateGlassConfigScreen extends Screen {
 
         int buttonWidth = 260;
         int left = this.width / 2 - buttonWidth / 2;
-        int top = Math.max(32, this.height / 2 - 84);
+        int top = Math.max(28, this.height / 2 - 88);
+        int step = 22;
 
         seamlessPanesButton = this.addRenderableWidget(
                 Button.builder(seamlessPanesButtonText(), button -> {
@@ -42,12 +44,22 @@ public final class UltimateGlassConfigScreen extends Screen {
                         .build()
         );
 
+        glassChiselButton = this.addRenderableWidget(
+                Button.builder(glassChiselButtonText(), button -> {
+                    UltimateGlassClient.requestGlassChiselToggle();
+                    button.setMessage(glassChiselButtonText());
+                })
+                        .pos(left, top + step)
+                        .size(buttonWidth, 20)
+                        .build()
+        );
+
         experimentalCompositesButton = this.addRenderableWidget(
                 Button.builder(experimentalCompositesButtonText(), button -> {
                     UltimateGlassClient.requestExperimentalCompositesToggle();
                     button.setMessage(experimentalCompositesButtonText());
                 })
-                        .pos(left, top + 24)
+                        .pos(left, top + step * 2)
                         .size(buttonWidth, 20)
                         .build()
         );
@@ -57,7 +69,7 @@ public final class UltimateGlassConfigScreen extends Screen {
                     UltimateGlassClient.requestTemperedPanesAlwaysDropToggle();
                     button.setMessage(alwaysDropPanesButtonText());
                 })
-                        .pos(left, top + 48)
+                        .pos(left, top + step * 3)
                         .size(buttonWidth, 20)
                         .build()
         );
@@ -67,14 +79,14 @@ public final class UltimateGlassConfigScreen extends Screen {
                     UltimateGlassClient.requestTemperedToVanillaRecipeToggle();
                     button.setMessage(reverseRecipeButtonText());
                 })
-                        .pos(left, top + 72)
+                        .pos(left, top + step * 4)
                         .size(buttonWidth, 20)
                         .build()
         );
 
-        addCraftingButton(left, top + 96, buttonWidth, GlaziersToolTier.COPPER);
-        addCraftingButton(left, top + 120, buttonWidth, GlaziersToolTier.IRON);
-        addCraftingButton(left, top + 144, buttonWidth, GlaziersToolTier.DIAMOND);
+        addCraftingButton(left, top + step * 5, buttonWidth, GlaziersToolTier.COPPER);
+        addCraftingButton(left, top + step * 6, buttonWidth, GlaziersToolTier.IRON);
+        addCraftingButton(left, top + step * 7, buttonWidth, GlaziersToolTier.DIAMOND);
 
         this.addRenderableWidget(
                 Button.builder(CommonComponents.GUI_DONE, button -> returnToParent())
@@ -92,6 +104,9 @@ public final class UltimateGlassConfigScreen extends Screen {
         }
         if (seamlessPanesButton != null) {
             seamlessPanesButton.setMessage(seamlessPanesButtonText());
+        }
+        if (glassChiselButton != null) {
+            glassChiselButton.setMessage(glassChiselButtonText());
         }
         if (alwaysDropPanesButton != null) {
             alwaysDropPanesButton.setMessage(alwaysDropPanesButtonText());
@@ -138,6 +153,14 @@ public final class UltimateGlassConfigScreen extends Screen {
                 UltimateGlassClientConfig.seamlessConnectedPanes()
                         ? "config.ultimateglass.seamless_panes_enabled"
                         : "config.ultimateglass.seamless_panes_disabled"
+        );
+    }
+
+    private Component glassChiselButtonText() {
+        return Component.translatable(
+                UltimateGlassClientConfig.glassChiselEnabled()
+                        ? "config.ultimateglass.glass_chisel_enabled"
+                        : "config.ultimateglass.glass_chisel_disabled"
         );
     }
 

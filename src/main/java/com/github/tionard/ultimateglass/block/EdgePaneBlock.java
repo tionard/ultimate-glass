@@ -13,7 +13,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -35,9 +37,10 @@ import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.placement.PanePlacementResolver;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
+import com.github.tionard.ultimateglass.block.entity.PaneSeamBlockEntity;
 
 /** A glass pane aligned to one of the six outside faces of its block space. */
-public class EdgePaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
+public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterloggedBlock, UltimatePane {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final BooleanProperty CONNECT_TOP = BooleanProperty.create("connect_top");
@@ -80,6 +83,11 @@ public class EdgePaneBlock extends Block implements SimpleWaterloggedBlock, Ulti
                 state.getValue(CONNECT_LEFT),
                 state.getValue(CONNECT_RIGHT)
         );
+    }
+
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new PaneSeamBlockEntity(pos, state);
     }
 
     @Override

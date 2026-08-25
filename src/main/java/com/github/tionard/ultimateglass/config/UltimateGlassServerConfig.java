@@ -27,6 +27,7 @@ public final class UltimateGlassServerConfig {
     private static volatile boolean experimentalCompositesEnabled = false;
     private static volatile boolean temperedPanesAlwaysDrop = true;
     private static volatile boolean temperedToVanillaRecipeEnabled = false;
+    private static volatile boolean glassChiselEnabled = true;
 
     private UltimateGlassServerConfig() {
     }
@@ -47,12 +48,13 @@ public final class UltimateGlassServerConfig {
                         data.experimentalCompositesEnabled,
                         data.temperedPanesAlwaysDrop == null || data.temperedPanesAlwaysDrop,
                         Boolean.TRUE.equals(data.temperedToVanillaRecipeEnabled),
+                        data.glassChiselEnabled == null || data.glassChiselEnabled,
                         false
                 );
             }
         } catch (IOException | RuntimeException exception) {
             UltimateGlass.LOGGER.warn("Could not read server configuration; using defaults", exception);
-            apply(true, true, true, false, true, false, false);
+            apply(true, true, true, false, true, false, true, false);
         }
     }
 
@@ -88,6 +90,10 @@ public final class UltimateGlassServerConfig {
         return temperedToVanillaRecipeEnabled;
     }
 
+    public static boolean glassChiselEnabled() {
+        return glassChiselEnabled;
+    }
+
     public static void apply(
             boolean copper,
             boolean iron,
@@ -95,6 +101,7 @@ public final class UltimateGlassServerConfig {
             boolean experimentalComposites,
             boolean alwaysDropTemperedPanes,
             boolean temperedToVanillaRecipe,
+            boolean chiselEnabled,
             boolean save
     ) {
         copperCraftingEnabled = copper;
@@ -103,6 +110,7 @@ public final class UltimateGlassServerConfig {
         experimentalCompositesEnabled = experimentalComposites;
         temperedPanesAlwaysDrop = alwaysDropTemperedPanes;
         temperedToVanillaRecipeEnabled = temperedToVanillaRecipe;
+        glassChiselEnabled = chiselEnabled;
         if (save) {
             save();
         }
@@ -118,7 +126,8 @@ public final class UltimateGlassServerConfig {
                         diamondCraftingEnabled,
                         experimentalCompositesEnabled,
                         temperedPanesAlwaysDrop,
-                        temperedToVanillaRecipeEnabled
+                        temperedToVanillaRecipeEnabled,
+                        glassChiselEnabled
                 ), writer);
             }
         } catch (IOException exception) {
@@ -133,6 +142,7 @@ public final class UltimateGlassServerConfig {
         private boolean experimentalCompositesEnabled = false;
         private Boolean temperedPanesAlwaysDrop = true;
         private Boolean temperedToVanillaRecipeEnabled = false;
+        private Boolean glassChiselEnabled = true;
 
         private ConfigData() {
         }
@@ -143,7 +153,8 @@ public final class UltimateGlassServerConfig {
                 boolean diamond,
                 boolean experimentalComposites,
                 boolean alwaysDropTemperedPanes,
-                boolean temperedToVanillaRecipe
+                boolean temperedToVanillaRecipe,
+                boolean chiselEnabled
         ) {
             this.copperCraftingEnabled = copper;
             this.ironCraftingEnabled = iron;
@@ -151,6 +162,7 @@ public final class UltimateGlassServerConfig {
             this.experimentalCompositesEnabled = experimentalComposites;
             this.temperedPanesAlwaysDrop = alwaysDropTemperedPanes;
             this.temperedToVanillaRecipeEnabled = temperedToVanillaRecipe;
+            this.glassChiselEnabled = chiselEnabled;
         }
     }
 }
