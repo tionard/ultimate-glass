@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
+import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
@@ -16,7 +17,7 @@ import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 import com.github.tionard.ultimateglass.seam.PaneSeamTarget;
 import com.github.tionard.ultimateglass.seam.PaneSeamTargetResolver;
 
-/** Toggles one player-selected pane boundary without modifying the neighboring block. */
+/** Toggles player-selected pane boundaries or clears the clicked pane's manual choices. */
 public final class GlaziersScriberItem extends Item {
     private static ClientUseHandler clientUseHandler = (context, state, target, seams) -> {
     };
@@ -29,6 +30,9 @@ public final class GlaziersScriberItem extends Item {
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
         if (player == null || player.isSpectator() || !player.getAbilities().mayBuild) {
+            return InteractionResult.PASS;
+        }
+        if (!UltimateGlassServerConfig.manualSeamToolEnabled()) {
             return InteractionResult.PASS;
         }
 

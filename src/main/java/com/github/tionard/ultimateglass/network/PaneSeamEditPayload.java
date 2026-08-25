@@ -15,7 +15,9 @@ public record PaneSeamEditPayload(
         BlockPos pos,
         int planeOrdinal,
         int boundaryOrdinal,
-        int overrideOrdinal
+        int overrideOrdinal,
+        boolean resetAll,
+        boolean singleEdge
 ) implements CustomPacketPayload {
     public static final Type<PaneSeamEditPayload> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "pane_seam_edit")
@@ -27,25 +29,33 @@ public record PaneSeamEditPayload(
                         buffer.writeVarInt(payload.planeOrdinal());
                         buffer.writeVarInt(payload.boundaryOrdinal());
                         buffer.writeVarInt(payload.overrideOrdinal());
+                        buffer.writeBoolean(payload.resetAll());
+                        buffer.writeBoolean(payload.singleEdge());
                     },
                     buffer -> new PaneSeamEditPayload(
                             buffer.readBlockPos(),
                             buffer.readVarInt(),
                             buffer.readVarInt(),
-                            buffer.readVarInt()
+                            buffer.readVarInt(),
+                            buffer.readBoolean(),
+                            buffer.readBoolean()
                     )
             );
 
     public static PaneSeamEditPayload of(
             BlockPos pos,
             PaneSeamTarget target,
-            PaneSeamOverride override
+            PaneSeamOverride override,
+            boolean resetAll,
+            boolean singleEdge
     ) {
         return new PaneSeamEditPayload(
                 pos,
                 target.plane().ordinal(),
                 target.boundary().ordinal(),
-                override.ordinal()
+                override.ordinal(),
+                resetAll,
+                singleEdge
         );
     }
 

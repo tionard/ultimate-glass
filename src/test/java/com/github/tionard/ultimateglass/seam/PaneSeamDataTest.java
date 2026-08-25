@@ -1,6 +1,8 @@
 package com.github.tionard.ultimateglass.seam;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -88,5 +90,25 @@ final class PaneSeamDataTest {
                 PaneSeamOverride.VISIBLE,
                 PaneSeamOverride.SEAMLESS.oppositeOfCurrent(false)
         );
+    }
+
+    @Test
+    void shiftResetClearsEveryPlaneAndBoundaryAtOnce() {
+        PaneSeamData data = new PaneSeamData();
+        data.set(PanePlane.EDGE_NORTH, Direction.UP, PaneSeamOverride.VISIBLE);
+        data.set(PanePlane.CENTER_X, Direction.SOUTH, PaneSeamOverride.SEAMLESS);
+
+        assertFalse(data.isEmpty());
+        assertTrue(data.reset());
+        assertTrue(data.isEmpty());
+        assertEquals(
+                PaneSeamOverride.AUTOMATIC,
+                data.get(PanePlane.EDGE_NORTH, Direction.UP)
+        );
+        assertEquals(
+                PaneSeamOverride.AUTOMATIC,
+                data.get(PanePlane.CENTER_X, Direction.SOUTH)
+        );
+        assertFalse(data.reset());
     }
 }

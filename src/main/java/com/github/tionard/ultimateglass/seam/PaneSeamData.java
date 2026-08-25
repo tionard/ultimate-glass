@@ -53,6 +53,11 @@ public final class PaneSeamData {
         return visibleMask == 0L && seamlessMask == 0L;
     }
 
+    /** Clears every manual choice on every physical sheet in this pane block. */
+    public boolean reset() {
+        return copyFrom(null);
+    }
+
     public PaneSeamData copy() {
         PaneSeamData copy = new PaneSeamData();
         copy.visibleMask = visibleMask;

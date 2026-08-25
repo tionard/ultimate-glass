@@ -4,17 +4,21 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2. It gives builders edge-a
 Glass Panes, rotatable centred sheets, connected corners, wood framing, and tiered glassworking
 tools.
 
-## Version 0.2.1a
+## Version 0.2.1b
 
-Version 0.2.1a is an alpha update for manual pane-edge control and the new Ultimate Glass Creative
+Version 0.2.1b is the testing beta for manual pane-edge control and the Ultimate Glass Creative
 tab. The complete-glass-family expansion is planned separately for 0.2.2.
 
 ### Manual pane edges
 
-- The new `Glazier's Scriber` edits the exact edge of the pane block that was clicked.
-- Right-click changes that edge from its current visible result to the opposite result.
-- Shift + right-click returns the clicked edge to automatic seamless behavior.
-- Each side is independent: neighboring panes may intentionally show mismatched borders.
+- The `Glazier's Scriber` edits the exact edge of the pane block that was clicked.
+- Right-click changes the current visible result to its opposite. By default, both sides of a
+  shared pane seam change together so borders cannot accidentally mismatch.
+- Press `V` while holding the Scriber to switch between paired-seam and single-edge editing. The
+  binding is configurable in Minecraft's Controls menu.
+- Single-edge mode changes only the clicked pane, allowing intentional mismatched borders.
+- Shift + right-click clears every manual choice on the clicked pane and returns the whole pane to
+  automatic seamless behavior.
 - A forced seamless edge is allowed beside any block or open space; it does not require another
   compatible pane.
 - Manual choices work on unframed, wood-framed, edge-bound, centered, and composite Tempered panes
@@ -88,7 +92,8 @@ Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
 ## Controls
 
 - Rotate a pane: right-click with any Glazier's Tool; composites skip fully hidden positions.
-- Change rotation axis: `V` by default.
+- Change rotation axis: `B` by default.
+- Toggle paired/single-edge Scriber mode: `V` by default while holding the Scriber.
 - Toggle edge/centred geometry: Shift + right-click with iron or diamond.
 - Place normally: right-click; the cursor's nearest edge on the clicked face selects the pane edge.
 - Force a clicked face: Shift + right-click while holding a Tempered pane.
@@ -96,10 +101,11 @@ Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
 
 ## Configuration
 
-Mod Menu exposes seamless connected panes, the off-by-default experimental stair/slab feature,
-default-on intact Tempered-pane drops, the off-by-default Tempered-to-vanilla recipe, and
-server-authoritative crafting switches for each Glazier's Tool tier. Mod Menu is optional; Fabric
-API is required. The mod must be installed on the server and every connecting client.
+Mod Menu exposes seamless connected panes, a default-on server switch for the Glazier's Scriber,
+the off-by-default experimental stair/slab feature, default-on intact Tempered-pane drops, the
+off-by-default Tempered-to-vanilla recipe, and server-authoritative crafting switches for each
+Glazier's Tool tier. Mod Menu is optional; Fabric API is required. The mod must be installed on the
+server and every connecting client.
 
 ## Release plan
 
@@ -107,6 +113,7 @@ API is required. The mod must be installed on the server and every connecting cl
 - `0.2.0-beta.5`: Stair/slab composite panes; final feature beta for 0.2.
 - `0.2.0`: Stable release after beta.5 validation.
 - `0.2.1a`: Alpha for manual pane seams and the Ultimate Glass Creative tab.
+- `0.2.1b`: Paired-seam beta with whole-pane reset, editable single-edge mode, and a Scriber toggle.
 - `0.2.2`: Planned complete glass families, to be specified after 0.2.1 testing.
 - Mosaic foundation, layered mosaics, and the broader integration/performance phase previously
   labelled beta.6-beta.8 move to the next feature release, currently targeted as 0.3.0.

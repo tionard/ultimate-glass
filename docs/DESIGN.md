@@ -111,14 +111,17 @@ does not modify block state or collision, and invalidates compiled chunk geometr
 
 `PaneSeamData` stores two compact masks per pane: forced-visible and forced-seamless boundaries.
 Any boundary absent from both masks remains automatic. Each key contains both a physical
-`PanePlane` and one in-plane world direction, so opposite sides of a shared seam are deliberately
-independent.
+`PanePlane` and one in-plane world direction, so opposite sides remain independently representable
+even though the default editing mode changes a shared seam as a pair.
 
 The Glazier's Scriber resolves the clicked sheet and its nearest edge on the client. A normal click
-sends the opposite of the player's currently rendered result; Shift sends `AUTOMATIC`. The server
-checks tool ownership, reach, plane geometry, and boundary validity before saving the requested
-state. Forced seamless boundaries never require a matching pane or any particular neighbouring
-block.
+sends the opposite of the player's currently rendered result. Paired mode is the default: when a
+coplanar pane continues into the neighboring cell, the server writes the same forced result to its
+opposite boundary without requiring matching material or frame identity. The configurable `V`
+binding switches to persistent single-edge mode for deliberate mismatches. Shift-use clears both
+masks for the entire clicked pane block. The server checks the enabled setting, tool ownership,
+reach, plane geometry, and boundary validity before saving any requested state. Forced seamless
+boundaries never require a matching pane or any particular neighbouring block.
 
 The renderer applies manual choices over the client seamless preference: forced choices always
 win, while automatic boundaries retain the existing exact-variant continuation rule. Saved masks
@@ -167,6 +170,6 @@ before moving between development builds.
 
 ## Release sequence
 
-Version 0.2.1a is the first alpha of manual seam editing and the dedicated Creative tab. Player
-testing will define its beta and stable follow-ups. Version 0.2.2 is reserved for the complete glass
-families discussion; mosaics and their Glazier's Table remain a later feature cycle.
+Version 0.2.1a was the first alpha of manual seam editing and the dedicated Creative tab. Version
+0.2.1b is the paired-seam beta following player feedback. Version 0.2.2 is reserved for the complete
+glass families discussion; mosaics and their Glazier's Table remain a later feature cycle.

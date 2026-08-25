@@ -25,4 +25,12 @@ public interface PaneSeamSource {
         markSeamsChanged();
         return true;
     }
+
+    default boolean resetSeamOverrides() {
+        if (!seamData().reset()) {
+            return false;
+        }
+        markSeamsChanged();
+        return true;
+    }
 }

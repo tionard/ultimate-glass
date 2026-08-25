@@ -17,10 +17,13 @@ import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
+import com.github.tionard.ultimateglass.seam.PaneSeamCounterpart;
 import com.github.tionard.ultimateglass.seam.PaneSeamSource;
+import com.github.tionard.ultimateglass.seam.PaneSeamTarget;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public final class UltimateGlassNetworking {
@@ -60,6 +63,7 @@ public final class UltimateGlassNetworking {
                             payload.experimentalCompositesEnabled(),
                             payload.temperedPanesAlwaysDrop(),
                             payload.temperedToVanillaRecipeEnabled(),
+                            payload.manualSeamToolEnabled(),
                             true
                     );
                     ToolCraftingConfigPayload current = ToolCraftingConfigPayload.current();
@@ -85,6 +89,7 @@ public final class UltimateGlassNetworking {
     ) {
         if (player.isSpectator()
                 || !player.getAbilities().mayBuild
+                || !UltimateGlassServerConfig.manualSeamToolEnabled()
                 || (!player.getMainHandItem().is(UltimateGlassItems.GLAZIERS_SCRIBER)
                         && !player.getOffhandItem().is(UltimateGlassItems.GLAZIERS_SCRIBER))
                 || player.distanceToSqr(Vec3.atCenterOf(payload.pos())) > 64.0D) {
@@ -109,24 +114,53 @@ public final class UltimateGlassNetworking {
             return;
         }
 
-        BlockState state = player.level().getBlockState(payload.pos());
-        PaneGeometry geometry = null;
-        if (state.getBlock() instanceof UltimatePane pane) {
-            geometry = pane.geometry(state);
-        } else if (state.getBlock() instanceof CompositePaneBlock
-                && player.level().getBlockEntity(payload.pos())
-                        instanceof CompositePaneBlockEntity composite) {
-            geometry = composite.paneGeometry();
-        }
+        Level level = player.level();
+        PaneGeometry geometry = geometry(level, payload.pos());
         if (geometry == null
                 || !geometry.planes().contains(plane)
-                || !(player.level().getBlockEntity(payload.pos()) instanceof PaneSeamSource seams)) {
+                || !(level.getBlockEntity(payload.pos()) instanceof PaneSeamSource seams)) {
+            return;
+        }
+
+        if (payload.resetAll()) {
+            seams.resetSeamOverrides();
+            player.sendSystemMessage(
+                    Component.translatable("message.ultimateglass.seams_reset")
+            );
             return;
         }
 
         seams.setSeamOverride(plane, boundary, override);
+        if (!payload.singleEdge()) {
+            PaneSeamCounterpart counterpart = PaneSeamCounterpart.of(
+                    payload.pos(), new PaneSeamTarget(plane, boundary)
+            );
+            PaneGeometry neighborGeometry = geometry(level, counterpart.pos());
+            if (neighborGeometry != null
+                    && neighborGeometry.planes().contains(plane)
+                    && level.getBlockEntity(counterpart.pos())
+                            instanceof PaneSeamSource neighborSeams) {
+                neighborSeams.setSeamOverride(
+                        counterpart.target().plane(),
+                        counterpart.target().boundary(),
+                        override
+                );
+            }
+        }
         player.sendSystemMessage(
                 Component.translatable(GlaziersScriberItem.messageKey(override))
         );
+    }
+
+    private static PaneGeometry geometry(Level level, net.minecraft.core.BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof UltimatePane pane) {
+            return pane.geometry(state);
+        }
+        if (state.getBlock() instanceof CompositePaneBlock
+                && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite) {
+            return composite.paneGeometry();
+        }
+        return null;
     }
 }
