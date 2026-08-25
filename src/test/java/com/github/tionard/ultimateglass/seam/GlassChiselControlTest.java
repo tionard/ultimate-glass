@@ -31,9 +31,11 @@ final class GlassChiselControlTest {
         String client = source("src/client/java/com/github/tionard/ultimateglass/client/UltimateGlassClient.java");
         String config = source("src/client/java/com/github/tionard/ultimateglass/client/UltimateGlassClientConfig.java");
 
-        assertTrue(client.contains("GLFW.GLFW_KEY_V"));
-        assertTrue(client.contains("GLFW.GLFW_KEY_B"));
+        assertEquals(2, client.split("GLFW.GLFW_KEY_V", -1).length - 1);
+        assertFalse(client.contains("GLFW.GLFW_KEY_B"));
         assertTrue(client.contains("TOGGLE_GLASS_CHISEL_MODE.consumeClick()"));
+        assertTrue(client.contains("isGlassChiselActive(client.player)"));
+        assertTrue(client.contains("isGlaziersToolActive(client.player)"));
         assertTrue(config.contains("singleEdgeChiselMode = false"));
     }
 

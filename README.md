@@ -92,7 +92,7 @@ Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
 ## Controls
 
 - Rotate a pane: right-click with any Glazier's Tool; composites skip fully hidden positions.
-- Change rotation axis: `B` by default.
+- Change rotation axis: `V` by default while holding a Glazier's Tool.
 - Toggle paired/single-edge Glass Chisel mode: `V` by default while holding the Chisel.
 - Toggle edge/centred geometry: Shift + right-click with iron or diamond.
 - Place normally: right-click; the cursor's nearest edge on the clicked face selects the pane edge.

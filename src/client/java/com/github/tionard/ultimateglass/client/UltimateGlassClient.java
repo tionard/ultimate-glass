@@ -21,6 +21,7 @@ import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.client.render.SeamlessPaneModels;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
+import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 import com.github.tionard.ultimateglass.item.GlassChiselItem;
 import com.github.tionard.ultimateglass.network.PaneSeamEditPayload;
 import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
@@ -40,7 +41,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
             new KeyMapping(
                     "key.ultimateglass.change_rotation_axis",
                     InputConstants.Type.KEYSYM,
-                    GLFW.GLFW_KEY_B,
+                    GLFW.GLFW_KEY_V,
                     CATEGORY
             )
     );
@@ -123,7 +124,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
             while (TOGGLE_GLASS_CHISEL_MODE.consumeClick()) {
                 if (client.player == null
                         || client.getConnection() == null
-                        || !isHoldingGlassChisel(client.player)) {
+                        || !isGlassChiselActive(client.player)) {
                     continue;
                 }
 
@@ -133,7 +134,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
             while (CHANGE_ROTATION_AXIS.consumeClick()) {
                 if (client.player == null
                         || client.getConnection() == null
-                        || isHoldingGlassChisel(client.player)) {
+                        || !isGlaziersToolActive(client.player)) {
                     continue;
                 }
 
@@ -255,9 +256,24 @@ public final class UltimateGlassClient implements ClientModInitializer {
         };
     }
 
-    private static boolean isHoldingGlassChisel(Player player) {
-        return player.getMainHandItem().is(UltimateGlassItems.GLASS_CHISEL)
-                || player.getOffhandItem().is(UltimateGlassItems.GLASS_CHISEL);
+    private static boolean isGlassChiselActive(Player player) {
+        if (player.getMainHandItem().is(UltimateGlassItems.GLASS_CHISEL)) {
+            return true;
+        }
+        if (player.getMainHandItem().getItem() instanceof GlaziersToolItem) {
+            return false;
+        }
+        return player.getOffhandItem().is(UltimateGlassItems.GLASS_CHISEL);
+    }
+
+    private static boolean isGlaziersToolActive(Player player) {
+        if (player.getMainHandItem().getItem() instanceof GlaziersToolItem) {
+            return true;
+        }
+        if (player.getMainHandItem().is(UltimateGlassItems.GLASS_CHISEL)) {
+            return false;
+        }
+        return player.getOffhandItem().getItem() instanceof GlaziersToolItem;
     }
 
 }

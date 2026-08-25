@@ -19,8 +19,9 @@ reset, and the Ultimate Glass Creative tab.
 3. Hold the Glass Chisel and press `V`, then click one side and confirm only that pane changes.
    Press `V` again and confirm paired mode returns. Confirm neither mode changes nor edge edits add
    messages to chat.
-4. Rebind `Toggle Glass Chisel Editing Mode` in Controls and confirm the new key works. Confirm `Change
-   Rotation Axis` defaults to `B` and remains independently configurable.
+4. Rebind `Toggle Glass Chisel Editing Mode` in Controls and confirm the new key works. Confirm both
+   it and `Change Rotation Axis` default to `V`, remain independently configurable, and only the
+   action for the currently held tool runs.
 5. Right-click each edited edge again and confirm its current result changes to the opposite one.
 6. Create several overrides on different edges and planes of one pane, then Shift + right-click it.
    Confirm the whole pane returns to automatic while neighboring panes keep their own overrides.
