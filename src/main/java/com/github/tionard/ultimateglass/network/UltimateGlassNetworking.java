@@ -125,8 +125,8 @@ public final class UltimateGlassNetworking {
         }
 
         seams.setSeamOverride(plane, boundary, override);
-        player.displayClientMessage(
-                Component.translatable(GlaziersScriberItem.messageKey(override)), true
+        player.sendSystemMessage(
+                Component.translatable(GlaziersScriberItem.messageKey(override))
         );
     }
 }
