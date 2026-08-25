@@ -21,7 +21,7 @@ import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.client.render.SeamlessPaneModels;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
-import com.github.tionard.ultimateglass.item.GlaziersScriberItem;
+import com.github.tionard.ultimateglass.item.GlassChiselItem;
 import com.github.tionard.ultimateglass.network.PaneSeamEditPayload;
 import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
 import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
@@ -45,9 +45,9 @@ public final class UltimateGlassClient implements ClientModInitializer {
             )
     );
 
-    private static final KeyMapping TOGGLE_SCRIBER_MODE = KeyMappingHelper.registerKeyMapping(
+    private static final KeyMapping TOGGLE_GLASS_CHISEL_MODE = KeyMappingHelper.registerKeyMapping(
             new KeyMapping(
-                    "key.ultimateglass.toggle_scriber_mode",
+                    "key.ultimateglass.toggle_glass_chisel_mode",
                     InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_V,
                     CATEGORY
@@ -60,7 +60,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         UltimateGlassClientConfig.load();
-        GlaziersScriberItem.setClientUseHandler((context, state, target, seams) -> {
+        GlassChiselItem.setClientUseHandler((context, state, target, seams) -> {
             boolean resetAll = context.getPlayer() != null
                     && context.getPlayer().isShiftKeyDown();
             PaneSeamOverride result;
@@ -84,7 +84,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     target,
                     result,
                     resetAll,
-                    UltimateGlassClientConfig.singleEdgeScriberMode()
+                    UltimateGlassClientConfig.singleEdgeChiselMode()
             ));
         });
         SeamlessPaneModels.initialize();
@@ -105,7 +105,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                                 payload.experimentalCompositesEnabled(),
                                 payload.temperedPanesAlwaysDrop(),
                                 payload.temperedToVanillaRecipeEnabled(),
-                                payload.manualSeamToolEnabled()
+                                payload.glassChiselEnabled()
                         )
                 )
         );
@@ -120,25 +120,20 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 selectedAxis = RotationAxisState.DEFAULT_AXIS;
             }
 
-            while (TOGGLE_SCRIBER_MODE.consumeClick()) {
+            while (TOGGLE_GLASS_CHISEL_MODE.consumeClick()) {
                 if (client.player == null
                         || client.getConnection() == null
-                        || !isHoldingScriber(client.player)) {
+                        || !isHoldingGlassChisel(client.player)) {
                     continue;
                 }
 
-                boolean singleEdge = UltimateGlassClientConfig.toggleSingleEdgeScriberMode();
-                client.player.sendSystemMessage(Component.translatable(
-                        singleEdge
-                                ? "message.ultimateglass.scriber_mode_single"
-                                : "message.ultimateglass.scriber_mode_paired"
-                ));
+                UltimateGlassClientConfig.toggleSingleEdgeChiselMode();
             }
 
             while (CHANGE_ROTATION_AXIS.consumeClick()) {
                 if (client.player == null
                         || client.getConnection() == null
-                        || isHoldingScriber(client.player)) {
+                        || isHoldingGlassChisel(client.player)) {
                     continue;
                 }
 
@@ -163,7 +158,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     UltimateGlassServerConfig.experimentalCompositesEnabled(),
                     UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                     UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
-                    UltimateGlassServerConfig.manualSeamToolEnabled(),
+                    UltimateGlassServerConfig.glassChiselEnabled(),
                     true
             );
             return;
@@ -176,7 +171,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                 UltimateGlassServerConfig.experimentalCompositesEnabled(),
                 UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                 UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
-                UltimateGlassServerConfig.manualSeamToolEnabled()
+                UltimateGlassServerConfig.glassChiselEnabled()
         ));
     }
 
@@ -193,7 +188,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     enabled,
                     UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                     UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
-                    UltimateGlassServerConfig.manualSeamToolEnabled(),
+                    UltimateGlassServerConfig.glassChiselEnabled(),
                     true
             );
             return;
@@ -214,9 +209,9 @@ public final class UltimateGlassClient implements ClientModInitializer {
         saveOrSendServerConfig();
     }
 
-    public static void requestManualSeamToolToggle() {
-        boolean enabled = !UltimateGlassClientConfig.manualSeamToolEnabled();
-        UltimateGlassClientConfig.setManualSeamToolEnabledLocally(enabled);
+    public static void requestGlassChiselToggle() {
+        boolean enabled = !UltimateGlassClientConfig.glassChiselEnabled();
+        UltimateGlassClientConfig.setGlassChiselEnabledLocally(enabled);
         saveOrSendServerConfig();
     }
 
@@ -230,7 +225,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
                     UltimateGlassServerConfig.experimentalCompositesEnabled(),
                     UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                     UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
-                    UltimateGlassServerConfig.manualSeamToolEnabled(),
+                    UltimateGlassServerConfig.glassChiselEnabled(),
                     true
             );
             return;
@@ -260,9 +255,9 @@ public final class UltimateGlassClient implements ClientModInitializer {
         };
     }
 
-    private static boolean isHoldingScriber(Player player) {
-        return player.getMainHandItem().is(UltimateGlassItems.GLAZIERS_SCRIBER)
-                || player.getOffhandItem().is(UltimateGlassItems.GLAZIERS_SCRIBER);
+    private static boolean isHoldingGlassChisel(Player player) {
+        return player.getMainHandItem().is(UltimateGlassItems.GLASS_CHISEL)
+                || player.getOffhandItem().is(UltimateGlassItems.GLASS_CHISEL);
     }
 
 }

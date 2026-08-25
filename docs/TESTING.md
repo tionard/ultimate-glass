@@ -1,24 +1,25 @@
-# Ultimate Glass 0.2.1b regression checklist
+# Ultimate Glass 0.2.1 regression checklist
 
-Version 0.2.1b revises manual seam editing around paired seams, an optional single-edge mode, and
-whole-pane reset. Run this checklist in a test world before the 0.2.1 release.
+Version 0.2.1 adds manual seam editing with paired seams, an optional single-edge mode, whole-pane
+reset, and the Ultimate Glass Creative tab.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.1b.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.1.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 `ultimate_*` block/item IDs and saved BlockState property names are unchanged.
 
 ## Manual pane edges
 
-1. Find the Glazier's Scriber in the Ultimate Glass Creative tab and craft it from one iron ingot
-   and one stick in a diagonal arrangement.
+1. Find the Glass Chisel in the Ultimate Glass Creative tab and craft it shapelessly from one
+   emerald, one string, and one stick in either the inventory grid or a crafting table.
 2. Connect two Tempered panes, click one side of their shared boundary, and confirm both panes gain
    or lose the border together in the default paired mode. Repeat with different colours/frames.
-3. Hold the Scriber and press `V`. Confirm the feedback changes to `Single edges`, then click one
-   side and confirm only that pane changes. Press `V` again and confirm paired mode returns.
-4. Rebind `Toggle Scriber Editing Mode` in Controls and confirm the new key works. Confirm `Change
+3. Hold the Glass Chisel and press `V`, then click one side and confirm only that pane changes.
+   Press `V` again and confirm paired mode returns. Confirm neither mode changes nor edge edits add
+   messages to chat.
+4. Rebind `Toggle Glass Chisel Editing Mode` in Controls and confirm the new key works. Confirm `Change
    Rotation Axis` defaults to `B` and remains independently configurable.
 5. Right-click each edited edge again and confirm its current result changes to the opposite one.
 6. Create several overrides on different edges and planes of one pane, then Shift + right-click it.
@@ -29,7 +30,7 @@ whole-pane reset. Run this checklist in a test world before the 0.2.1 release.
 9. Repeat on vertical, horizontal, centered, L-corner, cube-corner, stair, and slab panes.
 10. Rotate panes and toggle edge/centered geometry with the existing Glazier's Tools. Confirm saved
    manual choices follow the physical glass edge.
-11. Disable `Glazier's Scriber` in Mod Menu and confirm it cannot edit panes; re-enable it and
+11. Disable `Glass Chisel` in Mod Menu and confirm it cannot edit panes; re-enable it and
     confirm editing resumes. Verify a non-operator cannot change the server setting.
 12. Save/reload, unload/reload the chunk, reconnect, and restart a dedicated server. Confirm all
     manual edge choices remain unchanged.

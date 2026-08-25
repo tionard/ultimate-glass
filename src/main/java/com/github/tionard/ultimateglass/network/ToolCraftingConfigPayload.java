@@ -15,7 +15,7 @@ public record ToolCraftingConfigPayload(
         boolean experimentalCompositesEnabled,
         boolean temperedPanesAlwaysDrop,
         boolean temperedToVanillaRecipeEnabled,
-        boolean manualSeamToolEnabled
+        boolean glassChiselEnabled
 ) implements CustomPacketPayload {
     public static final Type<ToolCraftingConfigPayload> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "tool_crafting_config")
@@ -29,7 +29,7 @@ public record ToolCraftingConfigPayload(
                         buffer.writeBoolean(payload.experimentalCompositesEnabled());
                         buffer.writeBoolean(payload.temperedPanesAlwaysDrop());
                         buffer.writeBoolean(payload.temperedToVanillaRecipeEnabled());
-                        buffer.writeBoolean(payload.manualSeamToolEnabled());
+                        buffer.writeBoolean(payload.glassChiselEnabled());
                     },
                     buffer -> new ToolCraftingConfigPayload(
                             buffer.readBoolean(),
@@ -50,7 +50,7 @@ public record ToolCraftingConfigPayload(
                 UltimateGlassServerConfig.experimentalCompositesEnabled(),
                 UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                 UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
-                UltimateGlassServerConfig.manualSeamToolEnabled()
+                UltimateGlassServerConfig.glassChiselEnabled()
         );
     }
 

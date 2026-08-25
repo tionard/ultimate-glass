@@ -12,17 +12,16 @@ import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
-import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
 import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 import com.github.tionard.ultimateglass.seam.PaneSeamTarget;
 import com.github.tionard.ultimateglass.seam.PaneSeamTargetResolver;
 
 /** Toggles player-selected pane boundaries or clears the clicked pane's manual choices. */
-public final class GlaziersScriberItem extends Item {
+public final class GlassChiselItem extends Item {
     private static ClientUseHandler clientUseHandler = (context, state, target, seams) -> {
     };
 
-    public GlaziersScriberItem(Properties properties) {
+    public GlassChiselItem(Properties properties) {
         super(properties);
     }
 
@@ -32,7 +31,7 @@ public final class GlaziersScriberItem extends Item {
         if (player == null || player.isSpectator() || !player.getAbilities().mayBuild) {
             return InteractionResult.PASS;
         }
-        if (!UltimateGlassServerConfig.manualSeamToolEnabled()) {
+        if (!UltimateGlassServerConfig.glassChiselEnabled()) {
             return InteractionResult.PASS;
         }
 
@@ -75,14 +74,6 @@ public final class GlaziersScriberItem extends Item {
             return composite.paneGeometry();
         }
         return null;
-    }
-
-    public static String messageKey(PaneSeamOverride override) {
-        return switch (override) {
-            case AUTOMATIC -> "message.ultimateglass.seam_automatic";
-            case VISIBLE -> "message.ultimateglass.seam_visible";
-            case SEAMLESS -> "message.ultimateglass.seam_seamless";
-        };
     }
 
     @FunctionalInterface

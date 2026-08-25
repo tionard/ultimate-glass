@@ -11,7 +11,6 @@ import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
-import com.github.tionard.ultimateglass.item.GlaziersScriberItem;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
@@ -21,7 +20,6 @@ import com.github.tionard.ultimateglass.seam.PaneSeamCounterpart;
 import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 import com.github.tionard.ultimateglass.seam.PaneSeamTarget;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -63,7 +61,7 @@ public final class UltimateGlassNetworking {
                             payload.experimentalCompositesEnabled(),
                             payload.temperedPanesAlwaysDrop(),
                             payload.temperedToVanillaRecipeEnabled(),
-                            payload.manualSeamToolEnabled(),
+                            payload.glassChiselEnabled(),
                             true
                     );
                     ToolCraftingConfigPayload current = ToolCraftingConfigPayload.current();
@@ -89,9 +87,9 @@ public final class UltimateGlassNetworking {
     ) {
         if (player.isSpectator()
                 || !player.getAbilities().mayBuild
-                || !UltimateGlassServerConfig.manualSeamToolEnabled()
-                || (!player.getMainHandItem().is(UltimateGlassItems.GLAZIERS_SCRIBER)
-                        && !player.getOffhandItem().is(UltimateGlassItems.GLAZIERS_SCRIBER))
+                || !UltimateGlassServerConfig.glassChiselEnabled()
+                || (!player.getMainHandItem().is(UltimateGlassItems.GLASS_CHISEL)
+                        && !player.getOffhandItem().is(UltimateGlassItems.GLASS_CHISEL))
                 || player.distanceToSqr(Vec3.atCenterOf(payload.pos())) > 64.0D) {
             return;
         }
@@ -124,9 +122,6 @@ public final class UltimateGlassNetworking {
 
         if (payload.resetAll()) {
             seams.resetSeamOverrides();
-            player.sendSystemMessage(
-                    Component.translatable("message.ultimateglass.seams_reset")
-            );
             return;
         }
 
@@ -147,9 +142,6 @@ public final class UltimateGlassNetworking {
                 );
             }
         }
-        player.sendSystemMessage(
-                Component.translatable(GlaziersScriberItem.messageKey(override))
-        );
     }
 
     private static PaneGeometry geometry(Level level, net.minecraft.core.BlockPos pos) {

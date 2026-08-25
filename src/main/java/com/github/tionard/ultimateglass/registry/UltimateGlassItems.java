@@ -25,7 +25,7 @@ import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.item.DynamicFramedPaneItem;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
-import com.github.tionard.ultimateglass.item.GlaziersScriberItem;
+import com.github.tionard.ultimateglass.item.GlassChiselItem;
 import com.github.tionard.ultimateglass.item.StaticFramedPaneItem;
 import com.github.tionard.ultimateglass.item.TemperedPaneItem;
 import com.github.tionard.ultimateglass.pane.PaneFrame;
@@ -43,7 +43,7 @@ public final class UltimateGlassItems {
     private static final ResourceKey<Item> IRON_TOOL_KEY = key("iron_glaziers_tool");
     private static final ResourceKey<Item> DIAMOND_TOOL_KEY = key("diamond_glaziers_tool");
     private static final ResourceKey<Item> LEGACY_TOOL_KEY = key("glaziers_tool");
-    private static final ResourceKey<Item> SCRIBER_KEY = key("glaziers_scriber");
+    private static final ResourceKey<Item> GLASS_CHISEL_KEY = key("glass_chisel");
     private static final ResourceKey<CreativeModeTab> CREATIVE_TAB_KEY = ResourceKey.create(
             BuiltInRegistries.CREATIVE_MODE_TAB.key(),
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "creative_tab")
@@ -52,9 +52,9 @@ public final class UltimateGlassItems {
     public static final Item COPPER_GLAZIERS_TOOL = registerTool(COPPER_TOOL_KEY, GlaziersToolTier.COPPER);
     public static final Item IRON_GLAZIERS_TOOL = registerTool(IRON_TOOL_KEY, GlaziersToolTier.IRON);
     public static final Item DIAMOND_GLAZIERS_TOOL = registerTool(DIAMOND_TOOL_KEY, GlaziersToolTier.DIAMOND);
-    public static final Item GLAZIERS_SCRIBER = register(
-            SCRIBER_KEY,
-            GlaziersScriberItem::new,
+    public static final Item GLASS_CHISEL = register(
+            GLASS_CHISEL_KEY,
+            GlassChiselItem::new,
             new Item.Properties().stacksTo(1)
     );
 
@@ -80,7 +80,7 @@ public final class UltimateGlassItems {
                         .icon(() -> new ItemStack(paneItemFor(PaneMaterial.CLEAR)))
                         .title(Component.translatable("creativeTab.ultimateglass"))
                         .displayItems((parameters, output) -> {
-                            output.accept(GLAZIERS_SCRIBER);
+                            output.accept(GLASS_CHISEL);
                             output.accept(COPPER_GLAZIERS_TOOL);
                             output.accept(IRON_GLAZIERS_TOOL);
                             output.accept(DIAMOND_GLAZIERS_TOOL);
@@ -103,7 +103,7 @@ public final class UltimateGlassItems {
                     output.accept(COPPER_GLAZIERS_TOOL);
                     output.accept(IRON_GLAZIERS_TOOL);
                     output.accept(DIAMOND_GLAZIERS_TOOL);
-                    output.accept(GLAZIERS_SCRIBER);
+                    output.accept(GLASS_CHISEL);
                 });
     }
 

@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "ultimateglass:item/glaziers_scriber"
+    "model": "ultimateglass:item/glass_chisel"
   }
 }

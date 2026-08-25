@@ -15,7 +15,7 @@ public final class UltimateGlassConfigScreen extends Screen {
     private final Screen parent;
     private final Map<GlaziersToolTier, Button> craftingButtons = new EnumMap<>(GlaziersToolTier.class);
     private Button seamlessPanesButton;
-    private Button manualSeamToolButton;
+    private Button glassChiselButton;
     private Button experimentalCompositesButton;
     private Button alwaysDropPanesButton;
     private Button reverseRecipeButton;
@@ -44,10 +44,10 @@ public final class UltimateGlassConfigScreen extends Screen {
                         .build()
         );
 
-        manualSeamToolButton = this.addRenderableWidget(
-                Button.builder(manualSeamToolButtonText(), button -> {
-                    UltimateGlassClient.requestManualSeamToolToggle();
-                    button.setMessage(manualSeamToolButtonText());
+        glassChiselButton = this.addRenderableWidget(
+                Button.builder(glassChiselButtonText(), button -> {
+                    UltimateGlassClient.requestGlassChiselToggle();
+                    button.setMessage(glassChiselButtonText());
                 })
                         .pos(left, top + step)
                         .size(buttonWidth, 20)
@@ -105,8 +105,8 @@ public final class UltimateGlassConfigScreen extends Screen {
         if (seamlessPanesButton != null) {
             seamlessPanesButton.setMessage(seamlessPanesButtonText());
         }
-        if (manualSeamToolButton != null) {
-            manualSeamToolButton.setMessage(manualSeamToolButtonText());
+        if (glassChiselButton != null) {
+            glassChiselButton.setMessage(glassChiselButtonText());
         }
         if (alwaysDropPanesButton != null) {
             alwaysDropPanesButton.setMessage(alwaysDropPanesButtonText());
@@ -156,11 +156,11 @@ public final class UltimateGlassConfigScreen extends Screen {
         );
     }
 
-    private Component manualSeamToolButtonText() {
+    private Component glassChiselButtonText() {
         return Component.translatable(
-                UltimateGlassClientConfig.manualSeamToolEnabled()
-                        ? "config.ultimateglass.manual_seam_tool_enabled"
-                        : "config.ultimateglass.manual_seam_tool_disabled"
+                UltimateGlassClientConfig.glassChiselEnabled()
+                        ? "config.ultimateglass.glass_chisel_enabled"
+                        : "config.ultimateglass.glass_chisel_disabled"
         );
     }
 

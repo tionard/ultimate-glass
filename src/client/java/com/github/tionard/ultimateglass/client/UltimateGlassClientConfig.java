@@ -22,7 +22,7 @@ public final class UltimateGlassClientConfig {
             .resolve("ultimate-glass-client.json");
 
     private static volatile boolean seamlessConnectedPanes = true;
-    private static volatile boolean singleEdgeScriberMode = false;
+    private static volatile boolean singleEdgeChiselMode = false;
 
     private UltimateGlassClientConfig() {
     }
@@ -38,12 +38,12 @@ public final class UltimateGlassClientConfig {
             if (data != null) {
                 seamlessConnectedPanes = data.seamlessConnectedPanes == null
                         || data.seamlessConnectedPanes;
-                singleEdgeScriberMode = Boolean.TRUE.equals(data.singleEdgeScriberMode);
+                singleEdgeChiselMode = Boolean.TRUE.equals(data.singleEdgeChiselMode);
             }
         } catch (IOException | RuntimeException exception) {
             UltimateGlass.LOGGER.warn("Could not read client configuration; using defaults", exception);
             seamlessConnectedPanes = true;
-            singleEdgeScriberMode = false;
+            singleEdgeChiselMode = false;
         }
     }
 
@@ -57,14 +57,14 @@ public final class UltimateGlassClientConfig {
         return seamlessConnectedPanes;
     }
 
-    public static boolean singleEdgeScriberMode() {
-        return singleEdgeScriberMode;
+    public static boolean singleEdgeChiselMode() {
+        return singleEdgeChiselMode;
     }
 
-    public static boolean toggleSingleEdgeScriberMode() {
-        singleEdgeScriberMode = !singleEdgeScriberMode;
+    public static boolean toggleSingleEdgeChiselMode() {
+        singleEdgeChiselMode = !singleEdgeChiselMode;
         save();
-        return singleEdgeScriberMode;
+        return singleEdgeChiselMode;
     }
 
     public static boolean isCraftingEnabled(GlaziersToolTier tier) {
@@ -78,7 +78,7 @@ public final class UltimateGlassClientConfig {
             boolean experimentalComposites,
             boolean alwaysDropTemperedPanes,
             boolean temperedToVanillaRecipe,
-            boolean manualSeamToolEnabled
+            boolean glassChiselEnabled
     ) {
         UltimateGlassServerConfig.apply(
                 copper,
@@ -87,7 +87,7 @@ public final class UltimateGlassClientConfig {
                 experimentalComposites,
                 alwaysDropTemperedPanes,
                 temperedToVanillaRecipe,
-                manualSeamToolEnabled,
+                glassChiselEnabled,
                 false
         );
     }
@@ -108,7 +108,7 @@ public final class UltimateGlassClientConfig {
                 UltimateGlassServerConfig.experimentalCompositesEnabled(),
                 UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                 UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
-                UltimateGlassServerConfig.manualSeamToolEnabled(),
+                UltimateGlassServerConfig.glassChiselEnabled(),
                 false
         );
     }
@@ -125,7 +125,7 @@ public final class UltimateGlassClientConfig {
                 enabled,
                 UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                 UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
-                UltimateGlassServerConfig.manualSeamToolEnabled(),
+                UltimateGlassServerConfig.glassChiselEnabled(),
                 false
         );
     }
@@ -142,7 +142,7 @@ public final class UltimateGlassClientConfig {
                 UltimateGlassServerConfig.experimentalCompositesEnabled(),
                 enabled,
                 UltimateGlassServerConfig.temperedToVanillaRecipeEnabled(),
-                UltimateGlassServerConfig.manualSeamToolEnabled(),
+                UltimateGlassServerConfig.glassChiselEnabled(),
                 false
         );
     }
@@ -159,16 +159,16 @@ public final class UltimateGlassClientConfig {
                 UltimateGlassServerConfig.experimentalCompositesEnabled(),
                 UltimateGlassServerConfig.temperedPanesAlwaysDrop(),
                 enabled,
-                UltimateGlassServerConfig.manualSeamToolEnabled(),
+                UltimateGlassServerConfig.glassChiselEnabled(),
                 false
         );
     }
 
-    public static boolean manualSeamToolEnabled() {
-        return UltimateGlassServerConfig.manualSeamToolEnabled();
+    public static boolean glassChiselEnabled() {
+        return UltimateGlassServerConfig.glassChiselEnabled();
     }
 
-    public static void setManualSeamToolEnabledLocally(boolean enabled) {
+    public static void setGlassChiselEnabledLocally(boolean enabled) {
         UltimateGlassServerConfig.apply(
                 UltimateGlassServerConfig.copperCraftingEnabled(),
                 UltimateGlassServerConfig.ironCraftingEnabled(),
@@ -185,7 +185,7 @@ public final class UltimateGlassClientConfig {
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
             try (Writer writer = Files.newBufferedWriter(CONFIG_PATH)) {
-                GSON.toJson(new ConfigData(seamlessConnectedPanes, singleEdgeScriberMode), writer);
+                GSON.toJson(new ConfigData(seamlessConnectedPanes, singleEdgeChiselMode), writer);
             }
         } catch (IOException exception) {
             UltimateGlass.LOGGER.warn("Could not save client configuration", exception);
@@ -194,14 +194,14 @@ public final class UltimateGlassClientConfig {
 
     private static final class ConfigData {
         private Boolean seamlessConnectedPanes = true;
-        private Boolean singleEdgeScriberMode = false;
+        private Boolean singleEdgeChiselMode = false;
 
         private ConfigData() {
         }
 
-        private ConfigData(boolean seamlessConnectedPanes, boolean singleEdgeScriberMode) {
+        private ConfigData(boolean seamlessConnectedPanes, boolean singleEdgeChiselMode) {
             this.seamlessConnectedPanes = seamlessConnectedPanes;
-            this.singleEdgeScriberMode = singleEdgeScriberMode;
+            this.singleEdgeChiselMode = singleEdgeChiselMode;
         }
     }
 }

@@ -114,7 +114,7 @@ Any boundary absent from both masks remains automatic. Each key contains both a 
 `PanePlane` and one in-plane world direction, so opposite sides remain independently representable
 even though the default editing mode changes a shared seam as a pair.
 
-The Glazier's Scriber resolves the clicked sheet and its nearest edge on the client. A normal click
+The Glass Chisel resolves the clicked sheet and its nearest edge on the client. A normal click
 sends the opposite of the player's currently rendered result. Paired mode is the default: when a
 coplanar pane continues into the neighboring cell, the server writes the same forced result to its
 opposite boundary without requiring matching material or frame identity. The configurable `V`
@@ -170,6 +170,6 @@ before moving between development builds.
 
 ## Release sequence
 
-Version 0.2.1a was the first alpha of manual seam editing and the dedicated Creative tab. Version
-0.2.1b is the paired-seam beta following player feedback. Version 0.2.2 is reserved for the complete
-glass families discussion; mosaics and their Glazier's Table remain a later feature cycle.
+Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release following alpha and beta
+player testing. Version 0.2.2 is reserved for the complete glass families discussion; mosaics and
+their Glazier's Table remain a later feature cycle.
