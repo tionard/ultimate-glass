@@ -4,10 +4,26 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2. It gives builders edge-a
 Glass Panes, rotatable centred sheets, connected corners, wood framing, and tiered glassworking
 tools.
 
-## Version 0.2.0
+## Version 0.2.1a
 
-Version 0.2.0 adds experimental composite panes and refines placement and centred junctions. The
-wood framing and furnace/blast-furnace tempering introduced during beta remain unchanged.
+Version 0.2.1a is an alpha update for manual pane-edge control and the new Ultimate Glass Creative
+tab. The complete-glass-family expansion is planned separately for 0.2.2.
+
+### Manual pane edges
+
+- The new `Glazier's Scriber` edits the exact edge of the pane block that was clicked.
+- Right-click changes that edge from its current visible result to the opposite result.
+- Shift + right-click returns the clicked edge to automatic seamless behavior.
+- Each side is independent: neighboring panes may intentionally show mismatched borders.
+- A forced seamless edge is allowed beside any block or open space; it does not require another
+  compatible pane.
+- Manual choices work on unframed, wood-framed, edge-bound, centered, and composite Tempered panes
+  and survive save/reload.
+
+### Creative inventory
+
+- Ultimate Glass now has its own Creative tab containing its panes and glassworking tools.
+- The existing vanilla Building Blocks and Tools placements remain available as well.
 
 ### Stair and slab composites
 
@@ -90,6 +106,8 @@ API is required. The mod must be installed on the server and every connecting cl
 - `0.2.0-beta.4`: Tempered naming/progression and universal plank framing.
 - `0.2.0-beta.5`: Stair/slab composite panes; final feature beta for 0.2.
 - `0.2.0`: Stable release after beta.5 validation.
+- `0.2.1a`: Alpha for manual pane seams and the Ultimate Glass Creative tab.
+- `0.2.2`: Planned complete glass families, to be specified after 0.2.1 testing.
 - Mosaic foundation, layered mosaics, and the broader integration/performance phase previously
   labelled beta.6-beta.8 move to the next feature release, currently targeted as 0.3.0.
 

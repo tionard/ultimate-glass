@@ -24,6 +24,9 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
+import com.github.tionard.ultimateglass.pane.PanePlane;
+import com.github.tionard.ultimateglass.seam.PaneSeamData;
+import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 
 public final class GlaziersToolItem extends Item {
     private static final float DIAMOND_GLASS_MINING_SPEED = 6.0F;
@@ -69,14 +72,20 @@ public final class GlaziersToolItem extends Item {
 
         if (block instanceof EdgePaneBlock) {
             if (!level.isClientSide()) {
+                Direction.Axis rotationAxis = RotationAxisState.get(player);
+                PaneSeamData rotatedSeams = seamData(level, context.getClickedPos());
+                if (rotatedSeams != null) {
+                    rotatedSeams.rotateAround(rotationAxis);
+                }
                 Direction rotated = EdgePaneBlock.rotateAround(
                         state.getValue(EdgePaneBlock.FACING),
-                        RotationAxisState.get(player)
+                        rotationAxis
                 );
                 level.setBlockAndUpdate(
                         context.getClickedPos(),
                         state.setValue(EdgePaneBlock.FACING, rotated)
                 );
+                restoreSeamData(level, context.getClickedPos(), rotatedSeams);
                 refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
@@ -84,10 +93,16 @@ public final class GlaziersToolItem extends Item {
 
         if (block instanceof CenteredPaneBlock) {
             if (!level.isClientSide()) {
+                Direction.Axis rotationAxis = RotationAxisState.get(player);
+                PaneSeamData rotatedSeams = seamData(level, context.getClickedPos());
+                if (rotatedSeams != null) {
+                    rotatedSeams.rotateAround(rotationAxis);
+                }
                 level.setBlockAndUpdate(
                         context.getClickedPos(),
-                        CenteredPaneBlock.rotateAround(state, RotationAxisState.get(player))
+                        CenteredPaneBlock.rotateAround(state, rotationAxis)
                 );
+                restoreSeamData(level, context.getClickedPos(), rotatedSeams);
                 refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
@@ -161,15 +176,23 @@ public final class GlaziersToolItem extends Item {
 
         boolean waterlogged = state.getValue(BlockStateProperties.WATERLOGGED);
         Identifier dynamicFrame = dynamicFrame(level, context.getClickedPos());
+        PaneSeamData transformedSeams = seamData(level, context.getClickedPos());
 
         if (block == family.edgePane()) {
             Direction facing = state.getValue(EdgePaneBlock.FACING);
             if (!level.isClientSide()) {
+                if (transformedSeams != null) {
+                    transformedSeams.remapPlane(
+                            PanePlane.edge(facing),
+                            PanePlane.centered(facing.getAxis())
+                    );
+                }
                 BlockState target = family.centeredPane().defaultBlockState()
                         .setValue(CenteredPaneBlock.AXIS, facing.getAxis())
                         .setValue(CenteredPaneBlock.WATERLOGGED, waterlogged);
                 level.setBlockAndUpdate(context.getClickedPos(), target);
                 restoreDynamicFrame(level, context.getClickedPos(), dynamicFrame);
+                restoreSeamData(level, context.getClickedPos(), transformedSeams);
                 refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
@@ -181,13 +204,21 @@ public final class GlaziersToolItem extends Item {
             }
             if (!level.isClientSide()) {
                 Direction.Axis axis = state.getValue(CenteredPaneBlock.AXIS);
+                Direction facing = edgeFacing(context, axis);
+                if (transformedSeams != null) {
+                    transformedSeams.remapPlane(
+                            PanePlane.centered(axis),
+                            PanePlane.edge(facing)
+                    );
+                }
                 level.setBlockAndUpdate(
                         context.getClickedPos(),
                         family.edgePane().defaultBlockState()
-                                .setValue(EdgePaneBlock.FACING, edgeFacing(context, axis))
+                                .setValue(EdgePaneBlock.FACING, facing)
                                 .setValue(EdgePaneBlock.WATERLOGGED, waterlogged)
                 );
                 restoreDynamicFrame(level, context.getClickedPos(), dynamicFrame);
+                restoreSeamData(level, context.getClickedPos(), transformedSeams);
                 refreshPaneConnections(level, context.getClickedPos());
             }
             return InteractionResult.SUCCESS;
@@ -263,6 +294,23 @@ public final class GlaziersToolItem extends Item {
     ) {
         if (frameId != null && level.getBlockEntity(pos) instanceof DynamicFrameBlockEntity frame) {
             frame.setFrameBlockId(frameId);
+        }
+    }
+
+    private static PaneSeamData seamData(Level level, net.minecraft.core.BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof PaneSeamSource seams
+                ? seams.seamData().copy()
+                : null;
+    }
+
+    private static void restoreSeamData(
+            Level level,
+            net.minecraft.core.BlockPos pos,
+            PaneSeamData data
+    ) {
+        if (data != null && level.getBlockEntity(pos) instanceof PaneSeamSource seams
+                && seams.seamData().copyFrom(data)) {
+            seams.markSeamsChanged();
         }
     }
 }

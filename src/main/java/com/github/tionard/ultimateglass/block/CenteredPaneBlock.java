@@ -13,7 +13,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -34,9 +36,10 @@ import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
+import com.github.tionard.ultimateglass.block.entity.PaneSeamBlockEntity;
 
 /** A full glass sheet centred in its block space on one of the three axes. */
-public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, UltimatePane {
+public class CenteredPaneBlock extends Block implements EntityBlock, SimpleWaterloggedBlock, UltimatePane {
     public static final EnumProperty<Direction.Axis> AXIS = BlockStateProperties.AXIS;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final BooleanProperty CONNECT_FIRST = BooleanProperty.create("connect_first");
@@ -73,6 +76,11 @@ public class CenteredPaneBlock extends Block implements SimpleWaterloggedBlock, 
                 state.getValue(CONNECT_FIRST),
                 state.getValue(CONNECT_SECOND)
         );
+    }
+
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new PaneSeamBlockEntity(pos, state);
     }
 
     @Override

@@ -15,9 +15,10 @@ Appearance is independent from physical geometry:
   collision, outlines, rotation, and renderer-facing geometry.
 - `UltimatePane` exposes the shared appearance and geometry contracts.
 
-Unframed panes and the 12 built-in wood-frame families are ordinary blocks with no BlockEntity.
 The compatibility-sensitive `FACING`, edge connection, `AXIS`, centred connection, and
-`WATERLOGGED` properties remain unchanged.
+`WATERLOGGED` properties remain unchanged. Starting with 0.2.1a, ordinary panes use a small,
+non-ticking `PaneSeamBlockEntity` to store independent manual boundary choices. Dynamic frames and
+composites store the same seam data in their existing BlockEntities.
 
 ## Families, items, and tempering
 
@@ -88,9 +89,9 @@ never source further derived arms, preventing ghost propagation.
 
 ## Placement, rotation, and tools
 
-Normal right-click placement uses the player's horizontal direction, matching stair orientation.
-Shift + right-click is a fixed precision override: it always places the pane against the clicked
-face and never copies the orientation of panes, slabs, stairs, trapdoors, or other half-blocks.
+Normal right-click placement selects the edge nearest the cursor on the clicked face. Shift +
+right-click is a fixed precision override: it always places the pane against the clicked face and
+never copies the orientation of panes, slabs, stairs, trapdoors, or other half-blocks.
 
 The rotation-axis key cycles X, Y, and Z. Copper rotates. Iron also toggles edge/centred geometry.
 Diamond additionally harvests supported glass intact. When a generic modded frame changes geometry,
@@ -105,6 +106,24 @@ classification.
 
 The seamless option is client-only. Its model wrapper removes explicitly marked boundary quads,
 does not modify block state or collision, and invalidates compiled chunk geometry when toggled.
+
+## Manual seam editing
+
+`PaneSeamData` stores two compact masks per pane: forced-visible and forced-seamless boundaries.
+Any boundary absent from both masks remains automatic. Each key contains both a physical
+`PanePlane` and one in-plane world direction, so opposite sides of a shared seam are deliberately
+independent.
+
+The Glazier's Scriber resolves the clicked sheet and its nearest edge on the client. A normal click
+sends the opposite of the player's currently rendered result; Shift sends `AUTOMATIC`. The server
+checks tool ownership, reach, plane geometry, and boundary validity before saving the requested
+state. Forced seamless boundaries never require a matching pane or any particular neighbouring
+block.
+
+The renderer applies manual choices over the client seamless preference: forced choices always
+win, while automatic boundaries retain the existing exact-variant continuation rule. Saved masks
+are included in the chunk geometry key and synchronized with the BlockEntity update packet.
+Existing Glazier's Tool rotations and edge/centred toggles remap the masks with the physical glass.
 
 ## Stair and slab composites
 
@@ -148,6 +167,6 @@ before moving between development builds.
 
 ## Release sequence
 
-Beta.5 is the final planned 0.2 feature beta and adds stair/slab composites. After its validation,
-the next planned version is 0.2.0. The former beta.6-beta.8 mosaic and integration phases are moved
-to the next feature cycle (currently 0.3.0).
+Version 0.2.1a is the first alpha of manual seam editing and the dedicated Creative tab. Player
+testing will define its beta and stable follow-ups. Version 0.2.2 is reserved for the complete glass
+families discussion; mosaics and their Glazier's Table remain a later feature cycle.

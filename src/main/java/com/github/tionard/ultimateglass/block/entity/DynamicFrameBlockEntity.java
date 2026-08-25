@@ -19,13 +19,17 @@ import net.minecraft.world.level.storage.ValueOutput;
 
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlockEntities;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.seam.PaneSeamData;
+import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 
 /** Stores only the selected plank block; the pane itself is still rendered in the chunk mesh. */
-public final class DynamicFrameBlockEntity extends BlockEntity implements PaneFrameSource {
+public final class DynamicFrameBlockEntity extends BlockEntity
+        implements PaneFrameSource, PaneSeamSource {
     public static final Identifier DEFAULT_FRAME = Identifier.withDefaultNamespace("oak_planks");
     private static final String FRAME_KEY = "frame_block";
 
     private Identifier frameBlockId = DEFAULT_FRAME;
+    private final PaneSeamData seamData = new PaneSeamData();
 
     public DynamicFrameBlockEntity(BlockPos pos, BlockState state) {
         super(UltimateGlassBlockEntities.DYNAMIC_FRAME, pos, state);
@@ -39,6 +43,17 @@ public final class DynamicFrameBlockEntity extends BlockEntity implements PaneFr
     @Override
     public Block frameBlock() {
         return BuiltInRegistries.BLOCK.getOptional(frameBlockId).orElse(Blocks.OAK_PLANKS);
+    }
+
+    @Override
+    public PaneSeamData seamData() {
+        return seamData;
+    }
+
+    @Override
+    public void markSeamsChanged() {
+        setChanged();
+        requestRemesh();
     }
 
     public void setFrameBlockId(Identifier frameBlockId) {
@@ -58,10 +73,17 @@ public final class DynamicFrameBlockEntity extends BlockEntity implements PaneFr
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
         Identifier previousFrame = frameBlockId;
+        long previousVisible = seamData.visibleMask();
+        long previousSeamless = seamData.seamlessMask();
         frameBlockId = input.read(FRAME_KEY, Identifier.CODEC).orElse(DEFAULT_FRAME);
-        if (level != null && level.isClientSide() && !frameBlockId.equals(previousFrame)) {
-            BlockState state = getBlockState();
-            level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_ALL);
+        seamData.load(input);
+        if (!frameBlockId.equals(previousFrame)
+                || previousVisible != seamData.visibleMask()
+                || previousSeamless != seamData.seamlessMask()) {
+            if (level == null || !level.isClientSide()) {
+                return;
+            }
+            requestRemesh();
         }
     }
 
@@ -69,6 +91,7 @@ public final class DynamicFrameBlockEntity extends BlockEntity implements PaneFr
     protected void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
         output.store(FRAME_KEY, Identifier.CODEC, frameBlockId);
+        seamData.save(output);
     }
 
     @Override
@@ -91,5 +114,12 @@ public final class DynamicFrameBlockEntity extends BlockEntity implements PaneFr
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         return saveCustomOnly(registries);
+    }
+
+    private void requestRemesh() {
+        if (level != null) {
+            BlockState state = getBlockState();
+            level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_ALL);
+        }
     }
 }

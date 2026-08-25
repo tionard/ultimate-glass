@@ -129,6 +129,16 @@ public final class UltimateGlassBlocks {
                 .toList();
     }
 
+    public static Collection<Block> staticPaneBlocks() {
+        return FAMILIES_BY_APPEARANCE.values().stream()
+                .filter(family -> !family.appearance().frame().isDynamic())
+                .flatMap(family -> java.util.stream.Stream.of(
+                        family.edgePane(), family.centeredPane()
+                ))
+                .map(Block.class::cast)
+                .toList();
+    }
+
     private static TintedGlassPaneBlock registerTintedGlassPane() {
         ResourceKey<Block> key = blockKey("tinted_glass_pane");
         TintedGlassPaneBlock block = new TintedGlassPaneBlock(

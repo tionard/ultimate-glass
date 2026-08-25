@@ -21,6 +21,10 @@ import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.client.render.SeamlessPaneModels;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
+import com.github.tionard.ultimateglass.item.GlaziersScriberItem;
+import com.github.tionard.ultimateglass.network.PaneSeamEditPayload;
+import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
+import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
 import com.github.tionard.ultimateglass.network.RotationAxisPayload;
 import com.github.tionard.ultimateglass.network.ToolCraftingConfigPayload;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
@@ -46,6 +50,27 @@ public final class UltimateGlassClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         UltimateGlassClientConfig.load();
+        GlaziersScriberItem.setClientUseHandler((context, state, target, seams) -> {
+            PaneSeamOverride result;
+            if (context.getPlayer() != null && context.getPlayer().isShiftKeyDown()) {
+                result = PaneSeamOverride.AUTOMATIC;
+            } else {
+                boolean automaticState = UltimateGlassClientConfig.seamlessConnectedPanes()
+                        && PaneConnectionQueries.hasMatchingContinuation(
+                                context.getLevel(),
+                                context.getClickedPos(),
+                                state,
+                                target.boundary(),
+                                target.plane()
+                        );
+                result = seams.seamOverride(
+                        target.plane(), target.boundary()
+                ).oppositeOfCurrent(automaticState);
+            }
+            ClientPlayNetworking.send(PaneSeamEditPayload.of(
+                    context.getClickedPos(), target, result
+            ));
+        });
         SeamlessPaneModels.initialize();
         UltimateGlassBlocks.edgePanes().forEach(block ->
                 FluidRenderingRegistry.setBlockTransparency(block, true));

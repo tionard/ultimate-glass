@@ -11,17 +11,21 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.network.chat.Component;
 
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.item.DynamicFramedPaneItem;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 import com.github.tionard.ultimateglass.item.GlaziersToolTier;
+import com.github.tionard.ultimateglass.item.GlaziersScriberItem;
 import com.github.tionard.ultimateglass.item.StaticFramedPaneItem;
 import com.github.tionard.ultimateglass.item.TemperedPaneItem;
 import com.github.tionard.ultimateglass.pane.PaneFrame;
@@ -39,10 +43,20 @@ public final class UltimateGlassItems {
     private static final ResourceKey<Item> IRON_TOOL_KEY = key("iron_glaziers_tool");
     private static final ResourceKey<Item> DIAMOND_TOOL_KEY = key("diamond_glaziers_tool");
     private static final ResourceKey<Item> LEGACY_TOOL_KEY = key("glaziers_tool");
+    private static final ResourceKey<Item> SCRIBER_KEY = key("glaziers_scriber");
+    private static final ResourceKey<CreativeModeTab> CREATIVE_TAB_KEY = ResourceKey.create(
+            BuiltInRegistries.CREATIVE_MODE_TAB.key(),
+            Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "creative_tab")
+    );
 
     public static final Item COPPER_GLAZIERS_TOOL = registerTool(COPPER_TOOL_KEY, GlaziersToolTier.COPPER);
     public static final Item IRON_GLAZIERS_TOOL = registerTool(IRON_TOOL_KEY, GlaziersToolTier.IRON);
     public static final Item DIAMOND_GLAZIERS_TOOL = registerTool(DIAMOND_TOOL_KEY, GlaziersToolTier.DIAMOND);
+    public static final Item GLAZIERS_SCRIBER = register(
+            SCRIBER_KEY,
+            GlaziersScriberItem::new,
+            new Item.Properties().stacksTo(1)
+    );
 
     /** Kept registered so 0.1.3 worlds do not lose existing tools. Hidden from recipes and Creative tabs. */
     public static final Item GLAZIERS_TOOL = registerTool(LEGACY_TOOL_KEY, GlaziersToolTier.DIAMOND);
@@ -59,6 +73,25 @@ public final class UltimateGlassItems {
     }
 
     public static void initialize() {
+        Registry.register(
+                BuiltInRegistries.CREATIVE_MODE_TAB,
+                CREATIVE_TAB_KEY,
+                FabricCreativeModeTab.builder()
+                        .icon(() -> new ItemStack(paneItemFor(PaneMaterial.CLEAR)))
+                        .title(Component.translatable("creativeTab.ultimateglass"))
+                        .displayItems((parameters, output) -> {
+                            output.accept(GLAZIERS_SCRIBER);
+                            output.accept(COPPER_GLAZIERS_TOOL);
+                            output.accept(IRON_GLAZIERS_TOOL);
+                            output.accept(DIAMOND_GLAZIERS_TOOL);
+                            output.accept(TINTED_GLASS_PANE);
+                            paneFamiliesForCreative().forEach(
+                                    family -> output.accept(paneItemFor(family))
+                            );
+                        })
+                        .build()
+        );
+
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.BUILDING_BLOCKS)
                 .register(output -> {
                     output.accept(TINTED_GLASS_PANE);
@@ -70,6 +103,7 @@ public final class UltimateGlassItems {
                     output.accept(COPPER_GLAZIERS_TOOL);
                     output.accept(IRON_GLAZIERS_TOOL);
                     output.accept(DIAMOND_GLAZIERS_TOOL);
+                    output.accept(GLAZIERS_SCRIBER);
                 });
     }
 

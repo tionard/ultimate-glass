@@ -33,6 +33,8 @@ import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.PaneSeamPolicy;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
+import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
+import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 
 /** Removes frame pieces only where matching Ultimate panes continue the same sheet. */
 public final class SeamlessPaneModels {
@@ -129,9 +131,12 @@ public final class SeamlessPaneModels {
                     composite.centered(),
                     composite.frameBlockId(),
                     state.getValue(CompositePaneBlock.WATERLOGGED),
-                    UltimateGlassClientConfig.seamlessConnectedPanes()
-                            ? continuationMask(level, pos, paneState)
-                            : -1L
+                    seamlessBoundaryMask(
+                            level,
+                            pos,
+                            paneState,
+                            UltimateGlassClientConfig.seamlessConnectedPanes()
+                    )
             );
         }
     }
@@ -228,14 +233,14 @@ public final class SeamlessPaneModels {
             Object wrappedKey = super.createGeometryKey(level, pos, state, random);
             Object frameBlock = dynamicFrameId(level, pos, state);
             long centeredSources = centeredSourceMask(level, pos, state);
-            if (!UltimateGlassClientConfig.seamlessConnectedPanes()) {
-                return frameBlock == null && centeredSources == 0L
-                        ? wrappedKey
-                        : new GeometryKey(wrappedKey, 0L, frameBlock, centeredSources);
-            }
             return new GeometryKey(
                     wrappedKey,
-                    continuationMask(level, pos, state),
+                    seamlessBoundaryMask(
+                            level,
+                            pos,
+                            state,
+                            UltimateGlassClientConfig.seamlessConnectedPanes()
+                    ),
                     frameBlock,
                     centeredSources
             );
@@ -266,9 +271,9 @@ public final class SeamlessPaneModels {
                 && !centeredSectionSupported(quad, level, pos, state)) {
             return false;
         }
-        boolean keep = seamless
-                ? keepQuad(quad, level, pos, state, seamFill, framedSurface)
-                : !seamFill;
+        boolean keep = keepQuad(
+                quad, level, pos, state, seamFill, framedSurface, seamless
+        );
         if (keep && dynamicFrame) {
             if (frameMaterial != null) {
                 quad.materialBake(frameMaterial, MutableQuadView.BAKE_LOCK_UV);
@@ -283,13 +288,18 @@ public final class SeamlessPaneModels {
             BlockPos pos,
             BlockState state,
             boolean seamFill,
-            boolean framedSurface
+            boolean framedSurface,
+            boolean automaticSeamsEnabled
     ) {
         if (state.getBlock() instanceof EdgePaneBlock) {
-            return keepEdgeQuad(quad, level, pos, state, seamFill, framedSurface);
+            return keepEdgeQuad(
+                    quad, level, pos, state, seamFill, framedSurface, automaticSeamsEnabled
+            );
         }
         if (state.getBlock() instanceof CenteredPaneBlock) {
-            return keepCenteredQuad(quad, level, pos, state, seamFill, framedSurface);
+            return keepCenteredQuad(
+                    quad, level, pos, state, seamFill, framedSurface, automaticSeamsEnabled
+            );
         }
         return !seamFill;
     }
@@ -300,7 +310,8 @@ public final class SeamlessPaneModels {
             BlockPos pos,
             BlockState state,
             boolean seamFill,
-            boolean framedSurface
+            boolean framedSurface,
+            boolean automaticSeamsEnabled
     ) {
         PaneGeometry geometry = ((UltimatePane) state.getBlock()).geometry(state);
         List<PanePlane> containingPlanes = new ArrayList<>(3);
@@ -332,7 +343,8 @@ public final class SeamlessPaneModels {
                     level,
                     pos,
                     state,
-                    plane
+                    plane,
+                    automaticSeamsEnabled
             );
         }
 
@@ -345,7 +357,8 @@ public final class SeamlessPaneModels {
             BlockPos pos,
             BlockState state,
             boolean seamFill,
-            boolean framedSurface
+            boolean framedSurface,
+            boolean automaticSeamsEnabled
     ) {
         PaneGeometry geometry = ((UltimatePane) state.getBlock()).geometry(state);
         List<PanePlane> containingPlanes = new ArrayList<>(3);
@@ -377,7 +390,8 @@ public final class SeamlessPaneModels {
                     level,
                     pos,
                     state,
-                    plane
+                    plane,
+                    automaticSeamsEnabled
             );
         }
 
@@ -391,16 +405,16 @@ public final class SeamlessPaneModels {
             BlockAndTintGetter level,
             BlockPos pos,
             BlockState state,
-            PanePlane plane
+            PanePlane plane,
+            boolean automaticSeamsEnabled
     ) {
         if (borders.isEmpty()) {
             return !seamFill;
         }
 
-        long continuingBorders = borders.stream().filter(direction ->
-                PaneConnectionQueries.hasMatchingContinuation(
-                        level, pos, state, direction, plane)
-        ).count();
+        long continuingBorders = borders.stream().filter(direction -> boundaryIsSeamless(
+                level, pos, state, plane, direction, automaticSeamsEnabled
+        )).count();
         boolean replaceWithGlass = PaneSeamPolicy.shouldReplaceBoundary(
                 preservePerpendicularOuterEdge,
                 borders.size(),
@@ -426,14 +440,26 @@ public final class SeamlessPaneModels {
                 && quad.lightFace().getAxis() == plane.axis();
     }
 
-    private static long continuationMask(BlockAndTintGetter level, BlockPos pos, BlockState state) {
+    private static long seamlessBoundaryMask(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            boolean automaticSeamsEnabled
+    ) {
         long mask = 0L;
         if (state.getBlock() instanceof UltimatePane pane) {
             PaneGeometry geometry = pane.geometry(state);
             for (PanePlane plane : geometry.planes()) {
                 for (Direction direction : Direction.values()) {
-                    if (PaneConnectionQueries.hasMatchingContinuation(
-                            level, pos, state, direction, plane)) {
+                    if (direction.getAxis() != plane.axis()
+                            && boundaryIsSeamless(
+                                    level,
+                                    pos,
+                                    state,
+                                    plane,
+                                    direction,
+                                    automaticSeamsEnabled
+                            )) {
                         int bit = plane.ordinal() * Direction.values().length
                                 + direction.ordinal();
                         mask |= 1L << bit;
@@ -442,6 +468,27 @@ public final class SeamlessPaneModels {
             }
         }
         return mask;
+    }
+
+    private static boolean boundaryIsSeamless(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            PanePlane plane,
+            Direction direction,
+            boolean automaticSeamsEnabled
+    ) {
+        PaneSeamOverride override = level.getBlockEntity(pos) instanceof PaneSeamSource seams
+                ? seams.seamOverride(plane, direction)
+                : PaneSeamOverride.AUTOMATIC;
+        return switch (override) {
+            case VISIBLE -> false;
+            case SEAMLESS -> true;
+            case AUTOMATIC -> automaticSeamsEnabled
+                    && PaneConnectionQueries.hasMatchingContinuation(
+                            level, pos, state, direction, plane
+                    );
+        };
     }
 
     private static long centeredSourceMask(

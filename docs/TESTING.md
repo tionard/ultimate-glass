@@ -1,14 +1,32 @@
-# Ultimate Glass 0.2.0 regression checklist
+# Ultimate Glass 0.2.1a regression checklist
 
-Version 0.2.0 includes stair/slab composites on top of tempering and universal wood frames. Run
-this checklist in a new world and a backed-up existing world.
+Version 0.2.1a adds independent manual seam editing and an Ultimate Glass Creative tab. Run this
+checklist in a test world before promoting the feature to beta.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.0.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.1a.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 `ultimate_*` block/item IDs and saved BlockState property names are unchanged.
+
+## Manual pane edges
+
+1. Find the Glazier's Scriber in the Ultimate Glass Creative tab and craft it from one iron ingot
+   and one stick in a diagonal arrangement.
+2. Connect two matching Tempered panes, click only one side of their shared boundary, and confirm
+   only that pane changes from seamless to visible.
+3. Click the neighboring pane separately and confirm its side can be made visible independently.
+4. Right-click each edited edge again and confirm its current result changes to the opposite one.
+5. Shift + right-click each edge and confirm it returns to automatic behavior.
+6. Force an exposed edge seamless beside air and beside an ordinary solid block. Confirm it stays
+   seamless without requiring a compatible neighboring pane.
+7. Repeat with clear, stained, tinted, fixed-wood-framed, and modded-wood-framed panes.
+8. Repeat on vertical, horizontal, centered, L-corner, cube-corner, stair, and slab panes.
+9. Rotate panes and toggle edge/centered geometry with the existing Glazier's Tools. Confirm saved
+   manual choices follow the physical glass edge.
+10. Save/reload, unload/reload the chunk, reconnect, and restart a dedicated server. Confirm all
+    manual edge choices remain unchanged.
 
 ## Stair and slab composites
 

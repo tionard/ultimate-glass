@@ -25,10 +25,12 @@ import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlockEntities;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.seam.PaneSeamData;
+import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 
 /** Data-only backing state for a pane installed in the open volume of a stair or slab. */
 public final class CompositePaneBlockEntity extends net.minecraft.world.level.block.entity.BlockEntity
-        implements PaneFrameSource {
+        implements PaneFrameSource, PaneSeamSource {
     private static final String HOST_STATE_KEY = "host_state";
     private static final String MATERIAL_KEY = "pane_material";
     private static final String FRAME_KEY = "pane_frame";
@@ -60,6 +62,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     private Direction paneFacing = Direction.NORTH;
     private boolean centered;
     private Identifier frameBlockId = DynamicFrameBlockEntity.DEFAULT_FRAME;
+    private final PaneSeamData seamData = new PaneSeamData();
 
     public CompositePaneBlockEntity(BlockPos pos, BlockState state) {
         super(UltimateGlassBlockEntities.COMPOSITE_PANE, pos, state);
@@ -79,6 +82,17 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
 
     public boolean centered() {
         return centered;
+    }
+
+    @Override
+    public PaneSeamData seamData() {
+        return seamData;
+    }
+
+    @Override
+    public void markSeamsChanged() {
+        setChanged();
+        requestClientRemesh();
     }
 
     public PaneGeometry paneGeometry() {
@@ -107,6 +121,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         this.appearance = appearance;
         this.paneFacing = paneFacing;
         this.centered = false;
+        seamData.copyFrom(null);
         this.frameBlockId = frameBlockId == null
                 ? DynamicFrameBlockEntity.DEFAULT_FRAME
                 : frameBlockId;
@@ -118,6 +133,17 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     }
 
     public void toggleCentered() {
+        if (centered) {
+            seamData.remapPlane(
+                    com.github.tionard.ultimateglass.pane.PanePlane.centered(paneFacing.getAxis()),
+                    com.github.tionard.ultimateglass.pane.PanePlane.edge(paneFacing)
+            );
+        } else {
+            seamData.remapPlane(
+                    com.github.tionard.ultimateglass.pane.PanePlane.edge(paneFacing),
+                    com.github.tionard.ultimateglass.pane.PanePlane.centered(paneFacing.getAxis())
+            );
+        }
         centered = !centered;
         setChanged();
         if (level != null) {
@@ -129,6 +155,13 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     public void setPaneFacing(Direction paneFacing) {
         if (paneFacing.getAxis() == Direction.Axis.Y) {
             throw new IllegalArgumentException("Composite stair/slab panes must be vertical");
+        }
+        Direction rotated = this.paneFacing;
+        for (int turns = 0; turns < 4 && rotated != paneFacing; turns++) {
+            seamData.rotateAround(Direction.Axis.Y);
+            rotated = com.github.tionard.ultimateglass.pane.PanePlane.rotateDirection(
+                    rotated, Direction.Axis.Y
+            );
         }
         this.paneFacing = paneFacing;
         setChanged();
@@ -179,6 +212,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         centered = input.read(CENTERED_KEY, Codec.BOOL).orElse(false);
         frameBlockId = input.read(FRAME_BLOCK_KEY, Identifier.CODEC)
                 .orElse(DynamicFrameBlockEntity.DEFAULT_FRAME);
+        seamData.load(input);
         requestClientRemesh();
     }
 
@@ -192,6 +226,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         output.store(AXIS_KEY, AXIS_CODEC, paneFacing.getAxis());
         output.store(CENTERED_KEY, Codec.BOOL, centered);
         output.store(FRAME_BLOCK_KEY, Identifier.CODEC, frameBlockId);
+        seamData.save(output);
     }
 
     @Override
