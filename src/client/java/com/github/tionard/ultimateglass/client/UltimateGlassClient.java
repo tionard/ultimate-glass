@@ -28,6 +28,7 @@ import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
 import com.github.tionard.ultimateglass.network.RotationAxisPayload;
 import com.github.tionard.ultimateglass.network.ToolCraftingConfigPayload;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
+import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
 public final class UltimateGlassClient implements ClientModInitializer {
