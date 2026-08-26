@@ -61,11 +61,11 @@ public final class DynamicFramedCenteredPaneBlock extends CenteredPaneBlock
     @Override
     protected java.util.List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         java.util.List<ItemStack> drops = super.getDrops(state, builder);
+        drops.forEach(stack -> UltimateGlassSmartItems.applyComponents(this, stack));
         BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (blockEntity instanceof DynamicFrameBlockEntity frame) {
             drops.forEach(stack -> stack.set(UltimateGlassComponents.FRAME_BLOCK, frame.frameBlockId()));
         }
-        drops.forEach(stack -> UltimateGlassSmartItems.applyComponents(this, stack));
         return drops;
     }
 

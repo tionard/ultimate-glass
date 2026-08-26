@@ -8,10 +8,11 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
+import com.github.tionard.ultimateglass.glass.GlassFamilyBlock;
+import com.github.tionard.ultimateglass.glass.GlassForm;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
-import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
@@ -113,9 +114,7 @@ public final class UltimateGlassNetworking {
         }
 
         Level level = player.level();
-        PaneGeometry geometry = geometry(level, payload.pos());
-        if (geometry == null
-                || !geometry.planes().contains(plane)
+        if (!supportsPlane(level, payload.pos(), plane)
                 || !(level.getBlockEntity(payload.pos()) instanceof PaneSeamSource seams)) {
             return;
         }
@@ -125,17 +124,18 @@ public final class UltimateGlassNetworking {
             return;
         }
 
-        seams.setSeamOverride(plane, boundary, override);
+        setSeamOverride(level, payload.pos(), seams, plane, boundary, override);
         if (!payload.singleEdge()) {
             PaneSeamCounterpart counterpart = PaneSeamCounterpart.of(
                     payload.pos(), new PaneSeamTarget(plane, boundary)
             );
-            PaneGeometry neighborGeometry = geometry(level, counterpart.pos());
-            if (neighborGeometry != null
-                    && neighborGeometry.planes().contains(plane)
+            if (supportsPlane(level, counterpart.pos(), plane)
                     && level.getBlockEntity(counterpart.pos())
                             instanceof PaneSeamSource neighborSeams) {
-                neighborSeams.setSeamOverride(
+                setSeamOverride(
+                        level,
+                        counterpart.pos(),
+                        neighborSeams,
                         counterpart.target().plane(),
                         counterpart.target().boundary(),
                         override
@@ -144,15 +144,44 @@ public final class UltimateGlassNetworking {
         }
     }
 
-    private static PaneGeometry geometry(Level level, net.minecraft.core.BlockPos pos) {
+    private static void setSeamOverride(
+            Level level,
+            net.minecraft.core.BlockPos pos,
+            PaneSeamSource seams,
+            PanePlane plane,
+            Direction boundary,
+            PaneSeamOverride override
+    ) {
+        seams.setSeamOverride(plane, boundary, override);
+        if (isFramedFullBlock(level.getBlockState(pos)) && plane.isEdge()) {
+            // A cube edge is visible on two adjoining faces. Keep both surface halves together.
+            seams.setSeamOverride(
+                    PanePlane.edge(boundary),
+                    plane.edgeDirection(),
+                    override
+            );
+        }
+    }
+
+    private static boolean supportsPlane(
+            Level level,
+            net.minecraft.core.BlockPos pos,
+            PanePlane requestedPlane
+    ) {
         BlockState state = level.getBlockState(pos);
         if (state.getBlock() instanceof UltimatePane pane) {
-            return pane.geometry(state);
+            return pane.geometry(state).planes().contains(requestedPlane);
         }
         if (state.getBlock() instanceof CompositePaneBlock
                 && level.getBlockEntity(pos) instanceof CompositePaneBlockEntity composite) {
-            return composite.paneGeometry();
+            return composite.paneGeometry().planes().contains(requestedPlane);
         }
-        return null;
+        return requestedPlane.isEdge() && isFramedFullBlock(state);
+    }
+
+    private static boolean isFramedFullBlock(BlockState state) {
+        return state.getBlock() instanceof GlassFamilyBlock glass
+                && glass.glassVariant().form() == GlassForm.BLOCK
+                && glass.glassVariant().isFramed();
     }
 }

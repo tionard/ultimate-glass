@@ -94,7 +94,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     @Override
     public void markSeamsChanged() {
         setChanged();
-        requestClientRemesh();
+        requestRemesh();
     }
 
     public PaneGeometry paneGeometry() {
@@ -224,7 +224,7 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         frameBlockId = input.read(FRAME_BLOCK_KEY, Identifier.CODEC)
                 .orElse(DynamicFrameBlockEntity.DEFAULT_FRAME);
         seamData.load(input);
-        requestClientRemesh();
+        requestRemesh();
     }
 
     @Override
@@ -250,8 +250,8 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
         return saveCustomOnly(registries);
     }
 
-    private void requestClientRemesh() {
-        if (level != null && level.isClientSide()) {
+    private void requestRemesh() {
+        if (level != null) {
             BlockState state = getBlockState();
             level.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_ALL);
         }

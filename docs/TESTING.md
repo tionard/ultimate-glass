@@ -1,12 +1,12 @@
-# Ultimate Glass 0.2.2a regression checklist
+# Ultimate Glass 0.2.2b regression checklist
 
-Version 0.2.2a adds complete ordinary/Tempered pane and full-block families plus the transitional
-component-backed inventory model, while retaining 0.2.1 seam editing, composites, and tools.
+Version 0.2.2b fixes the first complete-family alpha while retaining its transitional
+component-backed inventory model, 0.2.1 seam editing, composites, and tools.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2a.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2b.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 and fixed-frame block/item IDs still load but new outputs use only the six
    smart item IDs.
@@ -42,6 +42,10 @@ component-backed inventory model, while retaining 0.2.1 seam editing, composites
    frame texture, name, material component, drop, and merged border remains stable.
 8. Confirm all vanilla and modded woods produce the same item ID for a given family while
    `glass_material` and `frame_block` distinguish the exact result.
+9. Break every smart framed pane/block family in several colours and woods. Confirm both stack
+   components, name, icon, and replacement placement retain the exact original combination.
+10. Drop and hold ordinary/Tempered framed pane items beside vanilla panes. Confirm their world and
+    hand scale matches normal pane items rather than full blocks.
 
 ## Manual pane edges
 
@@ -68,6 +72,9 @@ component-backed inventory model, while retaining 0.2.1 seam editing, composites
     confirm editing resumes. Verify a non-operator cannot change the server setting.
 12. Save/reload, unload/reload the chunk, reconnect, and restart a dedicated server. Confirm all
     manual edge choices remain unchanged.
+13. Chisel every edge of a framed full block. Confirm both visible halves of the clicked physical
+    edge change immediately, paired mode updates the neighbouring block, and single-edge mode does
+    not. Repeat with ordinary and Tempered frames.
 
 ## Stair and slab composites
 
@@ -75,8 +82,9 @@ component-backed inventory model, while retaining 0.2.1 seam editing, composites
    Mod Menu, and reconnect once to verify the server-authoritative value remains synchronized.
 2. Install clear, several stained colours, tinted, fixed-framed, and modded-framed Tempered panes
    into bottom slabs, top slabs, and stairs. Confirm the host and pane occupy one block cell.
-3. Confirm composites are edge-bound. On each host face, click near all four edges and verify normal
-   placement uses the nearest edge. Confirm Shift placement copies the clicked face exactly.
+3. Confirm ordinary right-click beside each eligible host performs normal adjacent pane placement
+   and never replaces the host. Confirm only Shift + right-click creates a composite and copies the
+   clicked host face exactly.
 4. Confirm a double slab, horizontal clicked face, or fully occupied stair face does not create a
    composite and leaves ordinary pane placement available.
 5. Test every horizontal stair facing, top/bottom half, and straight/inner/outer shape. Confirm the
@@ -99,6 +107,8 @@ component-backed inventory model, while retaining 0.2.1 seam editing, composites
     Confirm exactly one host block item and one pane always drop, including the modded frame
     component.
 14. Place composites beside ordinary matching and nonmatching Tempered panes and inspect every seam.
+   Chisel several composite boundaries and confirm every visual change appears immediately without
+   leaving and rejoining the world.
 15. Verify `/data get block` shows a non-ticking data holder and confirm no composite
     BlockEntityRenderer appears in a client profiler capture.
 16. Try a modded stair/slab with no BlockEntity and record compatibility. Confirm a host that owns a

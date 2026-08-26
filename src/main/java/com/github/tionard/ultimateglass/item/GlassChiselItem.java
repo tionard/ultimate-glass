@@ -10,6 +10,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
+import com.github.tionard.ultimateglass.glass.GlassFamilyBlock;
+import com.github.tionard.ultimateglass.glass.GlassForm;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.seam.PaneSeamSource;
@@ -72,6 +74,13 @@ public final class GlassChiselItem extends Item {
                 && level.getBlockEntity(context.getClickedPos())
                         instanceof CompositePaneBlockEntity composite) {
             return composite.paneGeometry();
+        }
+        if (state.getBlock() instanceof GlassFamilyBlock glass
+                && glass.glassVariant().form() == GlassForm.BLOCK
+                && glass.glassVariant().isFramed()) {
+            return PaneGeometry.edge(
+                    context.getClickedFace(), false, false, false, false
+            );
         }
         return null;
     }

@@ -4,10 +4,20 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2. It gives builders edge-a
 Glass Panes, rotatable centred sheets, connected corners, wood framing, and tiered glassworking
 tools.
 
-## Version 0.2.2a
+## Version 0.2.2b
 
-Version 0.2.2a is the first test build of the complete glass families. It keeps everything from
+Version 0.2.2b is the second test build of the complete glass families. It keeps everything from
 0.2.1 and adds Tempered full blocks plus ordinary and Tempered framed blocks and panes.
+
+### 0.2.2b corrections
+
+- Framed pane and block drops retain their exact glass material and plank instead of reverting to
+  clear glass with oak.
+- Framed pane items use normal pane-item sizing in the hand, inventory, and world.
+- The Glass Chisel can edit the twelve physical wood edges of framed full glass blocks.
+- Chisel edits on stair/slab composites rebuild immediately without requiring a reconnect.
+- Tempered panes combine with an experimental stair/slab host only through Shift + right-click;
+  ordinary right-click remains normal adjacent pane placement.
 
 ### Complete glass families
 
@@ -28,7 +38,7 @@ Version 0.2.2a is the first test build of the complete glass families. It keeps 
 
 ### Manual pane edges
 
-- The `Glass Chisel` edits the exact edge of the pane block that was clicked.
+- The `Glass Chisel` edits the exact edge of the pane or framed full block that was clicked.
 - Right-click changes the current visible result to its opposite. By default, both sides of a
   shared pane seam change together so borders cannot accidentally mismatch.
 - Press `V` while holding the Glass Chisel to switch between paired-seam and single-edge editing. The
@@ -38,8 +48,8 @@ Version 0.2.2a is the first test build of the complete glass families. It keeps 
   automatic seamless behavior.
 - A forced seamless edge is allowed beside any block or open space; it does not require another
   compatible pane.
-- Manual choices work on unframed, wood-framed, edge-bound, centered, and composite Tempered panes
-  and survive save/reload.
+- Manual choices work on unframed, wood-framed, edge-bound, centered, and composite Tempered panes,
+  plus framed full blocks, and survive save/reload.
 
 ### Creative inventory
 
@@ -51,12 +61,12 @@ Version 0.2.2a is the first test build of the complete glass families. It keeps 
 
 ### Stair and slab composites
 
-- Enable `Experimental stair/slab panes` in Mod Menu (off by default), then use any Tempered pane on
-  a stair or non-double slab to install it in the same block cell.
+- Enable `Experimental stair/slab panes` in Mod Menu (off by default), then Shift + right-click a
+  stair or non-double slab with any Tempered pane to install it in the same block cell. A normal
+  right-click places the pane beside the host instead.
 - Stair facing, half, shape, slab half, waterlogging, pane material, and frame identity are stored.
-- Composite panes use edge-bound placement. Normal use selects the nearest edge of the clicked
-  face; Shift use copies the clicked face exactly. Fully occupied stair faces fall back to ordinary
-  pane placement instead of creating invisible composites.
+- Composite panes use edge-bound placement against the Shift-clicked host face. Fully occupied
+  stair faces fall back to ordinary pane placement instead of creating invisible composites.
 - The renderer emits only pane sections outside the host volume, preventing glass from bleeding or
   flickering through stair/slab geometry.
 - Collision and outline combine the real host shape with only the pane volume outside that host.
@@ -137,7 +147,8 @@ server and every connecting client.
 - `0.2.0`: Stable release after beta.5 validation.
 - `0.2.1a`: Alpha for manual pane seams and the Ultimate Glass Creative tab.
 - `0.2.1`: Manual pane seams, paired/single-edge editing, whole-pane reset, and the Creative tab.
-- `0.2.2a`: Alpha for complete ordinary/Tempered pane and full-block glass families.
+- `0.2.2a`: First alpha for complete ordinary/Tempered pane and full-block glass families.
+- `0.2.2b`: Drop, item-scale, full-block chisel, composite refresh, and placement corrections.
 - `0.2.2`: Stable complete-family update after alpha/beta player testing.
 - `0.2.2` is also a transition release: fixed-combination IDs stay loadable but no longer appear in
   recipes or Creative. Existing legacy windows should be replaced before their later removal.

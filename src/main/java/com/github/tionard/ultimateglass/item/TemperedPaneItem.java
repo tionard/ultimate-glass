@@ -57,6 +57,10 @@ public class TemperedPaneItem extends BlockItem {
     }
 
     private InteractionResult installComposite(UseOnContext context) {
+        Player player = context.getPlayer();
+        if (player == null || !player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
         if (!UltimateGlassServerConfig.experimentalCompositesEnabled()) {
             return InteractionResult.PASS;
         }
@@ -67,8 +71,7 @@ public class TemperedPaneItem extends BlockItem {
             return InteractionResult.PASS;
         }
 
-        Player player = context.getPlayer();
-        if (player == null || player.isSpectator() || !player.getAbilities().mayBuild) {
+        if (player.isSpectator() || !player.getAbilities().mayBuild) {
             return InteractionResult.FAIL;
         }
 

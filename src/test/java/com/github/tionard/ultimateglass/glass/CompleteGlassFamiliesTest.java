@@ -137,7 +137,7 @@ final class CompleteGlassFamiliesTest {
         assertTrue(renderer.contains("FRAMED_BLOCK_SEAM_FILL_TINT_INDEX"));
         assertTrue(reverseRecipe.contains("vanillaStackForTempered"));
         assertTrue(framedRecipe.contains("unframedVariant"));
-        assertTrue(properties.contains("mod_version=0.2.2a"));
+        assertTrue(properties.contains("mod_version=0.2.2b"));
     }
 
     @Test

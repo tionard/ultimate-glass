@@ -60,6 +60,7 @@ public final class DynamicFramedVanillaPaneBlock extends FramedVanillaPaneBlock
     @Override
     protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         List<ItemStack> drops = super.getDrops(state, builder);
+        drops.forEach(stack -> UltimateGlassSmartItems.applyComponents(this, stack));
         BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (blockEntity instanceof DynamicFrameBlockEntity frame) {
             drops.forEach(stack -> stack.set(
@@ -67,7 +68,6 @@ public final class DynamicFramedVanillaPaneBlock extends FramedVanillaPaneBlock
                     frame.frameBlockId()
             ));
         }
-        drops.forEach(stack -> UltimateGlassSmartItems.applyComponents(this, stack));
         return drops;
     }
 

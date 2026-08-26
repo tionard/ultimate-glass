@@ -40,7 +40,7 @@ Vanilla-style panes are cooked into Tempered panes:
 - clear/stained input: the matching Minecraft pane;
 - tinted input: `ultimateglass:tinted_glass_pane`.
 
-Starting with 0.2.2a, `GlassVariant` describes the material, pane/full-block form, tempering state,
+Starting with 0.2.2, `GlassVariant` describes the material, pane/full-block form, tempering state,
 and optional frame as one shared family key. Every supported vanilla full glass block has an
 unframed Tempered counterpart. The existing server settings apply consistently to both physical
 forms: Tempered blocks follow the intact-drop switch, and the optional shapeless reverse recipe
@@ -129,7 +129,9 @@ Any boundary absent from both masks remains automatic. Each key contains both a 
 `PanePlane` and one in-plane world direction, so opposite sides remain independently representable
 even though the default editing mode changes a shared seam as a pair.
 
-The Glass Chisel resolves the clicked sheet and its nearest edge on the client. A normal click
+The Glass Chisel resolves the clicked sheet and its nearest edge on the client. Framed full blocks
+expose their twelve physical cube edges through the same target format; both visible surface halves
+of one cube edge are updated together. A normal click
 sends the opposite of the player's currently rendered result. Paired mode is the default: when a
 coplanar pane continues into the neighboring cell, the server writes the same forced result to its
 opposite boundary without requiring matching material or frame identity. The configurable `V`
@@ -151,11 +153,11 @@ ticker. The composite block state carries only waterlogging and tinted-light fla
 state-only engine queries.
 
 Composite placement is server-authoritative, experimental, and disabled by default. Tempered pane
-items intercept use on stairs and non-double slabs only when it is enabled. Hosts with a
-BlockEntity are rejected so beta.5 cannot silently discard mod-owned data. Normal placement uses
-the nearest edge of the clicked host face; Shift uses the clicked host face exactly. Unsupported
-horizontal composite orientations and fully occupied stair faces fall through to ordinary pane
-placement.
+items intercept Shift-use on stairs and non-double slabs only when it is enabled; ordinary use
+continues through normal pane placement beside the host. Hosts with a
+BlockEntity are rejected so beta.5 cannot silently discard mod-owned data. The installed pane uses
+the clicked host face exactly. Unsupported horizontal composite orientations and fully occupied
+stair faces fall through to ordinary pane placement.
 
 The client wrapper emits the stored host model and corresponding edge-pane model into one normal
 cached chunk mesh. Generated pane and frame sections are split at half-block boundaries; sections
@@ -187,6 +189,7 @@ simply unregistering a missing block ID is not a safe vanilla-glass conversion.
 
 ## Release sequence
 
-Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release. Version 0.2.2a begins
-player testing for complete ordinary/Tempered pane and full-block families. Mosaics and their
+Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release. Version 0.2.2a began
+player testing for complete ordinary/Tempered pane and full-block families; 0.2.2b is its first
+regression-fix build. Mosaics and their
 Glazier's Table remain a later feature cycle.

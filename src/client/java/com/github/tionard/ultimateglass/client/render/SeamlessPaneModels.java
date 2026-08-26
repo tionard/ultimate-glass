@@ -170,7 +170,8 @@ public final class SeamlessPaneModels {
             return new FramedGlassGeometryKey(
                     super.createGeometryKey(level, pos, state, random),
                     framedGlassConnectionMask(level, pos, state),
-                    dynamicFrameId(level, pos, state)
+                    dynamicFrameId(level, pos, state),
+                    framedGlassBoundaryMask(level, pos, state)
             );
         }
     }
@@ -203,8 +204,8 @@ public final class SeamlessPaneModels {
                 quad, face.getAxis(), 1.0F / 16.0F
         );
         long matchingBorders = borders.stream()
-                .filter(direction -> matchingFramedGlassNeighbour(
-                        level, pos, state, direction
+                .filter(direction -> framedGlassBoundaryIsSeamless(
+                        level, pos, state, face, direction
                 ))
                 .count();
         boolean replaceWithGlass = PaneSeamPolicy.shouldReplaceBoundary(
@@ -245,6 +246,42 @@ public final class SeamlessPaneModels {
             }
         }
         return mask;
+    }
+
+    private static long framedGlassBoundaryMask(
+            BlockAndTintGetter level, BlockPos pos, BlockState state
+    ) {
+        long mask = 0L;
+        for (Direction face : Direction.values()) {
+            for (Direction boundary : Direction.values()) {
+                if (boundary.getAxis() != face.getAxis()
+                        && framedGlassBoundaryIsSeamless(
+                                level, pos, state, face, boundary
+                        )) {
+                    int bit = face.ordinal() * Direction.values().length
+                            + boundary.ordinal();
+                    mask |= 1L << bit;
+                }
+            }
+        }
+        return mask;
+    }
+
+    private static boolean framedGlassBoundaryIsSeamless(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            Direction face,
+            Direction boundary
+    ) {
+        PaneSeamOverride override = level.getBlockEntity(pos) instanceof PaneSeamSource seams
+                ? seams.seamOverride(PanePlane.edge(face), boundary)
+                : PaneSeamOverride.AUTOMATIC;
+        return switch (override) {
+            case VISIBLE -> false;
+            case SEAMLESS -> true;
+            case AUTOMATIC -> matchingFramedGlassNeighbour(level, pos, state, boundary);
+        };
     }
 
     /** Emits both stored models into one cached chunk mesh; no BlockEntityRenderer is involved. */
@@ -852,6 +889,11 @@ public final class SeamlessPaneModels {
     private record FramedVanillaPaneGeometryKey(Object wrapped, Object frameBlock) {
     }
 
-    private record FramedGlassGeometryKey(Object wrapped, int neighbours, Object frameBlock) {
+    private record FramedGlassGeometryKey(
+            Object wrapped,
+            int neighbours,
+            Object frameBlock,
+            long boundaries
+    ) {
     }
 }

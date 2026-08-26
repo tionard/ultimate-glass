@@ -156,7 +156,8 @@ public final class UltimateGlassSmartItems {
         Target target = TARGETS.get(block);
         if (target != null && !stack.isEmpty()) {
             stack.set(UltimateGlassComponents.GLASS_MATERIAL, target.material().componentId());
-            if (target.kind().framed()) {
+            if (target.kind().framed()
+                    && stack.get(UltimateGlassComponents.FRAME_BLOCK) == null) {
                 stack.set(
                         UltimateGlassComponents.FRAME_BLOCK,
                         BuiltInRegistries.BLOCK.getKey(target.frame())
