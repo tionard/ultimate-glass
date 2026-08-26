@@ -781,7 +781,12 @@ tasks.register("generatePaneResources") {
                             category: "blocks",
                             group: "tempered_glass_blocks",
                             ingredient: "minecraft:${vanillaBlockName}",
-                            result: [id: "ultimateglass:${temperedBlockName}"],
+                            result: [
+                                    id: "ultimateglass:tempered_glass",
+                                    components: [
+                                            "ultimateglass:glass_material": "minecraft:${vanillaBlockName}"
+                                    ]
+                            ],
                             experience: 0.1,
                             cookingtime: 200
                     ]
@@ -793,7 +798,12 @@ tasks.register("generatePaneResources") {
                             category: "blocks",
                             group: "tempered_glass_blocks",
                             ingredient: "minecraft:${vanillaBlockName}",
-                            result: [id: "ultimateglass:${temperedBlockName}"],
+                            result: [
+                                    id: "ultimateglass:tempered_glass",
+                                    components: [
+                                            "ultimateglass:glass_material": "minecraft:${vanillaBlockName}"
+                                    ]
+                            ],
                             experience: 0.1,
                             cookingtime: 100
                     ]
@@ -842,7 +852,12 @@ tasks.register("generatePaneResources") {
                             category: "blocks",
                             group: "tempered_glass_panes",
                             ingredient: cookingInput,
-                            result: [id: "ultimateglass:${customItemName}"],
+                            result: [
+                                    id: "ultimateglass:tempered_glass_pane",
+                                    components: [
+                                            "ultimateglass:glass_material": "minecraft:${vanillaBlockName}"
+                                    ]
+                            ],
                             experience: 0.1,
                             cookingtime: 200
                     ]
@@ -854,7 +869,12 @@ tasks.register("generatePaneResources") {
                             category: "blocks",
                             group: "tempered_glass_panes",
                             ingredient: cookingInput,
-                            result: [id: "ultimateglass:${customItemName}"],
+                            result: [
+                                    id: "ultimateglass:tempered_glass_pane",
+                                    components: [
+                                            "ultimateglass:glass_material": "minecraft:${vanillaBlockName}"
+                                    ]
+                            ],
                             experience: 0.1,
                             cookingtime: 100
                     ]

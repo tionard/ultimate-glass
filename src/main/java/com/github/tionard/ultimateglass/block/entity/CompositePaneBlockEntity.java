@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -25,6 +26,9 @@ import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlockEntities;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
+import com.github.tionard.ultimateglass.glass.GlassForm;
+import com.github.tionard.ultimateglass.glass.GlassVariant;
 import com.github.tionard.ultimateglass.seam.PaneSeamData;
 import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 
@@ -183,13 +187,22 @@ public final class CompositePaneBlockEntity extends net.minecraft.world.level.bl
     }
 
     public ItemStack paneStack() {
-        ItemStack stack = new ItemStack(UltimateGlassItems.paneItemFor(
-                com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.familyFor(appearance)
-        ));
-        if (appearance.frame().isDynamic()) {
-            stack.set(UltimateGlassComponents.FRAME_BLOCK, frameBlockId);
+        Block frame = null;
+        if (appearance.frame().isFramed()) {
+            Identifier resolvedFrame = appearance.frame().isDynamic()
+                    ? frameBlockId
+                    : Identifier.withDefaultNamespace(appearance.frame().path() + "_planks");
+            frame = BuiltInRegistries.BLOCK.getOptional(resolvedFrame).orElse(Blocks.OAK_PLANKS);
         }
-        return stack;
+        return UltimateGlassSmartItems.stackForVariant(
+                new GlassVariant(
+                        appearance.material(),
+                        GlassForm.PANE,
+                        true,
+                        appearance.frame()
+                ),
+                frame
+        );
     }
 
     @Override

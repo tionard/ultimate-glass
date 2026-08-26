@@ -20,6 +20,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.glass.GlassVariant;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 /** Data-backed full framed block used for every non-vanilla plank. */
 public final class DynamicFramedGlassBlock extends FramedGlassBlock
@@ -54,6 +55,7 @@ public final class DynamicFramedGlassBlock extends FramedGlassBlock
             LevelReader level, BlockPos pos, BlockState state, boolean includeData
     ) {
         ItemStack stack = new ItemStack(asItem());
+        UltimateGlassSmartItems.applyMaterial(this, stack);
         copyFrame(level, pos, stack);
         return stack;
     }
@@ -68,6 +70,7 @@ public final class DynamicFramedGlassBlock extends FramedGlassBlock
                     frame.frameBlockId()
             ));
         }
+        drops.forEach(stack -> UltimateGlassSmartItems.applyMaterial(this, stack));
         return drops;
     }
 

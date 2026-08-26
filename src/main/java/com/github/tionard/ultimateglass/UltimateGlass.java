@@ -14,6 +14,7 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
 import com.github.tionard.ultimateglass.registry.UltimateGlassFamilies;
 import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 public final class UltimateGlass implements ModInitializer {
     public static final String MOD_ID = "ultimateglass";
@@ -28,6 +29,7 @@ public final class UltimateGlass implements ModInitializer {
         UltimateGlassBlockEntities.initialize();
         UltimateGlassItems.initialize();
         UltimateGlassFamilyItems.initialize();
+        UltimateGlassSmartItems.initialize();
         UltimateGlassRecipes.initialize();
         UltimateGlassNetworking.initialize();
         UltimateGlassInteractions.initialize();

@@ -77,7 +77,11 @@ public final class UltimateGlassItems {
                 BuiltInRegistries.CREATIVE_MODE_TAB,
                 CREATIVE_TAB_KEY,
                 FabricCreativeModeTab.builder()
-                        .icon(() -> new ItemStack(paneItemFor(PaneMaterial.CLEAR)))
+                        .icon(() -> UltimateGlassSmartItems.stack(
+                                com.github.tionard.ultimateglass.glass.SmartGlassKind.TEMPERED_PANE,
+                                PaneMaterial.CLEAR,
+                                null
+                        ))
                         .title(Component.translatable("creativeTab.ultimateglass"))
                         .displayItems((parameters, output) -> {
                             output.accept(GLASS_CHISEL);
@@ -85,10 +89,7 @@ public final class UltimateGlassItems {
                             output.accept(IRON_GLAZIERS_TOOL);
                             output.accept(DIAMOND_GLAZIERS_TOOL);
                             output.accept(TINTED_GLASS_PANE);
-                            paneFamiliesForCreative().forEach(
-                                    family -> output.accept(paneItemFor(family))
-                            );
-                            UltimateGlassFamilyItems.itemsForCreative().forEach(output::accept);
+                            UltimateGlassSmartItems.creativeStacks().forEach(output::accept);
                         })
                         .build()
         );
@@ -96,8 +97,7 @@ public final class UltimateGlassItems {
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.BUILDING_BLOCKS)
                 .register(output -> {
                     output.accept(TINTED_GLASS_PANE);
-                    paneFamiliesForCreative().forEach(family -> output.accept(paneItemFor(family)));
-                    UltimateGlassFamilyItems.itemsForCreative().forEach(output::accept);
+                    UltimateGlassSmartItems.creativeStacks().forEach(output::accept);
                 });
 
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)

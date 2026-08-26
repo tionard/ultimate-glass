@@ -24,6 +24,7 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
 import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.seam.PaneSeamData;
@@ -229,6 +230,10 @@ public final class GlaziersToolItem extends Item {
     }
 
     public static ItemStack collectedStack(Block block) {
+        ItemStack smart = UltimateGlassSmartItems.stackForBlock(block);
+        if (!smart.isEmpty()) {
+            return smart;
+        }
         PaneFamily family = UltimateGlassBlocks.familyFor(block);
         if (family != null) {
             Item customPaneItem = UltimateGlassItems.paneItemFor(block);

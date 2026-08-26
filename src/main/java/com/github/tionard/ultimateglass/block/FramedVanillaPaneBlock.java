@@ -10,6 +10,7 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import com.github.tionard.ultimateglass.glass.GlassFamilyBlock;
 import com.github.tionard.ultimateglass.glass.GlassVariant;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 /** A breakable framed pane with ordinary vanilla connection and placement behaviour. */
 public class FramedVanillaPaneBlock extends IronBarsBlock implements GlassFamilyBlock {
@@ -37,10 +38,13 @@ public class FramedVanillaPaneBlock extends IronBarsBlock implements GlassFamily
 
     @Override
     protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> drops;
         if (variant.material() != PaneMaterial.TINTED) {
-            return super.getDrops(state, builder);
+            drops = super.getDrops(state, builder);
+        } else {
+            ItemStack stack = new ItemStack(asItem());
+            drops = stack.isEmpty() ? List.of() : List.of(stack);
         }
-        ItemStack stack = new ItemStack(asItem());
-        return stack.isEmpty() ? List.of() : List.of(stack);
+        return UltimateGlassSmartItems.modernizeDrops(this, drops);
     }
 }

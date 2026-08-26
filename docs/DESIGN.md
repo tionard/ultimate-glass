@@ -22,9 +22,12 @@ composites store the same seam data in their existing BlockEntities.
 
 ## Families, items, and tempering
 
-Each Tempered appearance has one outside-face block, one centred block, and one shared item. The
-item always places the outside-face geometry; iron/diamond tool interaction toggles it to centred
-geometry without passing through a vanilla block.
+Material-specific outside-face, centred, and full-block implementations remain internal so colour,
+tinted lighting, collision, waterlogging, and vanilla-style behaviour stay state-driven. Player
+inventories expose six component-backed item families instead: unframed Tempered panes/blocks and
+ordinary/Tempered framed panes/blocks. `glass_material` chooses the internal material block during
+placement; form, tempering, and framing remain structural properties of the item ID so invalid
+combinations cannot be produced by recipes.
 
 Clear and stained inputs are Minecraft's normal pane blocks. The mod's `tinted_glass_pane` is an
 `IronBarsBlock`-style connected pane with vanilla tinted-glass light dampening. Six tinted-glass
@@ -46,20 +49,21 @@ accepts one unframed Tempered pane or block and returns one matching vanilla-sty
 ## Wood frames
 
 `WoodFramedPaneRecipe` accepts exactly one supported unframed pane or full block and one item in
-`#minecraft:planks`. The glass input may be ordinary or Tempered. For a vanilla plank it selects
-one of the fixed frame families. For any other tagged plank it emits the material/form/family's
-generic dynamic frame item with a synchronized `frame_block` data component.
+`#minecraft:planks`. The glass input may be ordinary or Tempered. Every plank—including all vanilla
+woods—produces the same smart item family with the input material in `glass_material` and the exact
+namespaced plank block ID in `frame_block`.
 
-Fixed families encode their wood through block identity and generated models. The generic family
-uses one edge and one centred block per glass material. `DynamicFrameBlockEntity` stores only the
-plank block identifier, has no ticker, synchronizes on change, and exposes the same value as an item
-component for placement, pick-block, harvesting, and edge/centred toggling.
+The internal dynamic family uses one edge/centred pair or full block per glass material; wood never
+multiplies block or item registrations. `DynamicFrameBlockEntity` stores the plank identifier, has
+no ticker, synchronizes on change, and exposes the same value as an item component for placement,
+pick-block, harvesting, and edge/centred toggling.
 
 The dynamic client model does not use a BlockEntityRenderer. Generated wood quads carry a private
 bake marker; the normal chunk-model wrapper replaces those quads with the selected plank block
 model's particle material, then emits them into the chunk mesh. The frame ID is included in the
-geometry cache key. This preserves the common fixed-block path and lets mod/resource-pack textures
-flow through without maintaining a wood registry in this mod.
+geometry cache key. This lets vanilla, mod, and resource-pack wood textures flow through one path
+without maintaining a wood registry in this mod. Old fixed-wood blocks remain registered only as
+hidden transition aliases for existing 0.2.1 worlds.
 
 ## Framed surface model
 
@@ -175,10 +179,11 @@ material.
 
 ## World compatibility
 
-Existing 0.1/earlier-beta custom IDs are retained. Fixed beta.4 vanilla-wood IDs are also retained
-by the revised beta.4 implementation. The new normal tinted pane and generic modded-frame blocks are
-additive. Removing the mod still removes mod-owned Tempered geometry, so users should back up worlds
-before moving between development builds.
+Version 0.2.2 is transitional. Existing 0.1/0.2.1 and fixed beta.4 block/item IDs remain registered
+and loadable but are hidden from Creative and are no longer recipe or drop outputs. All newly made,
+picked, or harvested supported glass uses the six smart item families. Players should replace old
+fixed-frame windows during 0.2.2. A later release must run an explicit migration or retain aliases;
+simply unregistering a missing block ID is not a safe vanilla-glass conversion.
 
 ## Release sequence
 

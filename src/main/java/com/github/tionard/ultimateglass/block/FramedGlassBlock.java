@@ -17,6 +17,7 @@ import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.glass.GlassFamilyBlock;
 import com.github.tionard.ultimateglass.glass.GlassVariant;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 /** Full framed glass block. Its model removes borders only beside an identical neighbour. */
 public class FramedGlassBlock extends Block implements GlassFamilyBlock {
@@ -54,12 +55,15 @@ public class FramedGlassBlock extends Block implements GlassFamilyBlock {
 
     @Override
     protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> drops;
         if ((!variant.tempered() || !UltimateGlassServerConfig.temperedPanesAlwaysDrop())
                 && variant.material() != PaneMaterial.TINTED) {
-            return super.getDrops(state, builder);
+            drops = super.getDrops(state, builder);
+        } else {
+            ItemStack stack = new ItemStack(asItem());
+            drops = stack.isEmpty() ? List.of() : List.of(stack);
         }
-        ItemStack stack = new ItemStack(asItem());
-        return stack.isEmpty() ? List.of() : List.of(stack);
+        return UltimateGlassSmartItems.modernizeDrops(this, drops);
     }
 
     public static void refreshModelsAround(Level level, BlockPos pos) {

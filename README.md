@@ -22,8 +22,9 @@ Version 0.2.2a is the first test build of the complete glass families. It keeps 
   and stained frames need Silk Touch.
 - Matching framed full blocks merge identical internal wood borders, producing clean multi-block
   windows. Different glass families or woods keep the divider between them.
-- All fixed vanilla woods use normal blocks. Modded tagged planks keep using the lightweight,
-  non-ticking dynamic frame path and carry their own texture and name.
+- Framed stacks now use data components for both their glass material and exact plank block. The
+  same six smart item families cover every colour, form, tempering state, and tagged wood without
+  registering their full cross-product as inventory items.
 
 ### Manual pane edges
 
@@ -43,6 +44,9 @@ Version 0.2.2a is the first test build of the complete glass families. It keeps 
 ### Creative inventory
 
 - Ultimate Glass now has its own Creative tab containing its panes and glassworking tools.
+- The tab lists the 18 Tempered pane materials, the 18 Tempered full-block materials, and one oak
+  example of each framed family. Other woods and framed colours are produced by the universal
+  recipe instead of flooding the tab with hundreds of combinations.
 - The existing vanilla Building Blocks and Tools placements remain available as well.
 
 ### Stair and slab composites
@@ -75,18 +79,20 @@ Version 0.2.2a is the first test build of the complete glass families. It keeps 
 - Smelting or blast-smelting the new tinted pane produces a `Tempered Tinted Glass Pane`.
 - An optional, off-by-default shapeless recipe converts one unframed Tempered pane back to its
   matching vanilla-style pane at a 1:1 ratio.
-- Internal `ultimate_*` registry IDs are intentionally retained so existing worlds do not lose
-  their blocks or items. The mod is Ultimate Glass; the enhanced panes are named Tempered.
+- Legacy `ultimate_*` and fixed-frame registry IDs remain loadable during the 0.2.2 transition.
+  New recipes, drops, and pick-block results use the component-backed items instead.
 
 ### Wood frames
 
 Craft one supported pane or full glass block with one item in Minecraft's `#planks` tag to frame
 it. Ordinary inputs produce ordinary breakable frames; Tempered inputs remain Tempered.
 
-- All 12 Minecraft 26.2 plank species have fixed, BlockEntity-free variants.
-- Planks added by other mods are accepted through the same tag-driven recipe.
-- A modded frame stores only its plank block ID in a non-ticking BlockEntity. Its static geometry
-  is still emitted into the normal chunk mesh; there is no per-frame BlockEntityRenderer.
+- Vanilla and modded planks follow the same tag-driven recipe and data path.
+- A framed stack stores `glass_material` and `frame_block` components. After placement, the
+  material selects the correct internal glass block and a non-ticking BlockEntity stores only the
+  arbitrary plank identity plus existing seam data.
+- Static geometry is still emitted into the normal chunk mesh; there is no per-frame
+  BlockEntityRenderer.
 - The frame uses the plank block model's particle texture, so resource packs and mod-provided wood
   textures carry through automatically.
 - Wood covers the thin outside frame and the one-pixel band immediately inside each broad face.
@@ -133,6 +139,8 @@ server and every connecting client.
 - `0.2.1`: Manual pane seams, paired/single-edge editing, whole-pane reset, and the Creative tab.
 - `0.2.2a`: Alpha for complete ordinary/Tempered pane and full-block glass families.
 - `0.2.2`: Stable complete-family update after alpha/beta player testing.
+- `0.2.2` is also a transition release: fixed-combination IDs stay loadable but no longer appear in
+  recipes or Creative. Existing legacy windows should be replaced before their later removal.
 - Mosaic foundation, layered mosaics, and the broader integration/performance phase previously
   labelled beta.6-beta.8 move to the next feature release, currently targeted as 0.3.0.
 

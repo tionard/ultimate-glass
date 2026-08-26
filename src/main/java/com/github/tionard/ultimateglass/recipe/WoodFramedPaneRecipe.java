@@ -52,7 +52,7 @@ public final class WoodFramedPaneRecipe extends CustomRecipe {
                 plank = candidate;
                 continue;
             }
-            GlassVariant candidate = UltimateGlassFamilyItems.unframedVariant(stack.getItem());
+            GlassVariant candidate = UltimateGlassFamilyItems.unframedVariant(stack);
             if (candidate == null || variant != null) {
                 return null;
             }

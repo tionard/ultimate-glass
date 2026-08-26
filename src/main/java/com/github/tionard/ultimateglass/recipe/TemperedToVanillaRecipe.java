@@ -36,7 +36,7 @@ public final class TemperedToVanillaRecipe extends CustomRecipe {
             if (stack.isEmpty()) {
                 continue;
             }
-            return UltimateGlassFamilyItems.vanillaStackForTempered(stack.getItem());
+            return UltimateGlassFamilyItems.vanillaStackForTempered(stack);
         }
         return ItemStack.EMPTY;
     }

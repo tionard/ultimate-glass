@@ -64,7 +64,13 @@ public final class UltimateGlassFamilyItems {
     }
 
     /** Resolves every unframed vanilla/tempered pane or full block accepted by framing recipes. */
-    public static GlassVariant unframedVariant(Item item) {
+    public static GlassVariant unframedVariant(ItemStack stack) {
+        GlassVariant smart = UltimateGlassSmartItems.unframedVariant(stack);
+        if (smart != null) {
+            return smart;
+        }
+
+        Item item = stack.getItem();
         GlassVariant registered = VARIANTS_BY_ITEM.get(item);
         if (registered != null && !registered.isFramed()) {
             return registered;
@@ -88,28 +94,21 @@ public final class UltimateGlassFamilyItems {
         return null;
     }
 
-    public static ItemStack framedStack(GlassVariant source, Block plank) {
-        PaneFrame fixedFrame = PaneFrame.fromPlank(plank.asItem());
-        PaneFrame frame = fixedFrame == null ? PaneFrame.DYNAMIC : fixedFrame;
-        if (source.form() == GlassForm.PANE && source.tempered()) {
-            return UltimateGlassItems.framedStack(source.material(), plank);
-        }
+    /** Legacy lookup retained for compatibility tests and old fixed item IDs. */
+    public static GlassVariant unframedVariant(Item item) {
+        return unframedVariant(new ItemStack(item));
+    }
 
-        GlassVariant target = source.withFrame(frame);
-        Item item = itemFor(target);
-        if (item == null) {
-            return ItemStack.EMPTY;
-        }
-        ItemStack stack = new ItemStack(item);
-        if (frame.isDynamic()) {
-            stack.set(UltimateGlassComponents.FRAME_BLOCK, BuiltInRegistries.BLOCK.getKey(plank));
-        }
-        return stack;
+    public static ItemStack framedStack(GlassVariant source, Block plank) {
+        return UltimateGlassSmartItems.stackForVariant(
+                source.withFrame(PaneFrame.DYNAMIC),
+                plank
+        );
     }
 
     /** Optional reverse-recipe output for unframed Tempered panes and full blocks. */
-    public static ItemStack vanillaStackForTempered(Item item) {
-        GlassVariant variant = unframedVariant(item);
+    public static ItemStack vanillaStackForTempered(ItemStack stack) {
+        GlassVariant variant = unframedVariant(stack);
         if (variant == null || !variant.tempered() || variant.isFramed()) {
             return ItemStack.EMPTY;
         }
@@ -119,8 +118,16 @@ public final class UltimateGlassFamilyItems {
         return new ItemStack(source.asItem());
     }
 
+    public static ItemStack vanillaStackForTempered(Item item) {
+        return vanillaStackForTempered(new ItemStack(item));
+    }
+
     /** Diamond Glazier's Tool recovery applies only to Tempered members, never ordinary frames. */
     public static ItemStack collectedStack(Block block) {
+        ItemStack smart = UltimateGlassSmartItems.stackForBlock(block);
+        if (!smart.isEmpty()) {
+            return smart;
+        }
         GlassVariant variant = UltimateGlassFamilies.variantFor(block);
         if (variant == null || !variant.tempered()) {
             return ItemStack.EMPTY;

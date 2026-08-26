@@ -38,6 +38,7 @@ import com.github.tionard.ultimateglass.placement.PanePlacementResolver;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
 import com.github.tionard.ultimateglass.item.GlaziersToolItem;
 import com.github.tionard.ultimateglass.block.entity.PaneSeamBlockEntity;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 /** A glass pane aligned to one of the six outside faces of its block space. */
 public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterloggedBlock, UltimatePane {
@@ -172,11 +173,23 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
 
     @Override
     protected java.util.List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        java.util.List<ItemStack> drops;
         if (!UltimateGlassServerConfig.temperedPanesAlwaysDrop()) {
-            return super.getDrops(state, builder);
+            drops = super.getDrops(state, builder);
+        } else {
+            ItemStack drop = GlaziersToolItem.collectedStack(this);
+            drops = drop.isEmpty() ? java.util.List.of() : java.util.List.of(drop);
         }
-        ItemStack drop = GlaziersToolItem.collectedStack(this);
-        return drop.isEmpty() ? java.util.List.of() : java.util.List.of(drop);
+        return UltimateGlassSmartItems.modernizeDrops(this, drops);
+    }
+
+    @Override
+    protected ItemStack getCloneItemStack(
+            LevelReader level, BlockPos pos, BlockState state, boolean includeData
+    ) {
+        ItemStack stack = new ItemStack(asItem());
+        UltimateGlassSmartItems.applyMaterial(this, stack);
+        return stack;
     }
 
     @Override

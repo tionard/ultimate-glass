@@ -18,6 +18,7 @@ final class CreativeTabTest {
         assertTrue(source.contains("FabricCreativeModeTab.builder()"));
         assertTrue(source.contains("creativeTab.ultimateglass"));
         assertTrue(source.contains("output.accept(GLASS_CHISEL)"));
-        assertTrue(source.contains("paneFamiliesForCreative().forEach"));
+        assertTrue(source.contains("UltimateGlassSmartItems.creativeStacks()"));
+        assertTrue(!source.contains("UltimateGlassFamilyItems.itemsForCreative().forEach"));
     }
 }

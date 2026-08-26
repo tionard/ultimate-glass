@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -19,6 +20,7 @@ import com.github.tionard.ultimateglass.glass.GlassForm;
 import com.github.tionard.ultimateglass.glass.GlassVariant;
 import com.github.tionard.ultimateglass.pane.PaneFrame;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 /** A full glass block upgraded through the same tempering progression as panes. */
 public final class TemperedGlassBlock extends Block implements GlassFamilyBlock {
@@ -58,10 +60,20 @@ public final class TemperedGlassBlock extends Block implements GlassFamilyBlock 
 
     @Override
     protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> drops;
         if (!UltimateGlassServerConfig.temperedPanesAlwaysDrop()) {
-            return super.getDrops(state, builder);
+            drops = super.getDrops(state, builder);
+        } else {
+            ItemStack stack = UltimateGlassSmartItems.stackForBlock(this);
+            drops = stack.isEmpty() ? List.of() : List.of(stack);
         }
-        ItemStack stack = new ItemStack(asItem());
-        return stack.isEmpty() ? List.of() : List.of(stack);
+        return UltimateGlassSmartItems.modernizeDrops(this, drops);
+    }
+
+    @Override
+    protected ItemStack getCloneItemStack(
+            LevelReader level, BlockPos pos, BlockState state, boolean includeData
+    ) {
+        return UltimateGlassSmartItems.stackForBlock(this);
     }
 }

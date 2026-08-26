@@ -30,21 +30,32 @@ import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.glass.GlassForm;
 import com.github.tionard.ultimateglass.glass.GlassVariant;
+import com.github.tionard.ultimateglass.glass.SmartGlassKind;
+import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.registry.UltimateGlassFamilies;
 import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
-/** Renders a dynamic framed pane item with the plank texture stored on that exact stack. */
-final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Material.Baked> {
+/** Renders component-backed glass and frames without registering every material combination. */
+final class DynamicFramePaneItemRenderer
+        implements SpecialModelRenderer<DynamicFramePaneItemRenderer.RenderMaterials> {
     private static final float PIXEL = 1.0F / 16.0F;
     private static final float DEPTH = 2.0F / 16.0F;
 
-    private final TextureAtlasSprite paneSprite;
+    private final PaneMaterial fixedMaterial;
     private final boolean fullBlock;
+    private final boolean framed;
 
-    private DynamicFramePaneItemRenderer(TextureAtlasSprite paneSprite, boolean fullBlock) {
-        this.paneSprite = paneSprite;
+    private DynamicFramePaneItemRenderer(
+            PaneMaterial fixedMaterial,
+            boolean fullBlock,
+            boolean framed
+    ) {
+        this.fixedMaterial = fixedMaterial;
         this.fullBlock = fullBlock;
+        this.framed = framed;
     }
 
     static ItemModel wrap(
@@ -52,8 +63,9 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
             ModelModifier.AfterBakeItem.Context context
     ) {
         GlassVariant completeVariant = UltimateGlassFamilyItems.dynamicVariant(context.itemId());
-        if (UltimateGlassItems.dynamicFrameMaterial(context.itemId()) == null
-                && completeVariant == null) {
+        PaneMaterial legacyPaneMaterial = UltimateGlassItems.dynamicFrameMaterial(context.itemId());
+        SmartGlassKind smartKind = UltimateGlassSmartItems.kind(context.itemId());
+        if (legacyPaneMaterial == null && completeVariant == null && smartKind == null) {
             return original;
         }
         if (!(context.sourceModel() instanceof CuboidItemModelWrapper.Unbaked source)) {
@@ -68,8 +80,14 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
         );
         return new SpecialModelWrapper<>(
                 new DynamicFramePaneItemRenderer(
-                        properties.particleMaterial().sprite(),
-                        completeVariant != null && completeVariant.form() == GlassForm.BLOCK
+                        completeVariant != null
+                                ? completeVariant.material()
+                                : legacyPaneMaterial,
+                        smartKind != null
+                                ? smartKind.form() == GlassForm.BLOCK
+                                : completeVariant != null
+                                        && completeVariant.form() == GlassForm.BLOCK,
+                        smartKind == null || smartKind.framed()
                 ),
                 properties,
                 context.transformation()
@@ -78,7 +96,7 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
 
     @Override
     public void submit(
-            Material.Baked frameMaterial,
+            RenderMaterials materials,
             PoseStack poseStack,
             SubmitNodeCollector collector,
             int light,
@@ -86,40 +104,44 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
             boolean foil,
             int outline
     ) {
+        TextureAtlasSprite paneSprite = materials.glass().sprite();
         collector.order(0).submitCustomGeometry(
                 poseStack,
                 RenderTypes.itemTranslucent(paneSprite.atlasLocation()),
                 (pose, vertices) -> {
-                    if (fullBlock) {
-                        renderGlassBlock(pose, vertices, paneSprite, light, overlay);
-                    } else {
-                        renderGlass(pose, vertices, paneSprite, light, overlay);
-                    }
+                    renderGlassGeometry(pose, vertices, paneSprite, light, overlay);
                 }
         );
-        TextureAtlasSprite frameSprite = frameMaterial.sprite();
-        collector.order(1).submitCustomGeometry(
-                poseStack,
-                RenderTypes.itemCutout(frameSprite.atlasLocation()),
-                (pose, vertices) -> {
-                    if (fullBlock) {
-                        renderBlockFrame(pose, vertices, frameSprite, light, overlay);
-                    } else {
-                        renderFrame(pose, vertices, frameSprite, light, overlay);
+        TextureAtlasSprite frameSprite = materials.frame() == null
+                ? null
+                : materials.frame().sprite();
+        if (framed && frameSprite != null) {
+            collector.order(1).submitCustomGeometry(
+                    poseStack,
+                    RenderTypes.itemCutout(frameSprite.atlasLocation()),
+                    (pose, vertices) -> {
+                        if (fullBlock) {
+                            renderBlockFrame(pose, vertices, frameSprite, light, overlay);
+                        } else {
+                            renderFrame(pose, vertices, frameSprite, light, overlay);
+                        }
                     }
-                }
-        );
+            );
+        }
         if (foil) {
             collector.order(2).submitCustomGeometry(
                     poseStack,
                     RenderTypes.glint(),
                     (pose, vertices) -> {
+                        renderGlassGeometry(pose, vertices, paneSprite, light, overlay);
                         if (fullBlock) {
-                            renderGlassBlock(pose, vertices, paneSprite, light, overlay);
-                            renderBlockFrame(pose, vertices, frameSprite, light, overlay);
+                            if (framed && frameSprite != null) {
+                                renderBlockFrame(pose, vertices, frameSprite, light, overlay);
+                            }
                         } else {
-                            renderGlass(pose, vertices, paneSprite, light, overlay);
-                            renderFrame(pose, vertices, frameSprite, light, overlay);
+                            if (framed && frameSprite != null) {
+                                renderFrame(pose, vertices, frameSprite, light, overlay);
+                            }
                         }
                     }
             );
@@ -138,16 +160,55 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
     }
 
     @Override
-    public Material.Baked extractArgument(ItemStack stack) {
+    public RenderMaterials extractArgument(ItemStack stack) {
+        PaneMaterial material = fixedMaterial == null
+                ? UltimateGlassSmartItems.material(stack)
+                : fixedMaterial;
+        Block glass = fullBlock
+                ? UltimateGlassFamilies.vanillaBlock(material)
+                : UltimateGlassFamilies.vanillaPane(material);
+        Material.Baked glassMaterial = Minecraft.getInstance()
+                .getModelManager()
+                .getBlockStateModelSet()
+                .getParticleMaterial(glass.defaultBlockState());
+        if (!framed) {
+            return new RenderMaterials(glassMaterial, null);
+        }
+
         Identifier frameId = stack.getOrDefault(
                 UltimateGlassComponents.FRAME_BLOCK,
                 DynamicFrameBlockEntity.DEFAULT_FRAME
         );
         Block frame = BuiltInRegistries.BLOCK.getOptional(frameId).orElse(Blocks.OAK_PLANKS);
-        return Minecraft.getInstance()
+        Material.Baked frameMaterial = Minecraft.getInstance()
                 .getModelManager()
                 .getBlockStateModelSet()
                 .getParticleMaterial(frame.defaultBlockState());
+        return new RenderMaterials(glassMaterial, frameMaterial);
+    }
+
+    record RenderMaterials(Material.Baked glass, Material.Baked frame) {
+    }
+
+    private void renderGlassGeometry(
+            PoseStack.Pose pose,
+            VertexConsumer vertices,
+            TextureAtlasSprite sprite,
+            int light,
+            int overlay
+    ) {
+        if (!framed) {
+            emitCuboid(
+                    pose, vertices, sprite,
+                    0.0F, 0.0F, 0.0F,
+                    1.0F, 1.0F, fullBlock ? 1.0F : DEPTH,
+                    light, overlay
+            );
+        } else if (fullBlock) {
+            renderGlassBlock(pose, vertices, sprite, light, overlay);
+        } else {
+            renderGlass(pose, vertices, sprite, light, overlay);
+        }
     }
 
     private static void renderGlass(

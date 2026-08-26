@@ -17,6 +17,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 public final class DynamicFramedEdgePaneBlock extends EdgePaneBlock
         implements EntityBlock, DynamicFramedPane {
@@ -52,6 +53,7 @@ public final class DynamicFramedEdgePaneBlock extends EdgePaneBlock
     @Override
     protected ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
         ItemStack stack = new ItemStack(asItem());
+        UltimateGlassSmartItems.applyMaterial(this, stack);
         copyFrame(level, pos, stack);
         return stack;
     }
@@ -63,6 +65,7 @@ public final class DynamicFramedEdgePaneBlock extends EdgePaneBlock
         if (blockEntity instanceof DynamicFrameBlockEntity frame) {
             drops.forEach(stack -> stack.set(UltimateGlassComponents.FRAME_BLOCK, frame.frameBlockId()));
         }
+        drops.forEach(stack -> UltimateGlassSmartItems.applyMaterial(this, stack));
         return drops;
     }
 

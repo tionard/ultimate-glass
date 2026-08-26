@@ -45,8 +45,15 @@ final class CompleteGlassFamiliesTest {
             ));
             assertEquals("minecraft:" + material, smelting.get("ingredient").getAsString());
             assertEquals(
-                    "ultimateglass:ultimate_" + material,
+                    "ultimateglass:tempered_glass",
                     smelting.getAsJsonObject("result").get("id").getAsString()
+            );
+            assertEquals(
+                    "minecraft:" + material,
+                    smelting.getAsJsonObject("result")
+                            .getAsJsonObject("components")
+                            .get("ultimateglass:glass_material")
+                            .getAsString()
             );
             assertFalse(smelting.getAsJsonObject("result").has("count"));
             assertEquals("minecraft:blasting", blasting.get("type").getAsString());
@@ -78,6 +85,22 @@ final class CompleteGlassFamiliesTest {
                     "modded_framed_ultimate_" + MATERIALS.get(material) + ".json"
             )));
         }
+    }
+
+    @Test
+    void paneTemperingProducesTheSharedComponentBackedItem() throws IOException {
+        JsonObject recipe = readJson(GENERATED.resolve(
+                "data/ultimateglass/recipe/ultimate_blue_stained_glass_pane.json"
+        ));
+        JsonObject result = recipe.getAsJsonObject("result");
+
+        assertEquals("ultimateglass:tempered_glass_pane", result.get("id").getAsString());
+        assertEquals(
+                "minecraft:blue_stained_glass",
+                result.getAsJsonObject("components")
+                        .get("ultimateglass:glass_material")
+                        .getAsString()
+        );
     }
 
     @Test

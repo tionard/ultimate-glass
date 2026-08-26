@@ -19,6 +19,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.glass.GlassVariant;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 /** Data-backed ordinary framed pane used for non-vanilla plank species. */
 public final class DynamicFramedVanillaPaneBlock extends FramedVanillaPaneBlock
@@ -51,6 +52,7 @@ public final class DynamicFramedVanillaPaneBlock extends FramedVanillaPaneBlock
             LevelReader level, BlockPos pos, BlockState state, boolean includeData
     ) {
         ItemStack stack = new ItemStack(asItem());
+        UltimateGlassSmartItems.applyMaterial(this, stack);
         copyFrame(level, pos, stack);
         return stack;
     }
@@ -65,6 +67,7 @@ public final class DynamicFramedVanillaPaneBlock extends FramedVanillaPaneBlock
                     frame.frameBlockId()
             ));
         }
+        drops.forEach(stack -> UltimateGlassSmartItems.applyMaterial(this, stack));
         return drops;
     }
 

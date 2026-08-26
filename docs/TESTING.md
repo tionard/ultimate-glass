@@ -1,14 +1,15 @@
 # Ultimate Glass 0.2.2a regression checklist
 
-Version 0.2.2a adds complete ordinary/Tempered pane and full-block families while retaining the
-0.2.1 seam editing, composite panes, tools, and Creative tab.
+Version 0.2.2a adds complete ordinary/Tempered pane and full-block families plus the transitional
+component-backed inventory model, while retaining 0.2.1 seam editing, composites, and tools.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
 2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2a.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
-4. Confirm pre-beta.4 `ultimate_*` block/item IDs and saved BlockState property names are unchanged.
+4. Confirm pre-beta.4 and fixed-frame block/item IDs still load but new outputs use only the six
+   smart item IDs.
 
 ## Tempered full blocks
 
@@ -38,7 +39,9 @@ Version 0.2.2a adds complete ordinary/Tempered pane and full-block families whil
 6. Replace one block with a different colour, wood, ordinary/Tempered family, or modded plank ID and
    confirm a complete divider remains around that mismatch.
 7. Save/reload, reconnect, unload/reload chunks, and restart a dedicated server. Confirm every
-   fixed/dynamic frame texture, name, drop, and merged border remains stable.
+   frame texture, name, material component, drop, and merged border remains stable.
+8. Confirm all vanilla and modded woods produce the same item ID for a given family while
+   `glass_material` and `frame_block` distinguish the exact result.
 
 ## Manual pane edges
 
@@ -116,16 +119,22 @@ Version 0.2.2a adds complete ordinary/Tempered pane and full-block families whil
 7. Smelt and blast-smelt the normal tinted pane; verify `Tempered Tinted Glass Pane` output.
 8. Confirm the normal tinted pane is not directly rotatable or edge/centred-toggleable.
 
-## Fixed wood frames
+## Universal wood frames and Creative inventory
 
 1. Craft each Tempered material with oak, spruce, birch, jungle, acacia, dark oak, pale oak,
    crimson, warped, mangrove, bamboo, and cherry planks.
-2. Verify the result name, Creative entry, and placed texture match the wood.
+2. Verify the result name, components, and placed texture match the wood while the item registry ID
+   stays identical across all wood choices.
 3. Inspect a lone pane from the front/back and confirm wood covers both the outer edge and exactly
    the closest one-pixel face band.
 4. Repeat for edge, horizontal, centred, L, cube-corner, XY/XZ/YZ, and XYZ geometry.
-5. Verify fixed variants have no BlockEntity with `/data get block` or equivalent inspection.
-6. Pick-block, Silk Touch, and diamond-tool harvest each family; verify the exact framed item.
+5. Verify new framed placements use one non-ticking data holder for the plank identity and existing
+   seam data, with no dedicated BlockEntityRenderer.
+6. Pick-block, Silk Touch, and diamond-tool harvest each family; verify both smart components.
+7. Confirm the Ultimate Glass and vanilla Building Blocks tabs show 18 Tempered panes, 18 Tempered
+   blocks, and only one oak example of each framed family—never a wood-by-colour cross product.
+8. Confirm old fixed-frame items remain command-accessible/loadable but are absent from Creative and
+   never produced by cooking, framing, drops, or pick-block.
 
 ## Modded plank frames
 
