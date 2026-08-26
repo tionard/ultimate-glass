@@ -4,10 +4,26 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2. It gives builders edge-a
 Glass Panes, rotatable centred sheets, connected corners, wood framing, and tiered glassworking
 tools.
 
-## Version 0.2.1
+## Version 0.2.2a
 
-Version 0.2.1 adds manual pane-edge control and the Ultimate Glass Creative tab. The
-complete-glass-family expansion is planned separately for 0.2.2.
+Version 0.2.2a is the first test build of the complete glass families. It keeps everything from
+0.2.1 and adds Tempered full blocks plus ordinary and Tempered framed blocks and panes.
+
+### Complete glass families
+
+- Clear, all 16 stained colours, and tinted glass now have matching Tempered full blocks.
+- Smelt one vanilla glass block into one Tempered block in a furnace, or use a blast furnace for
+  the faster version.
+- The default-on `Tempered glass never shatters` setting applies to panes and full blocks. The
+  off-by-default reverse recipe likewise converts either unframed form back at a 1:1 ratio.
+- Craft one ordinary vanilla-style pane or full glass block with one tagged plank to make a
+  breakable framed version. Tempered panes and full blocks can be framed through the same recipe.
+- Tinted ordinary frames retain tinted glass's normal intact-drop behaviour; other ordinary clear
+  and stained frames need Silk Touch.
+- Matching framed full blocks merge identical internal wood borders, producing clean multi-block
+  windows. Different glass families or woods keep the divider between them.
+- All fixed vanilla woods use normal blocks. Modded tagged planks keep using the lightweight,
+  non-ticking dynamic frame path and carry their own texture and name.
 
 ### Manual pane edges
 
@@ -64,7 +80,8 @@ complete-glass-family expansion is planned separately for 0.2.2.
 
 ### Wood frames
 
-Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
+Craft one supported pane or full glass block with one item in Minecraft's `#planks` tag to frame
+it. Ordinary inputs produce ordinary breakable frames; Tempered inputs remain Tempered.
 
 - All 12 Minecraft 26.2 plank species have fixed, BlockEntity-free variants.
 - Planks added by other mods are accepted through the same tag-driven recipe.
@@ -102,7 +119,7 @@ Craft one Tempered pane with one item in Minecraft's `#planks` tag to frame it.
 ## Configuration
 
 Mod Menu exposes seamless connected panes, a default-on server switch for the Glass Chisel,
-the off-by-default experimental stair/slab feature, default-on intact Tempered-pane drops, the
+the off-by-default experimental stair/slab feature, default-on intact Tempered-glass drops, the
 off-by-default Tempered-to-vanilla recipe, and server-authoritative crafting switches for each
 Glazier's Tool tier. Mod Menu is optional; Fabric API is required. The mod must be installed on the
 server and every connecting client.
@@ -114,7 +131,8 @@ server and every connecting client.
 - `0.2.0`: Stable release after beta.5 validation.
 - `0.2.1a`: Alpha for manual pane seams and the Ultimate Glass Creative tab.
 - `0.2.1`: Manual pane seams, paired/single-edge editing, whole-pane reset, and the Creative tab.
-- `0.2.2`: Planned complete glass families, to be specified after 0.2.1 testing.
+- `0.2.2a`: Alpha for complete ordinary/Tempered pane and full-block glass families.
+- `0.2.2`: Stable complete-family update after alpha/beta player testing.
 - Mosaic foundation, layered mosaics, and the broader integration/performance phase previously
   labelled beta.6-beta.8 move to the next feature release, currently targeted as 0.3.0.
 

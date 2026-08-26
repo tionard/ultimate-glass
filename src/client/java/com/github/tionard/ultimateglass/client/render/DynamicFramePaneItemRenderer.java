@@ -96,6 +96,7 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
                         renderGlass(pose, vertices, paneSprite, light, overlay);
                     }
                 }
+        );
         TextureAtlasSprite frameSprite = frameMaterial.sprite();
         collector.order(1).submitCustomGeometry(
                 poseStack,
@@ -188,12 +189,33 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
             int light,
             int overlay
     ) {
-        emitCuboid(
+        float high = 1.0F - PIXEL;
+        emitNorthSouthFaces(
                 pose, vertices, sprite,
-                PIXEL, PIXEL, PIXEL,
-                1.0F - PIXEL, 1.0F - PIXEL, 1.0F - PIXEL,
+                PIXEL, PIXEL, 0.0F,
+                high, high, 1.0F,
                 light, overlay
         );
+        emitQuad(pose, vertices, sprite, light, overlay, -1, 0, 0,
+                0.0F, PIXEL, high, high, high,
+                0.0F, high, high, high, PIXEL,
+                0.0F, high, PIXEL, PIXEL, PIXEL,
+                0.0F, PIXEL, PIXEL, PIXEL, high);
+        emitQuad(pose, vertices, sprite, light, overlay, 1, 0, 0,
+                1.0F, PIXEL, PIXEL, PIXEL, high,
+                1.0F, high, PIXEL, PIXEL, PIXEL,
+                1.0F, high, high, high, PIXEL,
+                1.0F, PIXEL, high, high, high);
+        emitQuad(pose, vertices, sprite, light, overlay, 0, -1, 0,
+                PIXEL, 0.0F, high, PIXEL, high,
+                PIXEL, 0.0F, PIXEL, PIXEL, PIXEL,
+                high, 0.0F, PIXEL, high, PIXEL,
+                high, 0.0F, high, high, high);
+        emitQuad(pose, vertices, sprite, light, overlay, 0, 1, 0,
+                PIXEL, 1.0F, high, PIXEL, high,
+                high, 1.0F, high, high, high,
+                high, 1.0F, PIXEL, high, PIXEL,
+                PIXEL, 1.0F, PIXEL, PIXEL, PIXEL);
     }
 
     private static void renderBlockFrame(

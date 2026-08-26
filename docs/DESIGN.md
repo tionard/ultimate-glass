@@ -37,13 +37,18 @@ Vanilla-style panes are cooked into Tempered panes:
 - clear/stained input: the matching Minecraft pane;
 - tinted input: `ultimateglass:tinted_glass_pane`.
 
-The former reversible shapeless conversion is deliberately absent.
+Starting with 0.2.2a, `GlassVariant` describes the material, pane/full-block form, tempering state,
+and optional frame as one shared family key. Every supported vanilla full glass block has an
+unframed Tempered counterpart. The existing server settings apply consistently to both physical
+forms: Tempered blocks follow the intact-drop switch, and the optional shapeless reverse recipe
+accepts one unframed Tempered pane or block and returns one matching vanilla-style item.
 
 ## Wood frames
 
-`WoodFramedPaneRecipe` accepts exactly one unframed Tempered pane and one item in `#minecraft:planks`.
-For a vanilla plank it selects one of the fixed frame families. For any other tagged plank it emits
-the material's generic dynamic frame item with a synchronized `frame_block` data component.
+`WoodFramedPaneRecipe` accepts exactly one supported unframed pane or full block and one item in
+`#minecraft:planks`. The glass input may be ordinary or Tempered. For a vanilla plank it selects
+one of the fixed frame families. For any other tagged plank it emits the material/form/family's
+generic dynamic frame item with a synchronized `frame_block` data component.
 
 Fixed families encode their wood through block identity and generated models. The generic family
 uses one edge and one centred block per glass material. `DynamicFrameBlockEntity` stores only the
@@ -73,6 +78,12 @@ unless every boundary represented by that section continues, preserving perimete
 For fixed variants, exact block identity defines a matching frame. For dynamic variants,
 `PaneConnectionQueries.samePaneVariant` additionally compares the stored plank block IDs. Different
 woods therefore never merge seamlessly or create centred source connections.
+
+Framed full blocks split each outside face into a one-pixel wood perimeter and a glass centre.
+When two blocks have the same complete glass family and exact frame identity, their hidden meeting
+faces and the two matching perimeter runs disappear from the chunk mesh. Corner wood stays until
+both adjacent window directions continue, preserving one clean outside perimeter. Dynamic full
+blocks use the same plank-particle substitution and geometry-cache identity as dynamic panes.
 
 ## Connected geometry
 
@@ -156,10 +167,11 @@ toggles the installed pane between edge and centred geometry. Ordinary breaking 
 returns the stored host block item and the exact pane stack, retaining dynamic frame data,
 regardless of tool suitability. Composite water state remains stored with the composite.
 
-The server config defaults Tempered panes to intact drops for every tool and bare-hand harvest.
+The server config defaults Tempered glass to intact drops for every tool and bare-hand harvest.
 Disabling that option restores the Silk Touch/diamond-tool rule. A separate off-by-default custom
-recipe converts exactly one unframed Tempered pane into its matching vanilla-style pane; framed
-panes are deliberately excluded so crafting cannot silently discard their frame material.
+recipe converts exactly one unframed Tempered pane or full block into its matching vanilla-style
+form; framed glass is deliberately excluded so crafting cannot silently discard its frame
+material.
 
 ## World compatibility
 
@@ -170,6 +182,6 @@ before moving between development builds.
 
 ## Release sequence
 
-Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release following alpha and beta
-player testing. Version 0.2.2 is reserved for the complete glass families discussion; mosaics and
-their Glazier's Table remain a later feature cycle.
+Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release. Version 0.2.2a begins
+player testing for complete ordinary/Tempered pane and full-block families. Mosaics and their
+Glazier's Table remain a later feature cycle.

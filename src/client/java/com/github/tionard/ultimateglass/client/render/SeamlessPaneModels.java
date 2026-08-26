@@ -23,7 +23,6 @@ import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
-import com.github.tionard.ultimateglass.block.DynamicFramedPane;
 import com.github.tionard.ultimateglass.block.DynamicFramedBlock;
 import com.github.tionard.ultimateglass.block.FramedGlassBlock;
 import com.github.tionard.ultimateglass.block.FramedVanillaPaneBlock;

@@ -1,14 +1,44 @@
-# Ultimate Glass 0.2.1 regression checklist
+# Ultimate Glass 0.2.2a regression checklist
 
-Version 0.2.1 adds manual seam editing with paired seams, an optional single-edge mode, whole-pane
-reset, and the Ultimate Glass Creative tab.
+Version 0.2.2a adds complete ordinary/Tempered pane and full-block families while retaining the
+0.2.1 seam editing, composite panes, tools, and Creative tab.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.1.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2a.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 `ultimate_*` block/item IDs and saved BlockState property names are unchanged.
+
+## Tempered full blocks
+
+1. Smelt and blast-smelt clear, all 16 stained colours, and tinted vanilla glass blocks. Confirm
+   every input produces exactly one matching Tempered full block at 200/100 ticks.
+2. Place every Tempered full block and inspect transparency, colour, tinted light blocking, block
+   faces, particles, item models, and Creative entries.
+3. With `Tempered glass never shatters` enabled, break representative blocks with bare hands,
+   incorrect tools, ordinary tools, Silk Touch, and the diamond Glazier's Tool. Confirm one block
+   always drops. Disable it and confirm clear/stained glass again needs Silk Touch while tinted
+   retains its normal intact drop.
+4. Confirm the reverse recipe is absent by default. Enable it and craft each unframed Tempered full
+   block alone; verify a 1:1 vanilla result. Confirm framed blocks do not match.
+
+## Ordinary and Tempered frames
+
+1. Combine ordinary clear/stained/tinted panes and full blocks with every vanilla wood and at least
+   two modded planks in `#minecraft:planks`. Repeat with all Tempered pane/block forms.
+2. Confirm ordinary framed panes use vanilla connected-pane placement, while Tempered framed panes
+   keep the mod's edge/centred placement and tool controls.
+3. Break ordinary clear/stained frames without Silk Touch and confirm they shatter; repeat with Silk
+   Touch and confirm the exact item returns. Confirm ordinary tinted frames return intact normally.
+4. Break Tempered framed full blocks under both intact-drop setting states and verify their family
+   and dynamic plank component survive.
+5. Build 2x2, 3x3, and rectangular full-block windows from an identical glass/wood combination.
+   Confirm all internal wood borders and hidden faces disappear while the outside perimeter stays.
+6. Replace one block with a different colour, wood, ordinary/Tempered family, or modded plank ID and
+   confirm a complete divider remains around that mismatch.
+7. Save/reload, reconnect, unload/reload chunks, and restart a dedicated server. Confirm every
+   fixed/dynamic frame texture, name, drop, and merged border remains stable.
 
 ## Manual pane edges
 
@@ -153,7 +183,7 @@ reset, and the Ultimate Glass Creative tab.
 3. Inspect all edge orientations plus L/cube corners; water must stop at every active pane face.
 4. Confirm centred panes keep normal full-cell water rendering.
 5. Repeat on Fabric and Sodium/Iris with shaders off/on.
-6. With `Tempered panes never shatter` enabled, verify bare hands, wrong tools, Silk Touch, and the
+6. With `Tempered glass never shatters` enabled, verify bare hands, wrong tools, Silk Touch, and the
    diamond tool each produce exactly one item, including the stored modded-frame component. Disable
    the setting and verify the former Silk Touch/diamond rule returns; Creative mode produces none.
 
