@@ -4,10 +4,21 @@ Ultimate Glass is a Fabric mod for Minecraft Java 26.2. It gives builders edge-a
 Glass Panes, rotatable centred sheets, connected corners, wood framing, and tiered glassworking
 tools.
 
-## Version 0.2.2b
+## Version 0.2.2c
 
-Version 0.2.2b is the second test build of the complete glass families. It keeps everything from
+Version 0.2.2c is the third test build of the complete glass families. It keeps everything from
 0.2.1 and adds Tempered full blocks plus ordinary and Tempered framed blocks and panes.
+
+### 0.2.2c corrections
+
+- Framed full-block items now inherit normal block-item sizing instead of rendering several times
+  too large in the hand or on the ground.
+- Ultimate Glass pane items use a slightly smaller shared hand/world scale while keeping normal
+  inventory icons.
+- Component-backed glass items use Minecraft's normal translucent block-item render sheet for
+  better shader compatibility, including Photon.
+- Six matching Tempered full blocks craft 16 Tempered panes of the same glass material, matching
+  vanilla glass and glass-pane recipe proportions.
 
 ### 0.2.2b corrections
 
@@ -149,6 +160,7 @@ server and every connecting client.
 - `0.2.1`: Manual pane seams, paired/single-edge editing, whole-pane reset, and the Creative tab.
 - `0.2.2a`: First alpha for complete ordinary/Tempered pane and full-block glass families.
 - `0.2.2b`: Drop, item-scale, full-block chisel, composite refresh, and placement corrections.
+- `0.2.2c`: Full-block item scale, compact panes, shader transparency, and block-to-pane recipe.
 - `0.2.2`: Stable complete-family update after alpha/beta player testing.
 - `0.2.2` is also a transition release: fixed-combination IDs stay loadable but no longer appear in
   recipes or Creative. Existing legacy windows should be replaced before their later removal.

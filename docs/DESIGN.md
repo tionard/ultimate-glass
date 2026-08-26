@@ -40,6 +40,10 @@ Vanilla-style panes are cooked into Tempered panes:
 - clear/stained input: the matching Minecraft pane;
 - tinted input: `ultimateglass:tinted_glass_pane`.
 
+Six matching unframed Tempered full blocks in the vanilla two-row pane pattern produce 16
+component-backed Tempered panes. The custom recipe reads `glass_material` from its inputs, rejects
+mixed materials, and copies the matching material to its output.
+
 Starting with 0.2.2, `GlassVariant` describes the material, pane/full-block form, tempering state,
 and optional frame as one shared family key. Every supported vanilla full glass block has an
 unframed Tempered counterpart. The existing server settings apply consistently to both physical
@@ -190,6 +194,6 @@ simply unregistering a missing block ID is not a safe vanilla-glass conversion.
 ## Release sequence
 
 Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release. Version 0.2.2a began
-player testing for complete ordinary/Tempered pane and full-block families; 0.2.2b is its first
+player testing for complete ordinary/Tempered pane and full-block families; 0.2.2c is its current
 regression-fix build. Mosaics and their
 Glazier's Table remain a later feature cycle.

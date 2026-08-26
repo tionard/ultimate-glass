@@ -9,6 +9,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.item.CuboidItemModelWrapper;
 import net.minecraft.client.renderer.item.ItemModel;
@@ -107,7 +108,7 @@ final class DynamicFramePaneItemRenderer
         TextureAtlasSprite paneSprite = materials.glass().sprite();
         collector.order(0).submitCustomGeometry(
                 poseStack,
-                RenderTypes.itemTranslucent(paneSprite.atlasLocation()),
+                Sheets.translucentBlockItemSheet(),
                 (pose, vertices) -> {
                     renderGlassGeometry(pose, vertices, paneSprite, light, overlay);
                 }
@@ -118,7 +119,7 @@ final class DynamicFramePaneItemRenderer
         if (framed && frameSprite != null) {
             collector.order(1).submitCustomGeometry(
                     poseStack,
-                    RenderTypes.itemCutout(frameSprite.atlasLocation()),
+                    Sheets.cutoutBlockItemSheet(),
                     (pose, vertices) -> {
                         if (fullBlock) {
                             renderBlockFrame(pose, vertices, frameSprite, light, overlay);
@@ -131,7 +132,7 @@ final class DynamicFramePaneItemRenderer
         if (foil) {
             collector.order(2).submitCustomGeometry(
                     poseStack,
-                    RenderTypes.glint(),
+                    RenderTypes.glintTranslucent(),
                     (pose, vertices) -> {
                         renderGlassGeometry(pose, vertices, paneSprite, light, overlay);
                         if (fullBlock) {

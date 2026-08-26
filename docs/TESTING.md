@@ -1,12 +1,12 @@
-# Ultimate Glass 0.2.2b regression checklist
+# Ultimate Glass 0.2.2c regression checklist
 
-Version 0.2.2b fixes the first complete-family alpha while retaining its transitional
+Version 0.2.2c fixes the complete-family test build while retaining its transitional
 component-backed inventory model, 0.2.1 seam editing, composites, and tools.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2b.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2c.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 and fixed-frame block/item IDs still load but new outputs use only the six
    smart item IDs.
@@ -23,6 +23,9 @@ component-backed inventory model, 0.2.1 seam editing, composites, and tools.
    retains its normal intact drop.
 4. Confirm the reverse recipe is absent by default. Enable it and craft each unframed Tempered full
    block alone; verify a 1:1 vanilla result. Confirm framed blocks do not match.
+5. Fill two adjacent crafting-table rows with six matching Tempered full blocks. Confirm the result
+   is 16 Tempered panes with the same clear, stained, or tinted material. Confirm mixed colours,
+   framed blocks, ordinary blocks, incomplete rows, and extra ingredients do not match.
 
 ## Ordinary and Tempered frames
 
@@ -44,8 +47,12 @@ component-backed inventory model, 0.2.1 seam editing, composites, and tools.
    `glass_material` and `frame_block` distinguish the exact result.
 9. Break every smart framed pane/block family in several colours and woods. Confirm both stack
    components, name, icon, and replacement placement retain the exact original combination.
-10. Drop and hold ordinary/Tempered framed pane items beside vanilla panes. Confirm their world and
-    hand scale matches normal pane items rather than full blocks.
+10. Drop and hold ordinary/Tempered framed pane items beside vanilla panes. Confirm Ultimate Glass
+    panes are slightly smaller in the world and hand, while their inventory icons remain normal.
+11. Drop and hold every framed full-block family beside a vanilla glass block. Confirm all use the
+    same normal block-item scale, including component-backed and legacy transition items.
+12. With Photon enabled, hold representative clear, stained, tinted, framed, and unframed smart
+    glass stacks. Confirm the glass remains transparent and the wood portion remains opaque.
 
 ## Manual pane edges
 

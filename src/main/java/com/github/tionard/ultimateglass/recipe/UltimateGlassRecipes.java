@@ -22,6 +22,11 @@ public final class UltimateGlassRecipes {
             "tempered_to_vanilla",
             new TemperedToVanillaRecipe()
     );
+    public static final RecipeSerializer<TemperedPaneFromBlocksRecipe>
+            TEMPERED_PANE_FROM_BLOCKS = registerUnit(
+                    "tempered_glass_pane_from_blocks",
+                    new TemperedPaneFromBlocksRecipe()
+            );
     public static final RecipeSerializer<GlaziersToolRecipe> COPPER_TOOL = register(
             "copper_glaziers_tool",
             GlaziersToolTier.COPPER

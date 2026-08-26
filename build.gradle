@@ -374,7 +374,9 @@ tasks.register("generatePaneResources") {
         }
         writeJson(
                 "assets/ultimateglass/models/block/edge_pane_item_framed_base.json",
-                createMergedShape(0, "item")
+                createMergedShape(0, "item") + [
+                        parent: "ultimateglass:item/glass_pane_display"
+                ]
         )
 
         def centeredAxes = [
@@ -598,6 +600,7 @@ tasks.register("generatePaneResources") {
                 }
             }
             return [
+                    parent: "minecraft:block/block",
                     render_type: "minecraft:translucent",
                     textures: [particle: "#pane"],
                     elements: elements
@@ -813,7 +816,7 @@ tasks.register("generatePaneResources") {
             writeJson(
                     "assets/ultimateglass/models/item/${customItemName}.json",
                     [
-                            parent: "minecraft:item/generated",
+                            parent: "ultimateglass:item/glass_pane_display",
                             textures: [layer0: color.pane]
                     ]
             )
@@ -1204,7 +1207,10 @@ tasks.register("generatePaneResources") {
         )
         writeJson(
                 "assets/ultimateglass/models/item/tinted_glass_pane.json",
-                [parent: "minecraft:item/generated", textures: [layer0: "minecraft:block/tinted_glass"]]
+                [
+                        parent: "ultimateglass:item/glass_pane_display",
+                        textures: [layer0: "minecraft:block/tinted_glass"]
+                ]
         )
         writeJson(
                 "assets/ultimateglass/items/tinted_glass_pane.json",
