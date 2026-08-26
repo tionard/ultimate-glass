@@ -12,7 +12,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -49,6 +48,7 @@ public final class UltimateGlassSmartItems {
                 bind(kind, material);
             }
         }
+        bindLegacyBlocks();
     }
 
     private UltimateGlassSmartItems() {
@@ -131,7 +131,7 @@ public final class UltimateGlassSmartItems {
         Target target = TARGETS.get(block);
         return target == null
                 ? ItemStack.EMPTY
-                : stack(target.kind(), target.material(), Blocks.OAK_PLANKS);
+                : stack(target.kind(), target.material(), target.frame());
     }
 
     /** Replaces legacy loot-table item IDs with the smart item bound to this internal block. */
@@ -145,17 +145,23 @@ public final class UltimateGlassSmartItems {
             if (drop.isEmpty()) {
                 continue;
             }
-            ItemStack replacement = stack(target.kind(), target.material(), Blocks.OAK_PLANKS);
+            ItemStack replacement = stack(target.kind(), target.material(), target.frame());
             replacement.setCount(drop.getCount());
             modern.add(replacement);
         }
         return modern;
     }
 
-    public static void applyMaterial(Block block, ItemStack stack) {
+    public static void applyComponents(Block block, ItemStack stack) {
         Target target = TARGETS.get(block);
         if (target != null && !stack.isEmpty()) {
             stack.set(UltimateGlassComponents.GLASS_MATERIAL, target.material().componentId());
+            if (target.kind().framed()) {
+                stack.set(
+                        UltimateGlassComponents.FRAME_BLOCK,
+                        BuiltInRegistries.BLOCK.getKey(target.frame())
+                );
+            }
         }
     }
 
@@ -207,15 +213,51 @@ public final class UltimateGlassSmartItems {
         }
         Item item = item(kind);
         Item.BY_BLOCK.put(target, item);
-        TARGETS.put(target, new Target(kind, material));
+        TARGETS.put(target, new Target(kind, material, Blocks.OAK_PLANKS));
 
         if (kind.form() == GlassForm.PANE && kind.tempered()) {
             UltimateGlassBlocks.PaneFamily family = kind.framed()
                     ? UltimateGlassBlocks.dynamicFamily(material)
                     : UltimateGlassBlocks.familyFor(material);
             Item.BY_BLOCK.put(family.centeredPane(), item);
-            TARGETS.put(family.centeredPane(), new Target(kind, material));
+            TARGETS.put(family.centeredPane(), new Target(kind, material, Blocks.OAK_PLANKS));
         }
+    }
+
+    private static void bindLegacyBlocks() {
+        UltimateGlassBlocks.paneFamilies().forEach(family -> {
+            PaneFrame paneFrame = family.appearance().frame();
+            SmartGlassKind kind = paneFrame.isFramed()
+                    ? SmartGlassKind.FRAMED_TEMPERED_PANE
+                    : SmartGlassKind.TEMPERED_PANE;
+            Block frame = frameBlock(paneFrame);
+            bindLegacy(family.edgePane(), kind, family.appearance().material(), frame);
+            bindLegacy(family.centeredPane(), kind, family.appearance().material(), frame);
+        });
+
+        UltimateGlassFamilies.variants().forEach(entry -> {
+            GlassVariant variant = entry.getKey();
+            SmartGlassKind kind = kindFor(variant);
+            if (kind != null) {
+                bindLegacy(entry.getValue(), kind, variant.material(), frameBlock(variant.frame()));
+            }
+        });
+    }
+
+    private static void bindLegacy(
+            Block block, SmartGlassKind kind, PaneMaterial material, Block frame
+    ) {
+        Item item = item(kind);
+        Item.BY_BLOCK.put(block, item);
+        TARGETS.put(block, new Target(kind, material, frame));
+    }
+
+    private static Block frameBlock(PaneFrame frame) {
+        if (!frame.isFramed() || frame.isDynamic()) {
+            return Blocks.OAK_PLANKS;
+        }
+        Identifier id = Identifier.withDefaultNamespace(frame.path() + "_planks");
+        return BuiltInRegistries.BLOCK.getOptional(id).orElse(Blocks.OAK_PLANKS);
     }
 
     private static SmartGlassKind kindFor(GlassVariant variant) {
@@ -238,6 +280,6 @@ public final class UltimateGlassSmartItems {
                 : SmartGlassKind.TEMPERED_BLOCK;
     }
 
-    private record Target(SmartGlassKind kind, PaneMaterial material) {
+    private record Target(SmartGlassKind kind, PaneMaterial material, Block frame) {
     }
 }

@@ -151,12 +151,6 @@ public final class UltimateGlassItems {
         return PANE_ITEMS_BY_FAMILY.values();
     }
 
-    private static Collection<PaneFamily> paneFamiliesForCreative() {
-        return UltimateGlassBlocks.paneFamilies().stream()
-                .filter(family -> !family.appearance().frame().isDynamic())
-                .toList();
-    }
-
     private static void registerPaneItem(PaneFamily family) {
         ResourceKey<Item> key = key(family.itemPath());
         Item item = family.appearance().frame().isDynamic()

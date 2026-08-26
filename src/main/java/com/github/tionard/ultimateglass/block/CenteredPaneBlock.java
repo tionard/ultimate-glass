@@ -181,7 +181,7 @@ public class CenteredPaneBlock extends Block implements EntityBlock, SimpleWater
             LevelReader level, BlockPos pos, BlockState state, boolean includeData
     ) {
         ItemStack stack = new ItemStack(asItem());
-        UltimateGlassSmartItems.applyMaterial(this, stack);
+        UltimateGlassSmartItems.applyComponents(this, stack);
         return stack;
     }
 

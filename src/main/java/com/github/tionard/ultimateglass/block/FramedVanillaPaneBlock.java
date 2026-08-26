@@ -2,7 +2,9 @@ package com.github.tionard.ultimateglass.block;
 
 import java.util.List;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -46,5 +48,12 @@ public class FramedVanillaPaneBlock extends IronBarsBlock implements GlassFamily
             drops = stack.isEmpty() ? List.of() : List.of(stack);
         }
         return UltimateGlassSmartItems.modernizeDrops(this, drops);
+    }
+
+    @Override
+    protected ItemStack getCloneItemStack(
+            LevelReader level, BlockPos pos, BlockState state, boolean includeData
+    ) {
+        return UltimateGlassSmartItems.stackForBlock(this);
     }
 }

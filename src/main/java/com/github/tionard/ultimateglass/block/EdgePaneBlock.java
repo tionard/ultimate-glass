@@ -188,7 +188,7 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
             LevelReader level, BlockPos pos, BlockState state, boolean includeData
     ) {
         ItemStack stack = new ItemStack(asItem());
-        UltimateGlassSmartItems.applyMaterial(this, stack);
+        UltimateGlassSmartItems.applyComponents(this, stack);
         return stack;
     }
 

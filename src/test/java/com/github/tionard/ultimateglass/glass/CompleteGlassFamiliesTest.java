@@ -140,6 +140,25 @@ final class CompleteGlassFamiliesTest {
         assertTrue(properties.contains("mod_version=0.2.2a"));
     }
 
+    @Test
+    void transitionalBlocksReturnSmartStacksInsteadOfLegacyItems() throws IOException {
+        String smartItems = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/registry/UltimateGlassSmartItems.java"
+        ));
+        String framedBlock = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/block/FramedGlassBlock.java"
+        ));
+        String framedPane = Files.readString(Path.of(
+                "src/main/java/com/github/tionard/ultimateglass/block/FramedVanillaPaneBlock.java"
+        ));
+
+        assertTrue(smartItems.contains("UltimateGlassBlocks.paneFamilies().forEach"));
+        assertTrue(smartItems.contains("UltimateGlassFamilies.variants().forEach"));
+        assertTrue(smartItems.contains("Item.BY_BLOCK.put(block, item)"));
+        assertTrue(framedBlock.contains("UltimateGlassSmartItems.stackForBlock(this)"));
+        assertTrue(framedPane.contains("UltimateGlassSmartItems.stackForBlock(this)"));
+    }
+
     private static long markerCount(JsonArray elements, int marker) {
         long count = 0;
         for (JsonElement value : elements) {

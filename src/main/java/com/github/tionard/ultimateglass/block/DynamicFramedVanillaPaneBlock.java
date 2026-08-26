@@ -52,7 +52,7 @@ public final class DynamicFramedVanillaPaneBlock extends FramedVanillaPaneBlock
             LevelReader level, BlockPos pos, BlockState state, boolean includeData
     ) {
         ItemStack stack = new ItemStack(asItem());
-        UltimateGlassSmartItems.applyMaterial(this, stack);
+        UltimateGlassSmartItems.applyComponents(this, stack);
         copyFrame(level, pos, stack);
         return stack;
     }
@@ -67,7 +67,7 @@ public final class DynamicFramedVanillaPaneBlock extends FramedVanillaPaneBlock
                     frame.frameBlockId()
             ));
         }
-        drops.forEach(stack -> UltimateGlassSmartItems.applyMaterial(this, stack));
+        drops.forEach(stack -> UltimateGlassSmartItems.applyComponents(this, stack));
         return drops;
     }
 

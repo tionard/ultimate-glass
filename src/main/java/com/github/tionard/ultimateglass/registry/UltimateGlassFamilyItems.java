@@ -1,6 +1,5 @@
 package com.github.tionard.ultimateglass.registry;
 
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -54,13 +53,6 @@ public final class UltimateGlassFamilyItems {
 
     public static GlassVariant dynamicVariant(Identifier itemId) {
         return DYNAMIC_VARIANTS.get(itemId);
-    }
-
-    public static Collection<Item> itemsForCreative() {
-        return ITEMS_BY_VARIANT.entrySet().stream()
-                .filter(entry -> !entry.getKey().frame().isDynamic())
-                .map(Map.Entry::getValue)
-                .toList();
     }
 
     /** Resolves every unframed vanilla/tempered pane or full block accepted by framing recipes. */

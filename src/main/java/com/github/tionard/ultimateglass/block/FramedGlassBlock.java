@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -64,6 +65,13 @@ public class FramedGlassBlock extends Block implements GlassFamilyBlock {
             drops = stack.isEmpty() ? List.of() : List.of(stack);
         }
         return UltimateGlassSmartItems.modernizeDrops(this, drops);
+    }
+
+    @Override
+    protected ItemStack getCloneItemStack(
+            LevelReader level, BlockPos pos, BlockState state, boolean includeData
+    ) {
+        return UltimateGlassSmartItems.stackForBlock(this);
     }
 
     public static void refreshModelsAround(Level level, BlockPos pos) {

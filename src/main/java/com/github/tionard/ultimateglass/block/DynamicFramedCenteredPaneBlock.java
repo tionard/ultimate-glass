@@ -53,7 +53,7 @@ public final class DynamicFramedCenteredPaneBlock extends CenteredPaneBlock
     @Override
     protected ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
         ItemStack stack = new ItemStack(asItem());
-        UltimateGlassSmartItems.applyMaterial(this, stack);
+        UltimateGlassSmartItems.applyComponents(this, stack);
         copyFrame(level, pos, stack);
         return stack;
     }
@@ -65,7 +65,7 @@ public final class DynamicFramedCenteredPaneBlock extends CenteredPaneBlock
         if (blockEntity instanceof DynamicFrameBlockEntity frame) {
             drops.forEach(stack -> stack.set(UltimateGlassComponents.FRAME_BLOCK, frame.frameBlockId()));
         }
-        drops.forEach(stack -> UltimateGlassSmartItems.applyMaterial(this, stack));
+        drops.forEach(stack -> UltimateGlassSmartItems.applyComponents(this, stack));
         return drops;
     }
 

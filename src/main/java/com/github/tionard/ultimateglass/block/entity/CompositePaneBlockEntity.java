@@ -24,8 +24,6 @@ import com.github.tionard.ultimateglass.pane.PaneFrame;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlockEntities;
-import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
-import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 import com.github.tionard.ultimateglass.glass.GlassForm;
 import com.github.tionard.ultimateglass.glass.GlassVariant;
