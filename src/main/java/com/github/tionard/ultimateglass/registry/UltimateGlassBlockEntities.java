@@ -38,7 +38,10 @@ public final class UltimateGlassBlockEntities {
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "dynamic_pane_frame"),
             FabricBlockEntityTypeBuilder.create(
                     DynamicFrameBlockEntity::new,
-                    UltimateGlassBlocks.dynamicFrameBlocks().toArray(net.minecraft.world.level.block.Block[]::new)
+                    java.util.stream.Stream.concat(
+                            UltimateGlassBlocks.dynamicFrameBlocks().stream(),
+                            UltimateGlassFamilies.dynamicFrameBlocks().stream()
+                    ).toArray(net.minecraft.world.level.block.Block[]::new)
             ).build()
     );
 

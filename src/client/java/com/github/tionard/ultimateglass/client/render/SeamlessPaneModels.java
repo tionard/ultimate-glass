@@ -24,6 +24,9 @@ import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.CompositePaneBlock;
 import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.block.DynamicFramedPane;
+import com.github.tionard.ultimateglass.block.DynamicFramedBlock;
+import com.github.tionard.ultimateglass.block.FramedGlassBlock;
+import com.github.tionard.ultimateglass.block.FramedVanillaPaneBlock;
 import com.github.tionard.ultimateglass.block.entity.CompositePaneBlockEntity;
 import com.github.tionard.ultimateglass.block.entity.PaneFrameSource;
 import com.github.tionard.ultimateglass.client.UltimateGlassClientConfig;
@@ -33,6 +36,7 @@ import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.pane.PaneSeamPolicy;
 import com.github.tionard.ultimateglass.pane.UltimatePane;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
+import com.github.tionard.ultimateglass.registry.UltimateGlassFamilies;
 import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
 import com.github.tionard.ultimateglass.seam.PaneSeamSource;
 
@@ -47,6 +51,9 @@ public final class SeamlessPaneModels {
     private static final int FRAMED_SURFACE_TINT_INDEX = 13;
     private static final int SEAM_FILL_TINT_INDEX = 15;
     private static final int DYNAMIC_FRAME_TINT_INDEX = 14;
+    private static final int FRAMED_BLOCK_SURFACE_TINT_INDEX = 21;
+    private static final int DYNAMIC_FRAMED_BLOCK_SURFACE_TINT_INDEX = 22;
+    private static final int FRAMED_BLOCK_SEAM_FILL_TINT_INDEX = 23;
     private static boolean initialized;
 
     private SeamlessPaneModels() {
@@ -68,10 +75,177 @@ public final class SeamlessPaneModels {
                 if (state.getBlock() instanceof CompositePaneBlock) {
                     return new CompositePaneModel(model);
                 }
+                if (state.getBlock() instanceof FramedGlassBlock) {
+                    return new FramedGlassModel(model);
+                }
+                if (state.getBlock() instanceof FramedVanillaPaneBlock) {
+                    return new FramedVanillaPaneModel(model);
+                }
                 return model;
             });
             context.modifyItemModelAfterBake().register(DynamicFramePaneItemRenderer::wrap);
         });
+    }
+
+    /** Substitutes the stored modded plank texture in otherwise vanilla-style pane geometry. */
+    private static final class FramedVanillaPaneModel extends WrapperBlockStateModel {
+        private FramedVanillaPaneModel(BlockStateModel wrapped) {
+            super(wrapped);
+        }
+
+        @Override
+        public void emitQuads(
+                QuadEmitter emitter,
+                BlockAndTintGetter level,
+                BlockPos pos,
+                BlockState state,
+                RandomSource random,
+                Predicate<Direction> cullTest
+        ) {
+            Material.Baked frameMaterial = dynamicFrameMaterial(level, pos, state);
+            emitter.pushTransform(quad -> {
+                int marker = quad.tintIndex();
+                boolean dynamic = marker == DYNAMIC_FRAME_TINT_INDEX;
+                if (marker == FRAMED_SURFACE_TINT_INDEX || dynamic) {
+                    quad.tintIndex(-1);
+                }
+                if (dynamic && frameMaterial != null) {
+                    quad.materialBake(frameMaterial, MutableQuadView.BAKE_LOCK_UV);
+                }
+                return true;
+            });
+            try {
+                super.emitQuads(emitter, level, pos, state, random, cullTest);
+            } finally {
+                emitter.popTransform();
+            }
+        }
+
+        @Override
+        public Object createGeometryKey(
+                BlockAndTintGetter level,
+                BlockPos pos,
+                BlockState state,
+                RandomSource random
+        ) {
+            return new FramedVanillaPaneGeometryKey(
+                    super.createGeometryKey(level, pos, state, random),
+                    dynamicFrameId(level, pos, state)
+            );
+        }
+    }
+
+    /** Removes shared wood borders and hidden internal faces between matching framed blocks. */
+    private static final class FramedGlassModel extends WrapperBlockStateModel {
+        private FramedGlassModel(BlockStateModel wrapped) {
+            super(wrapped);
+        }
+
+        @Override
+        public void emitQuads(
+                QuadEmitter emitter,
+                BlockAndTintGetter level,
+                BlockPos pos,
+                BlockState state,
+                RandomSource random,
+                Predicate<Direction> cullTest
+        ) {
+            Material.Baked frameMaterial = dynamicFrameMaterial(level, pos, state);
+            emitter.pushTransform(quad -> transformFramedGlassQuad(
+                    quad, level, pos, state, frameMaterial
+            ));
+            try {
+                super.emitQuads(emitter, level, pos, state, random, cullTest);
+            } finally {
+                emitter.popTransform();
+            }
+        }
+
+        @Override
+        public Object createGeometryKey(
+                BlockAndTintGetter level,
+                BlockPos pos,
+                BlockState state,
+                RandomSource random
+        ) {
+            return new FramedGlassGeometryKey(
+                    super.createGeometryKey(level, pos, state, random),
+                    framedGlassConnectionMask(level, pos, state),
+                    dynamicFrameId(level, pos, state)
+            );
+        }
+    }
+
+    private static boolean transformFramedGlassQuad(
+            MutableQuadView quad,
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            Material.Baked frameMaterial
+    ) {
+        Direction face = quad.lightFace();
+        if (matchingFramedGlassNeighbour(level, pos, state, face)) {
+            return false;
+        }
+
+        int marker = quad.tintIndex();
+        boolean frameSurface = marker == FRAMED_BLOCK_SURFACE_TINT_INDEX
+                || marker == DYNAMIC_FRAMED_BLOCK_SURFACE_TINT_INDEX;
+        boolean dynamicFrame = marker == DYNAMIC_FRAMED_BLOCK_SURFACE_TINT_INDEX;
+        boolean seamFill = marker == FRAMED_BLOCK_SEAM_FILL_TINT_INDEX;
+        if (frameSurface || seamFill) {
+            quad.tintIndex(-1);
+        }
+        if (!frameSurface && !seamFill) {
+            return true;
+        }
+
+        List<Direction> borders = boundaryDirectionsExcept(
+                quad, face.getAxis(), 1.0F / 16.0F
+        );
+        long matchingBorders = borders.stream()
+                .filter(direction -> matchingFramedGlassNeighbour(
+                        level, pos, state, direction
+                ))
+                .count();
+        boolean replaceWithGlass = PaneSeamPolicy.shouldReplaceBoundary(
+                true, borders.size(), (int) matchingBorders
+        );
+        if (seamFill != replaceWithGlass) {
+            return false;
+        }
+        if (dynamicFrame && frameMaterial != null) {
+            quad.materialBake(frameMaterial, MutableQuadView.BAKE_LOCK_UV);
+        }
+        return true;
+    }
+
+    private static boolean matchingFramedGlassNeighbour(
+            BlockAndTintGetter level,
+            BlockPos pos,
+            BlockState state,
+            Direction direction
+    ) {
+        BlockPos neighbourPos = pos.relative(direction);
+        return UltimateGlassFamilies.matchingFramedBlock(
+                level,
+                pos,
+                state,
+                neighbourPos,
+                level.getBlockState(neighbourPos)
+        );
+    }
+
+    private static int framedGlassConnectionMask(
+            BlockAndTintGetter level, BlockPos pos, BlockState state
+    ) {
+        int mask = 0;
+        for (Direction direction : Direction.values()) {
+            if (matchingFramedGlassNeighbour(level, pos, state, direction)) {
+                mask |= 1 << direction.ordinal();
+            }
+        }
+        return mask;
     }
 
     /** Emits both stored models into one cached chunk mesh; no BlockEntityRenderer is involved. */
@@ -578,7 +752,7 @@ public final class SeamlessPaneModels {
             BlockPos pos,
             BlockState state
     ) {
-        if (!(state.getBlock() instanceof DynamicFramedPane)
+        if (!(state.getBlock() instanceof DynamicFramedBlock)
                 || !(level.getBlockEntity(pos) instanceof PaneFrameSource frame)) {
             return null;
         }
@@ -593,7 +767,7 @@ public final class SeamlessPaneModels {
             BlockPos pos,
             BlockState state
     ) {
-        return state.getBlock() instanceof DynamicFramedPane
+        return state.getBlock() instanceof DynamicFramedBlock
                 && level.getBlockEntity(pos) instanceof PaneFrameSource frame
                 ? frame.frameBlockId()
                 : null;
@@ -674,5 +848,11 @@ public final class SeamlessPaneModels {
             boolean waterlogged,
             long continuations
     ) {
+    }
+
+    private record FramedVanillaPaneGeometryKey(Object wrapped, Object frameBlock) {
+    }
+
+    private record FramedGlassGeometryKey(Object wrapped, int neighbours, Object frameBlock) {
     }
 }

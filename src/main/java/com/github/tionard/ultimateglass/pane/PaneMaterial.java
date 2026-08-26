@@ -58,6 +58,15 @@ public enum PaneMaterial {
         return vanillaPanePath;
     }
 
+    /** Returns the corresponding vanilla full-block path for every supported glass material. */
+    public String vanillaBlockPath() {
+        return switch (kind) {
+            case CLEAR -> "glass";
+            case STAINED -> colorName + "_stained_glass";
+            case TINTED -> "tinted_glass";
+        };
+    }
+
     public enum Kind {
         CLEAR,
         STAINED,

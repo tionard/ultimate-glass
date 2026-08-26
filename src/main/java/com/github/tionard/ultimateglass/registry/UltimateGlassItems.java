@@ -88,6 +88,7 @@ public final class UltimateGlassItems {
                             paneFamiliesForCreative().forEach(
                                     family -> output.accept(paneItemFor(family))
                             );
+                            UltimateGlassFamilyItems.itemsForCreative().forEach(output::accept);
                         })
                         .build()
         );
@@ -96,6 +97,7 @@ public final class UltimateGlassItems {
                 .register(output -> {
                     output.accept(TINTED_GLASS_PANE);
                     paneFamiliesForCreative().forEach(family -> output.accept(paneItemFor(family)));
+                    UltimateGlassFamilyItems.itemsForCreative().forEach(output::accept);
                 });
 
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)

@@ -28,7 +28,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
 
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
+import com.github.tionard.ultimateglass.glass.GlassForm;
+import com.github.tionard.ultimateglass.glass.GlassVariant;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 
 /** Renders a dynamic framed pane item with the plank texture stored on that exact stack. */
@@ -37,17 +40,23 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
     private static final float DEPTH = 2.0F / 16.0F;
 
     private final TextureAtlasSprite paneSprite;
+    private final boolean fullBlock;
 
-    private DynamicFramePaneItemRenderer(TextureAtlasSprite paneSprite) {
+    private DynamicFramePaneItemRenderer(TextureAtlasSprite paneSprite, boolean fullBlock) {
         this.paneSprite = paneSprite;
+        this.fullBlock = fullBlock;
     }
 
     static ItemModel wrap(
             ItemModel original,
             ModelModifier.AfterBakeItem.Context context
     ) {
+        GlassVariant completeVariant = UltimateGlassFamilyItems.dynamicVariant(context.itemId());
         if (UltimateGlassItems.dynamicFrameMaterial(context.itemId()) == null
-                || !(context.sourceModel() instanceof CuboidItemModelWrapper.Unbaked source)) {
+                && completeVariant == null) {
+            return original;
+        }
+        if (!(context.sourceModel() instanceof CuboidItemModelWrapper.Unbaked source)) {
             return original;
         }
 
@@ -58,7 +67,10 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
                 resolved.getTopTextureSlots()
         );
         return new SpecialModelWrapper<>(
-                new DynamicFramePaneItemRenderer(properties.particleMaterial().sprite()),
+                new DynamicFramePaneItemRenderer(
+                        properties.particleMaterial().sprite(),
+                        completeVariant != null && completeVariant.form() == GlassForm.BLOCK
+                ),
                 properties,
                 context.transformation()
         );
@@ -77,21 +89,37 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
         collector.order(0).submitCustomGeometry(
                 poseStack,
                 RenderTypes.itemTranslucent(paneSprite.atlasLocation()),
-                (pose, vertices) -> renderGlass(pose, vertices, paneSprite, light, overlay)
-        );
+                (pose, vertices) -> {
+                    if (fullBlock) {
+                        renderGlassBlock(pose, vertices, paneSprite, light, overlay);
+                    } else {
+                        renderGlass(pose, vertices, paneSprite, light, overlay);
+                    }
+                }
         TextureAtlasSprite frameSprite = frameMaterial.sprite();
         collector.order(1).submitCustomGeometry(
                 poseStack,
                 RenderTypes.itemCutout(frameSprite.atlasLocation()),
-                (pose, vertices) -> renderFrame(pose, vertices, frameSprite, light, overlay)
+                (pose, vertices) -> {
+                    if (fullBlock) {
+                        renderBlockFrame(pose, vertices, frameSprite, light, overlay);
+                    } else {
+                        renderFrame(pose, vertices, frameSprite, light, overlay);
+                    }
+                }
         );
         if (foil) {
             collector.order(2).submitCustomGeometry(
                     poseStack,
                     RenderTypes.glint(),
                     (pose, vertices) -> {
-                        renderGlass(pose, vertices, paneSprite, light, overlay);
-                        renderFrame(pose, vertices, frameSprite, light, overlay);
+                        if (fullBlock) {
+                            renderGlassBlock(pose, vertices, paneSprite, light, overlay);
+                            renderBlockFrame(pose, vertices, frameSprite, light, overlay);
+                        } else {
+                            renderGlass(pose, vertices, paneSprite, light, overlay);
+                            renderFrame(pose, vertices, frameSprite, light, overlay);
+                        }
                     }
             );
         }
@@ -101,7 +129,7 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
     public void getExtents(Consumer<Vector3fc> output) {
         for (float x : new float[] {0.0F, 1.0F}) {
             for (float y : new float[] {0.0F, 1.0F}) {
-                for (float z : new float[] {0.0F, DEPTH}) {
+                for (float z : new float[] {0.0F, fullBlock ? 1.0F : DEPTH}) {
                     output.accept(new Vector3f(x, y, z));
                 }
             }
@@ -151,6 +179,49 @@ final class DynamicFramePaneItemRenderer implements SpecialModelRenderer<Materia
                 PIXEL, 1.0F - PIXEL, DEPTH, light, overlay);
         emitCuboid(pose, vertices, sprite, 1.0F - PIXEL, PIXEL, 0.0F,
                 1.0F, 1.0F - PIXEL, DEPTH, light, overlay);
+    }
+
+    private static void renderGlassBlock(
+            PoseStack.Pose pose,
+            VertexConsumer vertices,
+            TextureAtlasSprite sprite,
+            int light,
+            int overlay
+    ) {
+        emitCuboid(
+                pose, vertices, sprite,
+                PIXEL, PIXEL, PIXEL,
+                1.0F - PIXEL, 1.0F - PIXEL, 1.0F - PIXEL,
+                light, overlay
+        );
+    }
+
+    private static void renderBlockFrame(
+            PoseStack.Pose pose,
+            VertexConsumer vertices,
+            TextureAtlasSprite sprite,
+            int light,
+            int overlay
+    ) {
+        float high = 1.0F - PIXEL;
+        for (float y : new float[] {0.0F, high}) {
+            for (float z : new float[] {0.0F, high}) {
+                emitCuboid(pose, vertices, sprite, 0.0F, y, z,
+                        1.0F, y + PIXEL, z + PIXEL, light, overlay);
+            }
+        }
+        for (float x : new float[] {0.0F, high}) {
+            for (float z : new float[] {0.0F, high}) {
+                emitCuboid(pose, vertices, sprite, x, PIXEL, z,
+                        x + PIXEL, high, z + PIXEL, light, overlay);
+            }
+        }
+        for (float x : new float[] {0.0F, high}) {
+            for (float y : new float[] {0.0F, high}) {
+                emitCuboid(pose, vertices, sprite, x, y, PIXEL,
+                        x + PIXEL, y + PIXEL, high, light, overlay);
+            }
+        }
     }
 
     private static void emitCuboid(
