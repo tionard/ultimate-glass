@@ -17,6 +17,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
 import com.github.tionard.ultimateglass.registry.UltimateGlassComponents;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 public final class DynamicFramedCenteredPaneBlock extends CenteredPaneBlock
         implements EntityBlock, DynamicFramedPane {
@@ -52,6 +53,7 @@ public final class DynamicFramedCenteredPaneBlock extends CenteredPaneBlock
     @Override
     protected ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
         ItemStack stack = new ItemStack(asItem());
+        UltimateGlassSmartItems.applyComponents(this, stack);
         copyFrame(level, pos, stack);
         return stack;
     }
@@ -59,6 +61,7 @@ public final class DynamicFramedCenteredPaneBlock extends CenteredPaneBlock
     @Override
     protected java.util.List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         java.util.List<ItemStack> drops = super.getDrops(state, builder);
+        drops.forEach(stack -> UltimateGlassSmartItems.applyComponents(this, stack));
         BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (blockEntity instanceof DynamicFrameBlockEntity frame) {
             drops.forEach(stack -> stack.set(UltimateGlassComponents.FRAME_BLOCK, frame.frameBlockId()));

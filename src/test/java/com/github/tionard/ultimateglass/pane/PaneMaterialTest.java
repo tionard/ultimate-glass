@@ -30,4 +30,11 @@ final class PaneMaterialTest {
         assertTrue(PaneMaterial.BLUE_STAINED.hasVanillaPane());
         assertEquals(PaneMaterial.Kind.STAINED, PaneMaterial.BLUE_STAINED.kind());
     }
+
+    @Test
+    void stackComponentIdentityRoundTripsEveryMaterial() {
+        for (PaneMaterial material : PaneMaterial.values()) {
+            assertEquals(material, PaneMaterial.fromComponentId(material.componentId()));
+        }
+    }
 }

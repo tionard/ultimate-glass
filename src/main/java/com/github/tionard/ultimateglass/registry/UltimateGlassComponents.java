@@ -7,8 +7,17 @@ import net.minecraft.resources.Identifier;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 
-/** Persistent item data used by the generic modded-plank frame item. */
+/** Persistent material data shared by the component-backed glass item families. */
 public final class UltimateGlassComponents {
+    public static final DataComponentType<Identifier> GLASS_MATERIAL = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "glass_material"),
+            DataComponentType.<Identifier>builder()
+                    .persistent(Identifier.CODEC)
+                    .networkSynchronized(Identifier.STREAM_CODEC)
+                    .build()
+    );
+
     public static final DataComponentType<Identifier> FRAME_BLOCK = Registry.register(
             BuiltInRegistries.DATA_COMPONENT_TYPE,
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "frame_block"),

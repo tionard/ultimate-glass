@@ -7,9 +7,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
-import com.github.tionard.ultimateglass.pane.PaneMaterial;
-import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
-import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 
 /** Optional one-to-one recovery of an unframed Tempered pane into its vanilla-style source. */
 public final class TemperedToVanillaRecipe extends CustomRecipe {
@@ -38,11 +36,7 @@ public final class TemperedToVanillaRecipe extends CustomRecipe {
             if (stack.isEmpty()) {
                 continue;
             }
-            PaneMaterial material = UltimateGlassItems.unframedMaterial(stack.getItem());
-            if (material == null) {
-                return ItemStack.EMPTY;
-            }
-            return new ItemStack(UltimateGlassBlocks.familyFor(material).vanillaPane().asItem());
+            return UltimateGlassFamilyItems.vanillaStackForTempered(stack);
         }
         return ItemStack.EMPTY;
     }

@@ -22,7 +22,9 @@ import com.github.tionard.ultimateglass.block.entity.DynamicFrameBlockEntity;
 import com.github.tionard.ultimateglass.pane.CompositePaneGeometry;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks.PaneFamily;
+import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 import com.github.tionard.ultimateglass.pane.PanePlane;
 import com.github.tionard.ultimateglass.seam.PaneSeamData;
@@ -228,6 +230,10 @@ public final class GlaziersToolItem extends Item {
     }
 
     public static ItemStack collectedStack(Block block) {
+        ItemStack smart = UltimateGlassSmartItems.stackForBlock(block);
+        if (!smart.isEmpty()) {
+            return smart;
+        }
         PaneFamily family = UltimateGlassBlocks.familyFor(block);
         if (family != null) {
             Item customPaneItem = UltimateGlassItems.paneItemFor(block);
@@ -235,6 +241,11 @@ public final class GlaziersToolItem extends Item {
                 return new ItemStack(customPaneItem);
             }
             return new ItemStack(family.vanillaPane().asItem());
+        }
+
+        ItemStack completeFamilyDrop = UltimateGlassFamilyItems.collectedStack(block);
+        if (!completeFamilyDrop.isEmpty()) {
+            return completeFamilyDrop;
         }
 
         if (isVanillaGlassBlock(block)) {
@@ -273,7 +284,9 @@ public final class GlaziersToolItem extends Item {
         }
 
         String path = id.getPath();
-        return "glass".equals(path) || path.endsWith("_stained_glass");
+        return "glass".equals(path)
+                || "tinted_glass".equals(path)
+                || path.endsWith("_stained_glass");
     }
 
     private static void refreshPaneConnections(Level level, net.minecraft.core.BlockPos pos) {

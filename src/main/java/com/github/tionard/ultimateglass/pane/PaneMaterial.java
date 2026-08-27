@@ -2,6 +2,8 @@ package com.github.tionard.ultimateglass.pane;
 
 import org.jetbrains.annotations.Nullable;
 
+import net.minecraft.resources.Identifier;
+
 /** The glass material carried by an Ultimate Glass pane, independent of its geometry. */
 public enum PaneMaterial {
     CLEAR(Kind.CLEAR, null, "glass_pane"),
@@ -56,6 +58,32 @@ public enum PaneMaterial {
             throw new IllegalStateException(this + " has no vanilla pane block");
         }
         return vanillaPanePath;
+    }
+
+    /** Returns the corresponding vanilla full-block path for every supported glass material. */
+    public String vanillaBlockPath() {
+        return switch (kind) {
+            case CLEAR -> "glass";
+            case STAINED -> colorName + "_stained_glass";
+            case TINTED -> "tinted_glass";
+        };
+    }
+
+    /** Stable stack-component identity shared by pane and full-block forms. */
+    public Identifier componentId() {
+        return Identifier.withDefaultNamespace(vanillaBlockPath());
+    }
+
+    public static PaneMaterial fromComponentId(Identifier id) {
+        if (id == null || !"minecraft".equals(id.getNamespace())) {
+            return CLEAR;
+        }
+        for (PaneMaterial material : values()) {
+            if (material.vanillaBlockPath().equals(id.getPath())) {
+                return material;
+            }
+        }
+        return CLEAR;
     }
 
     public enum Kind {

@@ -374,7 +374,9 @@ tasks.register("generatePaneResources") {
         }
         writeJson(
                 "assets/ultimateglass/models/block/edge_pane_item_framed_base.json",
-                createMergedShape(0, "item")
+                createMergedShape(0, "item") + [
+                        parent: "ultimateglass:item/glass_pane_display"
+                ]
         )
 
         def centeredAxes = [
@@ -545,6 +547,190 @@ tasks.register("generatePaneResources") {
                 [path: "modded", texture: "minecraft:block/oak_planks", dynamic: true]
         ]
 
+        def framedBlockFaces = [
+                north: [normalAxis: 2, positive: false, uAxis: 0, vAxis: 1],
+                south: [normalAxis: 2, positive: true,  uAxis: 0, vAxis: 1],
+                west : [normalAxis: 0, positive: false, uAxis: 2, vAxis: 1],
+                east : [normalAxis: 0, positive: true,  uAxis: 2, vAxis: 1],
+                down : [normalAxis: 1, positive: false, uAxis: 0, vAxis: 2],
+                up   : [normalAxis: 1, positive: true,  uAxis: 0, vAxis: 2]
+        ]
+
+        def createFramedGlassBlockBase = { boolean dynamicFrame ->
+            def elements = []
+            framedBlockFaces.each { faceName, data ->
+                def cuts = [0, 1, 15, 16]
+                for (int u = 0; u < cuts.size() - 1; u++) {
+                    for (int v = 0; v < cuts.size() - 1; v++) {
+                        def from = [0, 0, 0]
+                        def to = [16, 16, 16]
+                        if (data.positive) {
+                            from[data.normalAxis] = 15
+                        } else {
+                            to[data.normalAxis] = 1
+                        }
+                        from[data.uAxis] = cuts[u]
+                        to[data.uAxis] = cuts[u + 1]
+                        from[data.vAxis] = cuts[v]
+                        to[data.vAxis] = cuts[v + 1]
+
+                        boolean border = u == 0 || u == cuts.size() - 2
+                                || v == 0 || v == cuts.size() - 2
+                        def normalFace = [
+                                texture: border ? "#edge" : "#pane",
+                                cullface: faceName
+                        ]
+                        if (border) {
+                            normalFace.tintindex = dynamicFrame ? 22 : 21
+                        }
+                        elements << [from: from, to: to, faces: [(faceName): normalFace]]
+
+                        if (border) {
+                            elements << [
+                                    from: from,
+                                    to: to,
+                                    faces: [(faceName): [
+                                            texture: "#pane",
+                                            cullface: faceName,
+                                            tintindex: 23
+                                    ]]
+                            ]
+                        }
+                    }
+                }
+            }
+            return [
+                    parent: "minecraft:block/block",
+                    render_type: "minecraft:translucent",
+                    textures: [particle: "#pane"],
+                    elements: elements
+            ]
+        }
+
+        def createOrdinaryFramedPaneShape = { int mask, boolean dynamicFrame ->
+            boolean north = (mask & 1) != 0
+            boolean east = (mask & 2) != 0
+            boolean south = (mask & 4) != 0
+            boolean west = (mask & 8) != 0
+            int marker = dynamicFrame ? 14 : 13
+            def elements = []
+
+            def addFaceElement = { List<Integer> from, List<Integer> to,
+                                   String face, String texture, boolean frame ->
+                def faceData = [texture: texture]
+                if (frame) {
+                    faceData.tintindex = marker
+                }
+                elements << [from: from, to: to, faces: [(face): faceData]]
+            }
+
+            int zMin = north ? 0 : 7
+            int zMax = south ? 16 : 9
+            def zCuts = ([zMin, 7, 9, zMax] as Set).toList().sort()
+            for (int segment = 0; segment < zCuts.size() - 1; segment++) {
+                int first = zCuts[segment]
+                int last = zCuts[segment + 1]
+                boolean central = first >= 7 && last <= 9
+                [west: !west || !central, east: !east || !central].each { face, visible ->
+                    if (!visible || last <= first) {
+                        return
+                    }
+                    [[0, 1], [1, 15], [15, 16]].each { yRange ->
+                        boolean yFrame = yRange[0] == 0 || yRange[1] == 16
+                        boolean endFrame = (!north && first == zMin)
+                                || (!south && last == zMax)
+                        def from = [7, yRange[0], first]
+                        def to = [9, yRange[1], last]
+                        boolean frame = yFrame || endFrame
+                        addFaceElement(from, to, face, frame ? "#edge" : "#pane", frame)
+                    }
+                }
+            }
+            [[face: "down", y0: 0, y1: 1], [face: "up", y0: 15, y1: 16]].each { cap ->
+                addFaceElement([7, cap.y0, zMin], [9, cap.y1, zMax], cap.face, "#edge", true)
+            }
+            addFaceElement([7, 0, zMin], [9, 16, zMin + 1], "north",
+                    north ? "#pane" : "#edge", !north)
+            addFaceElement([7, 0, zMax - 1], [9, 16, zMax], "south",
+                    south ? "#pane" : "#edge", !south)
+
+            if (west) {
+                [[0, 1], [1, 15], [15, 16]].each { yRange ->
+                    boolean frame = yRange[0] == 0 || yRange[1] == 16
+                    [north: "north", south: "south"].each { ignored, face ->
+                        addFaceElement([0, yRange[0], 7], [7, yRange[1], 9], face,
+                                frame ? "#edge" : "#pane", frame)
+                    }
+                }
+                addFaceElement([0, 0, 7], [7, 1, 9], "down", "#edge", true)
+                addFaceElement([0, 15, 7], [7, 16, 9], "up", "#edge", true)
+                addFaceElement([0, 0, 7], [1, 16, 9], "west", "#pane", false)
+            }
+            if (east) {
+                [[0, 1], [1, 15], [15, 16]].each { yRange ->
+                    boolean frame = yRange[0] == 0 || yRange[1] == 16
+                    [north: "north", south: "south"].each { ignored, face ->
+                        addFaceElement([9, yRange[0], 7], [16, yRange[1], 9], face,
+                                frame ? "#edge" : "#pane", frame)
+                    }
+                }
+                addFaceElement([9, 0, 7], [16, 1, 9], "down", "#edge", true)
+                addFaceElement([9, 15, 7], [16, 16, 9], "up", "#edge", true)
+                addFaceElement([15, 0, 7], [16, 16, 9], "east", "#pane", false)
+            }
+
+            return [
+                    render_type: "minecraft:translucent",
+                    textures: [particle: "#pane"],
+                    elements: elements
+            ]
+        }
+
+        writeJson(
+                "assets/ultimateglass/models/block/framed_glass_block_base.json",
+                createFramedGlassBlockBase(false)
+        )
+        writeJson(
+                "assets/ultimateglass/models/block/dynamic_framed_glass_block_base.json",
+                createFramedGlassBlockBase(true)
+        )
+        for (int mask = 0; mask < 16; mask++) {
+            writeJson(
+                    "assets/ultimateglass/models/block/ordinary_framed_pane_shape_${mask}_base.json",
+                    createOrdinaryFramedPaneShape(mask, false)
+            )
+            writeJson(
+                    "assets/ultimateglass/models/block/ordinary_dynamic_framed_pane_shape_${mask}_base.json",
+                    createOrdinaryFramedPaneShape(mask, true)
+            )
+        }
+
+        def writeGlassLoot = { String blockName, String itemName, boolean guaranteed ->
+            def pool = [
+                    entries: [[type: "minecraft:item", name: "ultimateglass:${itemName}"]],
+                    rolls: 1.0
+            ]
+            if (!guaranteed) {
+                pool.conditions = [[
+                        condition: "minecraft:match_tool",
+                        predicate: [predicates: [
+                                "minecraft:enchantments": [[
+                                        enchantments: "minecraft:silk_touch",
+                                        levels: [min: 1]
+                                ]]
+                        ]]
+                ]]
+            }
+            writeJson(
+                    "data/ultimateglass/loot_table/blocks/${blockName}.json",
+                    [
+                            type: "minecraft:block",
+                            pools: [pool],
+                            random_sequence: "ultimateglass:blocks/${blockName}"
+                    ]
+            )
+        }
+
         colors.each { color ->
             boolean tinted = color.tinted ?: false
             String blockName = tinted
@@ -562,13 +748,75 @@ tasks.register("generatePaneResources") {
                     : color.suffix.isEmpty()
                     ? "glass_pane"
                     : "${color.suffix}_stained_glass_pane"
+            String vanillaBlockName = tinted
+                    ? "tinted_glass"
+                    : color.suffix.isEmpty()
+                    ? "glass"
+                    : "${color.suffix}_stained_glass"
             String customItemName = "ultimate_${vanillaPaneName}"
+            String temperedBlockName = "ultimate_${vanillaBlockName}"
             def textures = [pane: color.pane, edge: color.edge]
+
+            writeJson(
+                    "assets/ultimateglass/models/block/${temperedBlockName}.json",
+                    [
+                            parent: "minecraft:block/cube_all",
+                            render_type: "minecraft:translucent",
+                            textures: [all: color.pane, particle: color.pane]
+                    ]
+            )
+            writeJson(
+                    "assets/ultimateglass/blockstates/${temperedBlockName}.json",
+                    [variants: ["": [model: "ultimateglass:block/${temperedBlockName}"]]]
+            )
+            writeJson(
+                    "assets/ultimateglass/models/item/${temperedBlockName}.json",
+                    [parent: "ultimateglass:block/${temperedBlockName}"]
+            )
+            writeJson(
+                    "assets/ultimateglass/items/${temperedBlockName}.json",
+                    [model: [type: "minecraft:model", model: "ultimateglass:item/${temperedBlockName}"]]
+            )
+            writeJson(
+                    "data/ultimateglass/recipe/${temperedBlockName}.json",
+                    [
+                            type: "minecraft:smelting",
+                            category: "blocks",
+                            group: "tempered_glass_blocks",
+                            ingredient: "minecraft:${vanillaBlockName}",
+                            result: [
+                                    id: "ultimateglass:tempered_glass",
+                                    components: [
+                                            "ultimateglass:glass_material": "minecraft:${vanillaBlockName}"
+                                    ]
+                            ],
+                            experience: 0.1,
+                            cookingtime: 200
+                    ]
+            )
+            writeJson(
+                    "data/ultimateglass/recipe/${temperedBlockName}_from_blasting.json",
+                    [
+                            type: "minecraft:blasting",
+                            category: "blocks",
+                            group: "tempered_glass_blocks",
+                            ingredient: "minecraft:${vanillaBlockName}",
+                            result: [
+                                    id: "ultimateglass:tempered_glass",
+                                    components: [
+                                            "ultimateglass:glass_material": "minecraft:${vanillaBlockName}"
+                                    ]
+                            ],
+                            experience: 0.1,
+                            cookingtime: 100
+                    ]
+            )
+            writeGlassLoot(temperedBlockName, temperedBlockName, tinted)
 
             writeJson(
                     "assets/ultimateglass/models/item/${customItemName}.json",
                     [
-                            parent: "minecraft:item/generated",
+                            parent: "ultimateglass:item/glass_pane_display",
                             textures: [layer0: color.pane]
                     ]
             )
@@ -607,7 +855,12 @@ tasks.register("generatePaneResources") {
                             category: "blocks",
                             group: "tempered_glass_panes",
                             ingredient: cookingInput,
-                            result: [id: "ultimateglass:${customItemName}"],
+                            result: [
+                                    id: "ultimateglass:tempered_glass_pane",
+                                    components: [
+                                            "ultimateglass:glass_material": "minecraft:${vanillaBlockName}"
+                                    ]
+                            ],
                             experience: 0.1,
                             cookingtime: 200
                     ]
@@ -619,7 +872,12 @@ tasks.register("generatePaneResources") {
                             category: "blocks",
                             group: "tempered_glass_panes",
                             ingredient: cookingInput,
-                            result: [id: "ultimateglass:${customItemName}"],
+                            result: [
+                                    id: "ultimateglass:tempered_glass_pane",
+                                    components: [
+                                            "ultimateglass:glass_material": "minecraft:${vanillaBlockName}"
+                                    ]
+                            ],
                             experience: 0.1,
                             cookingtime: 100
                     ]
@@ -828,6 +1086,86 @@ tasks.register("generatePaneResources") {
                         "assets/ultimateglass/blockstates/${frameBlockName}.json",
                         [multipart: frameMultipart]
                 )
+
+                String ordinaryPaneName = "${framePrefix}${vanillaPaneName}"
+                String ordinaryBlockName = "${framePrefix}${vanillaBlockName}"
+                String temperedFramedBlockName = "${framePrefix}ultimate_${vanillaBlockName}"
+                String ordinaryPaneBase = dynamicFrame
+                        ? "ordinary_dynamic_framed_pane"
+                        : "ordinary_framed_pane"
+                String framedBlockBase = dynamicFrame
+                        ? "dynamic_framed_glass_block_base"
+                        : "framed_glass_block_base"
+
+                writeJson(
+                        "assets/ultimateglass/models/item/${ordinaryPaneName}.json",
+                        [
+                                parent: "ultimateglass:block/edge_pane_item_framed_base",
+                                textures: frameTextures
+                        ]
+                )
+                writeJson(
+                        "assets/ultimateglass/items/${ordinaryPaneName}.json",
+                        [model: [type: "minecraft:model", model: "ultimateglass:item/${ordinaryPaneName}"]]
+                )
+                for (int mask = 0; mask < 16; mask++) {
+                    writeJson(
+                            "assets/ultimateglass/models/block/${ordinaryPaneName}_shape_${mask}.json",
+                            [
+                                    parent: "ultimateglass:block/${ordinaryPaneBase}_shape_${mask}_base",
+                                    textures: frameTextures
+                            ]
+                    )
+                }
+                def ordinaryPaneMultipart = []
+                for (int mask = 0; mask < 16; mask++) {
+                    def condition = [:]
+                    ["north", "east", "south", "west"].eachWithIndex { side, index ->
+                        condition[side] = ((mask & (1 << index)) != 0).toString()
+                    }
+                    ordinaryPaneMultipart << [
+                            when: condition,
+                            apply: [model: "ultimateglass:block/${ordinaryPaneName}_shape_${mask}"]
+                    ]
+                }
+                writeJson(
+                        "assets/ultimateglass/blockstates/${ordinaryPaneName}.json",
+                        [multipart: ordinaryPaneMultipart]
+                )
+                writeGlassLoot(ordinaryPaneName, ordinaryPaneName, tinted)
+
+                [
+                        [name: ordinaryBlockName, tempered: false],
+                        [name: temperedFramedBlockName, tempered: true]
+                ].each { framedFullBlock ->
+                    writeJson(
+                            "assets/ultimateglass/models/block/${framedFullBlock.name}.json",
+                            [
+                                    parent: "ultimateglass:block/${framedBlockBase}",
+                                    textures: frameTextures
+                            ]
+                    )
+                    writeJson(
+                            "assets/ultimateglass/blockstates/${framedFullBlock.name}.json",
+                            [variants: ["": [model: "ultimateglass:block/${framedFullBlock.name}"]]]
+                    )
+                    writeJson(
+                            "assets/ultimateglass/models/item/${framedFullBlock.name}.json",
+                            [parent: "ultimateglass:block/${framedFullBlock.name}"]
+                    )
+                    writeJson(
+                            "assets/ultimateglass/items/${framedFullBlock.name}.json",
+                            [model: [
+                                    type: "minecraft:model",
+                                    model: "ultimateglass:item/${framedFullBlock.name}"
+                            ]]
+                    )
+                    writeGlassLoot(
+                            framedFullBlock.name,
+                            framedFullBlock.name,
+                            tinted
+                    )
+                }
             }
         }
 
@@ -869,7 +1207,10 @@ tasks.register("generatePaneResources") {
         )
         writeJson(
                 "assets/ultimateglass/models/item/tinted_glass_pane.json",
-                [parent: "minecraft:item/generated", textures: [layer0: "minecraft:block/tinted_glass"]]
+                [
+                        parent: "ultimateglass:item/glass_pane_display",
+                        textures: [layer0: "minecraft:block/tinted_glass"]
+                ]
         )
         writeJson(
                 "assets/ultimateglass/items/tinted_glass_pane.json",

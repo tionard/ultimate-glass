@@ -9,10 +9,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-import com.github.tionard.ultimateglass.pane.PaneMaterial;
-import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
+import com.github.tionard.ultimateglass.glass.GlassVariant;
+import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 
-/** Frames one tempered pane with any item in Minecraft's planks tag. */
+/** Frames one supported ordinary/Tempered pane or full block with any tagged plank. */
 public final class WoodFramedPaneRecipe extends CustomRecipe {
     @Override
     public boolean matches(CraftingInput input, Level level) {
@@ -25,7 +25,7 @@ public final class WoodFramedPaneRecipe extends CustomRecipe {
         if (ingredients == null) {
             return ItemStack.EMPTY;
         }
-        return UltimateGlassItems.framedStack(ingredients.material(), ingredients.plank());
+        return UltimateGlassFamilyItems.framedStack(ingredients.variant(), ingredients.plank());
     }
 
     @Override
@@ -39,7 +39,7 @@ public final class WoodFramedPaneRecipe extends CustomRecipe {
         }
 
         Block plank = null;
-        PaneMaterial material = null;
+        GlassVariant variant = null;
         for (ItemStack stack : input.items()) {
             if (stack.isEmpty()) {
                 continue;
@@ -52,15 +52,15 @@ public final class WoodFramedPaneRecipe extends CustomRecipe {
                 plank = candidate;
                 continue;
             }
-            PaneMaterial candidate = UltimateGlassItems.unframedMaterial(stack.getItem());
-            if (candidate == null || material != null) {
+            GlassVariant candidate = UltimateGlassFamilyItems.unframedVariant(stack);
+            if (candidate == null || variant != null) {
                 return null;
             }
-            material = candidate;
+            variant = candidate;
         }
-        return plank == null || material == null ? null : new Ingredients(plank, material);
+        return plank == null || variant == null ? null : new Ingredients(plank, variant);
     }
 
-    private record Ingredients(Block plank, PaneMaterial material) {
+    private record Ingredients(Block plank, GlassVariant variant) {
     }
 }

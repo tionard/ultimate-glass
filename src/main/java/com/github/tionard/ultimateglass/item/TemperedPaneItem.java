@@ -6,6 +6,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -35,6 +36,18 @@ public class TemperedPaneItem extends BlockItem {
         super(block, properties);
     }
 
+    /** Allows a component-backed item to select its material-specific internal pane block. */
+    protected Block placementBlock(ItemStack stack) {
+        return getBlock();
+    }
+
+    @Override
+    protected BlockState getPlacementState(BlockPlaceContext context) {
+        Block target = placementBlock(context.getItemInHand());
+        BlockState state = target == null ? null : target.getStateForPlacement(context);
+        return state != null && canPlace(context, state) ? state : null;
+    }
+
     @Override
     public InteractionResult useOn(UseOnContext context) {
         InteractionResult compositeResult = installComposite(context);
@@ -44,6 +57,10 @@ public class TemperedPaneItem extends BlockItem {
     }
 
     private InteractionResult installComposite(UseOnContext context) {
+        Player player = context.getPlayer();
+        if (player == null || !player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
         if (!UltimateGlassServerConfig.experimentalCompositesEnabled()) {
             return InteractionResult.PASS;
         }
@@ -54,12 +71,11 @@ public class TemperedPaneItem extends BlockItem {
             return InteractionResult.PASS;
         }
 
-        Player player = context.getPlayer();
-        if (player == null || player.isSpectator() || !player.getAbilities().mayBuild) {
+        if (player.isSpectator() || !player.getAbilities().mayBuild) {
             return InteractionResult.FAIL;
         }
 
-        PaneAppearance appearance = paneAppearance();
+        PaneAppearance appearance = paneAppearance(context.getItemInHand());
         if (appearance == null) {
             return InteractionResult.PASS;
         }
@@ -105,8 +121,10 @@ public class TemperedPaneItem extends BlockItem {
         return InteractionResult.SUCCESS;
     }
 
-    private PaneAppearance paneAppearance() {
-        UltimateGlassBlocks.PaneFamily family = UltimateGlassBlocks.familyFor(getBlock());
+    private PaneAppearance paneAppearance(ItemStack stack) {
+        UltimateGlassBlocks.PaneFamily family = UltimateGlassBlocks.familyFor(
+                placementBlock(stack)
+        );
         return family == null ? null : family.appearance();
     }
 

@@ -77,7 +77,11 @@ public final class UltimateGlassItems {
                 BuiltInRegistries.CREATIVE_MODE_TAB,
                 CREATIVE_TAB_KEY,
                 FabricCreativeModeTab.builder()
-                        .icon(() -> new ItemStack(paneItemFor(PaneMaterial.CLEAR)))
+                        .icon(() -> UltimateGlassSmartItems.stack(
+                                com.github.tionard.ultimateglass.glass.SmartGlassKind.TEMPERED_PANE,
+                                PaneMaterial.CLEAR,
+                                null
+                        ))
                         .title(Component.translatable("creativeTab.ultimateglass"))
                         .displayItems((parameters, output) -> {
                             output.accept(GLASS_CHISEL);
@@ -85,9 +89,7 @@ public final class UltimateGlassItems {
                             output.accept(IRON_GLAZIERS_TOOL);
                             output.accept(DIAMOND_GLAZIERS_TOOL);
                             output.accept(TINTED_GLASS_PANE);
-                            paneFamiliesForCreative().forEach(
-                                    family -> output.accept(paneItemFor(family))
-                            );
+                            UltimateGlassSmartItems.creativeStacks().forEach(output::accept);
                         })
                         .build()
         );
@@ -95,7 +97,7 @@ public final class UltimateGlassItems {
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.BUILDING_BLOCKS)
                 .register(output -> {
                     output.accept(TINTED_GLASS_PANE);
-                    paneFamiliesForCreative().forEach(family -> output.accept(paneItemFor(family)));
+                    UltimateGlassSmartItems.creativeStacks().forEach(output::accept);
                 });
 
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
@@ -147,12 +149,6 @@ public final class UltimateGlassItems {
 
     public static Collection<Item> paneItems() {
         return PANE_ITEMS_BY_FAMILY.values();
-    }
-
-    private static Collection<PaneFamily> paneFamiliesForCreative() {
-        return UltimateGlassBlocks.paneFamilies().stream()
-                .filter(family -> !family.appearance().frame().isDynamic())
-                .toList();
     }
 
     private static void registerPaneItem(PaneFamily family) {
