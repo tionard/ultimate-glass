@@ -1,0 +1,3 @@
+tag=v0.2.2
+asset=ultimate-glass-0.2.2.jar
+verified_commit=14e58d043338e38be534b93846d21f73bbf42ae9
