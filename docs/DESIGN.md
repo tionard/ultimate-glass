@@ -193,7 +193,6 @@ simply unregistering a missing block ID is not a safe vanilla-glass conversion.
 
 ## Release sequence
 
-Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release. Version 0.2.2a began
-player testing for complete ordinary/Tempered pane and full-block families; 0.2.2c is its current
-regression-fix build. Mosaics and their
-Glazier's Table remain a later feature cycle.
+Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release. Version 0.2.2
+completes the ordinary/Tempered pane and full-block families after the 0.2.2a–0.2.2c test
+cycle. Mosaics and their Glazier's Table remain a later feature cycle.

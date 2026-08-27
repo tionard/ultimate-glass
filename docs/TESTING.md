@@ -1,12 +1,12 @@
-# Ultimate Glass 0.2.2c regression checklist
+# Ultimate Glass 0.2.2 regression checklist
 
-Version 0.2.2c fixes the complete-family test build while retaining its transitional
+Version 0.2.2 is the stable complete-family release while retaining its transitional
 component-backed inventory model, 0.2.1 seam editing, composites, and tools.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2c.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 and fixed-frame block/item IDs still load but new outputs use only the six
    smart item IDs.
