@@ -22,11 +22,14 @@ public final class PaneSeamTargetResolver {
     ) {
         Vec3 hit = worldHit.subtract(pos.getX(), pos.getY(), pos.getZ());
         PanePlane plane = geometry.planes().stream()
-                .filter(candidate -> candidate.axis() == clickedFace.getAxis())
-                .findFirst()
-                .orElseGet(() -> geometry.planes().stream()
-                        .min(Comparator.comparingDouble(candidate -> planeDistance(candidate, hit)))
-                        .orElseThrow());
+                // Parallel sheets have the same normal: identify the sheet at the hit,
+                // not the first enum value on that axis. At shared corners, the clicked
+                // face normal breaks ties. A distant perpendicular sheet must not steal
+                // clicks on the thin rim of a nearer pane.
+                .min(Comparator.comparingDouble((PanePlane candidate) -> planeDistance(candidate, hit))
+                        .thenComparingInt(candidate -> candidate.axis() == clickedFace.getAxis() ? 0 : 1)
+                        .thenComparingDouble(candidate -> planeCenterDistance(candidate, hit)))
+                .orElseThrow();
 
         Direction boundary = java.util.Arrays.stream(Direction.values())
                 .filter(direction -> direction.getAxis() != plane.axis())
@@ -37,12 +40,15 @@ public final class PaneSeamTargetResolver {
 
     private static double planeDistance(PanePlane plane, Vec3 hit) {
         double coordinate = coordinate(hit, plane.axis());
-        if (plane.isCentered()) {
-            return Math.abs(coordinate - 0.5D);
-        }
-        return plane.edgeDirection().getAxisDirection() == Direction.AxisDirection.NEGATIVE
-                ? coordinate
-                : 1.0D - coordinate;
+        double min = plane.shape().min(plane.axis());
+        double max = plane.shape().max(plane.axis());
+        // Include the full pane thickness, with tolerance for ray-hit rounding.
+        return Math.max(0.0D, Math.max(min - coordinate, coordinate - max) - 1.0E-7D);
+    }
+
+    private static double planeCenterDistance(PanePlane plane, Vec3 hit) {
+        double center = (plane.shape().min(plane.axis()) + plane.shape().max(plane.axis())) / 2.0D;
+        return Math.abs(coordinate(hit, plane.axis()) - center);
     }
 
     private static double boundaryDistance(Direction direction, Vec3 hit) {

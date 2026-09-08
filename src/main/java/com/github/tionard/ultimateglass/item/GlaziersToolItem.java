@@ -79,13 +79,9 @@ public final class GlaziersToolItem extends Item {
                 if (rotatedSeams != null) {
                     rotatedSeams.rotateAround(rotationAxis);
                 }
-                Direction rotated = EdgePaneBlock.rotateAround(
-                        state.getValue(EdgePaneBlock.FACING),
-                        rotationAxis
-                );
                 level.setBlockAndUpdate(
                         context.getClickedPos(),
-                        state.setValue(EdgePaneBlock.FACING, rotated)
+                        EdgePaneBlock.rotateAssembly(state, rotationAxis)
                 );
                 restoreSeamData(level, context.getClickedPos(), rotatedSeams);
                 refreshPaneConnections(level, context.getClickedPos());
@@ -181,6 +177,9 @@ public final class GlaziersToolItem extends Item {
         PaneSeamData transformedSeams = seamData(level, context.getClickedPos());
 
         if (block == family.edgePane()) {
+            if (EdgePaneBlock.paneCount(state) > 1) {
+                return InteractionResult.SUCCESS;
+            }
             Direction facing = state.getValue(EdgePaneBlock.FACING);
             if (!level.isClientSide()) {
                 if (transformedSeams != null) {

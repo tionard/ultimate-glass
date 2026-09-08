@@ -101,8 +101,64 @@ final class GeneratedPaneModelTest {
 
     @Test
     void everyEdgeSeamReplacementSamplesThePaneTextureCenter() throws IOException {
-        for (int mask = 0; mask < 16; mask++) {
+        for (int mask = 0; mask < 32; mask++) {
             paneElementCounts("edge_pane_shape_" + mask + "_base.json");
+        }
+    }
+
+    @Test
+    void parallelPanesRemainTwoSeparatedFullThicknessSheets() throws IOException {
+        assertEquals(new PaneElementCounts(32, 24), paneElementCounts("edge_pane_shape_16_base.json"));
+        for (String suffix : List.of("_base.json", "_framed_base.json", "_dynamic_framed_base.json")) {
+            JsonArray elements = readJson(MODEL_ROOT.resolve("edge_pane_shape_16" + suffix))
+                    .getAsJsonArray("elements");
+            boolean north = false;
+            boolean south = false;
+            for (JsonElement entry : elements) {
+                var element = entry.getAsJsonObject();
+                int[] from = coordinates(element.getAsJsonArray("from"));
+                int[] to = coordinates(element.getAsJsonArray("to"));
+                assertEquals(2, to[2] - from[2], "Opposite pane must not trim/thicken the original sheet");
+                assertTrue(from[2] == 0 || from[2] == 14);
+                north |= from[2] == 0;
+                south |= from[2] == 14;
+            }
+            assertTrue(north && south);
+        }
+    }
+
+    @Test
+    void everyEdgeAssemblyHasNonOverlappingModelFacesAndValidBounds() throws IOException {
+        for (int mask = 0; mask < 32; mask++) {
+            for (String suffix : List.of("_base.json", "_framed_base.json", "_dynamic_framed_base.json")) {
+                String name = "edge_pane_shape_" + mask + suffix;
+                assertNoOverlappingNonSeamFaces(name);
+                for (JsonElement entry : readJson(MODEL_ROOT.resolve(name)).getAsJsonArray("elements")) {
+                    var element = entry.getAsJsonObject();
+                    int[] from = coordinates(element.getAsJsonArray("from"));
+                    int[] to = coordinates(element.getAsJsonArray("to"));
+                    for (int axis = 0; axis < 3; axis++) {
+                        assertTrue(0 <= from[axis] && from[axis] < to[axis] && to[axis] <= 16, name);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void edgeBlockstatesSelectExactlyOneOfAll192RelativeStates() throws IOException {
+        for (String name : List.of("edge_glass_pane", "edge_tinted_glass_pane", "edge_oak_framed_glass_pane",
+                "edge_modded_framed_glass_pane")) {
+            Path path = GENERATED_ROOT.resolve("assets/ultimateglass/blockstates/" + name + ".json");
+            assertTrue(Files.exists(path), name);
+            JsonArray parts = readJson(path).getAsJsonArray("multipart");
+            assertEquals(192, parts.size(), name);
+            Set<String> states = new HashSet<>();
+            for (JsonElement entry : parts) {
+                JsonObject when = entry.getAsJsonObject().getAsJsonObject("when");
+                assertTrue(when.has("connect_opposite"));
+                assertTrue(states.add(when.toString()), "Duplicate model predicate");
+            }
         }
     }
 

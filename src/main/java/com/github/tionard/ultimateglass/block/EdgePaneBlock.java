@@ -24,12 +24,12 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import com.github.tionard.ultimateglass.pane.PaneAppearance;
-import com.github.tionard.ultimateglass.pane.PaneConnectionQueries;
 import com.github.tionard.ultimateglass.pane.PaneGeometry;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.github.tionard.ultimateglass.pane.PanePlane;
@@ -48,6 +48,8 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
     public static final BooleanProperty CONNECT_BOTTOM = BooleanProperty.create("connect_bottom");
     public static final BooleanProperty CONNECT_LEFT = BooleanProperty.create("connect_left");
     public static final BooleanProperty CONNECT_RIGHT = BooleanProperty.create("connect_right");
+    // Retain the original property names so saved automatic corners load as installed panes.
+    public static final BooleanProperty CONNECT_OPPOSITE = BooleanProperty.create("connect_opposite");
 
     private final Block vanillaPane;
     private final PaneAppearance appearance;
@@ -62,7 +64,8 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
                 .setValue(CONNECT_TOP, false)
                 .setValue(CONNECT_BOTTOM, false)
                 .setValue(CONNECT_LEFT, false)
-                .setValue(CONNECT_RIGHT, false));
+                .setValue(CONNECT_RIGHT, false)
+                .setValue(CONNECT_OPPOSITE, false));
     }
 
     @Override
@@ -82,7 +85,8 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
                 state.getValue(CONNECT_TOP),
                 state.getValue(CONNECT_BOTTOM),
                 state.getValue(CONNECT_LEFT),
-                state.getValue(CONNECT_RIGHT)
+                state.getValue(CONNECT_RIGHT),
+                state.getValue(CONNECT_OPPOSITE)
         );
     }
 
@@ -174,13 +178,18 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
     @Override
     protected java.util.List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         java.util.List<ItemStack> drops;
-        if (!UltimateGlassServerConfig.temperedPanesAlwaysDrop()) {
+        var tool = builder.getOptionalParameter(LootContextParams.TOOL);
+        boolean diamondTool = tool != null && tool.typeHolder().value() instanceof GlaziersToolItem glazier
+                && glazier.tier().silkTouchesGlass();
+        if (!UltimateGlassServerConfig.temperedPanesAlwaysDrop() && !diamondTool) {
             drops = super.getDrops(state, builder);
         } else {
             ItemStack drop = GlaziersToolItem.collectedStack(this);
             drops = drop.isEmpty() ? java.util.List.of() : java.util.List.of(drop);
         }
-        return UltimateGlassSmartItems.modernizeDrops(this, drops);
+        java.util.List<ItemStack> modern = UltimateGlassSmartItems.modernizeDrops(this, drops);
+        modern.forEach(stack -> stack.setCount(stack.getCount() * paneCount(state)));
+        return modern;
     }
 
     @Override
@@ -200,7 +209,8 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
                 CONNECT_TOP,
                 CONNECT_BOTTOM,
                 CONNECT_LEFT,
-                CONNECT_RIGHT
+                CONNECT_RIGHT,
+                CONNECT_OPPOSITE
         );
     }
 
@@ -209,44 +219,43 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
     }
 
     public static void refreshConnectionsAround(Level level, BlockPos changedPos) {
-        if (level.isClientSide()) {
-            return;
-        }
-
-        for (int x = -2; x <= 2; x++) {
-            for (int y = -2; y <= 2; y++) {
-                for (int z = -2; z <= 2; z++) {
-                    BlockPos candidatePos = changedPos.offset(x, y, z);
-                    BlockState candidate = level.getBlockState(candidatePos);
-                    if (!(candidate.getBlock() instanceof EdgePaneBlock pane)) {
-                        continue;
-                    }
-
-                    BlockState updated = pane.withConnections(candidate, level, candidatePos);
-                    if (updated != candidate) {
-                        level.setBlockAndUpdate(candidatePos, updated);
-                    }
-                }
-            }
-        }
+        // Edge faces are now permanent inventory, independent of neighbours.
+        // Kept as a compatibility entry point for composite/frame placement callers.
     }
 
     public BlockState withConnections(BlockState state, BlockGetter level, BlockPos pos) {
-        Direction facing = state.getValue(FACING);
+        // In particular, do not erase saved 0.2.2 corner flags during chunk load updates.
+        return state;
+    }
+
+    public static int paneCount(BlockState state) {
+        return ((EdgePaneBlock) state.getBlock()).geometry(state).planes().size();
+    }
+
+    public static BlockState addPane(BlockState state, Direction direction) {
+        PaneGeometry geometry = ((EdgePaneBlock) state.getBlock()).geometry(state);
+        return withGeometry(state, state.getValue(FACING),
+                PaneGeometry.of(geometry.planes().plus(PanePlane.edge(direction))));
+    }
+
+    public static BlockState rotateAssembly(BlockState state, Direction.Axis axis) {
+        return withGeometry(state, rotateAround(state.getValue(FACING), axis),
+                ((EdgePaneBlock) state.getBlock()).geometry(state).rotateAround(axis));
+    }
+
+    private static BlockState withGeometry(BlockState state, Direction facing, PaneGeometry geometry) {
         Direction top = PaneGeometry.localTop(facing);
         Direction bottom = top.getOpposite();
         Direction left = PaneGeometry.localLeft(facing);
         Direction right = left.getOpposite();
 
         return state
-                .setValue(CONNECT_TOP, PaneConnectionQueries.hasOuterEdgeConnection(
-                        level, pos, facing, top))
-                .setValue(CONNECT_BOTTOM, PaneConnectionQueries.hasOuterEdgeConnection(
-                        level, pos, facing, bottom))
-                .setValue(CONNECT_LEFT, PaneConnectionQueries.hasOuterEdgeConnection(
-                        level, pos, facing, left))
-                .setValue(CONNECT_RIGHT, PaneConnectionQueries.hasOuterEdgeConnection(
-                        level, pos, facing, right));
+                .setValue(FACING, facing)
+                .setValue(CONNECT_TOP, geometry.hasEdgePlane(top))
+                .setValue(CONNECT_BOTTOM, geometry.hasEdgePlane(bottom))
+                .setValue(CONNECT_LEFT, geometry.hasEdgePlane(left))
+                .setValue(CONNECT_RIGHT, geometry.hasEdgePlane(right))
+                .setValue(CONNECT_OPPOSITE, geometry.hasEdgePlane(facing.getOpposite()));
     }
 
     /** Returns whether this state contains a pane plane on the requested block face. */

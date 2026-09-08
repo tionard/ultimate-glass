@@ -48,6 +48,7 @@ public final class UltimateGlassInteractions {
             }
 
             if (player.getAbilities().instabuild
+                    || state.getBlock() instanceof EdgePaneBlock // Counted in its loot path, including diamond tools.
                     || UltimateGlassServerConfig.temperedPanesAlwaysDrop()
                     || !(player.getMainHandItem().getItem() instanceof GlaziersToolItem tool)
                     || !tool.tier().silkTouchesGlass()) {

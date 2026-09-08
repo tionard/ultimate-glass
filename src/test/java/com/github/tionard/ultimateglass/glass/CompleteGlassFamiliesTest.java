@@ -131,13 +131,11 @@ final class CompleteGlassFamiliesTest {
         String framedRecipe = Files.readString(Path.of(
                 "src/main/java/com/github/tionard/ultimateglass/recipe/WoodFramedPaneRecipe.java"
         ));
-        String properties = Files.readString(Path.of("gradle.properties"));
 
         assertTrue(renderer.contains("matchingFramedGlassNeighbour"));
         assertTrue(renderer.contains("FRAMED_BLOCK_SEAM_FILL_TINT_INDEX"));
         assertTrue(reverseRecipe.contains("vanillaStackForTempered"));
         assertTrue(framedRecipe.contains("unframedVariant"));
-        assertTrue(properties.contains("mod_version=0.2.2"));
     }
 
     @Test

@@ -1,12 +1,17 @@
-# Ultimate Glass 0.2.2 regression checklist
+# Ultimate Glass 0.2.3 regression checklist
 
-Version 0.2.2 is the stable complete-family release while retaining its transitional
-component-backed inventory model, 0.2.1 seam editing, composites, and tools.
+For **0.2.3 manual edge panes**, start with the
+[assembly checklist](MANUAL-EDGE-PANES.md#in-game-acceptance-checklist).
+It overrides the older neighbour-generated edge-corner expectations below. Test only on a world
+copy; client and server must both use 0.2.3.
+
+Version 0.2.3 adds explicitly installed edge-pane assemblies to the complete glass families,
+component-backed inventory model, seam editing, composites, and tools from prior releases.
 
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.2.jar` is produced.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.3.jar` is produced.
 3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 and fixed-frame block/item IDs still load but new outputs use only the six
    smart item IDs.
