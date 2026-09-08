@@ -95,9 +95,28 @@ blocks use the same plank-particle substitution and geometry-cache identity as d
 
 ## Connected geometry
 
-Edge connections build merged L and three-plane corners. Transparent sheets are trimmed at every
-intersection, each pair receives one shared frame line, and triple intersections receive one
-2x2x2 corner block.
+In 0.2.3, edge faces are explicitly installed inventory, not derived neighbour connections.
+The legacy FACING and four CONNECT_* flags remain readable, with CONNECT_OPPOSITE added for the
+sixth face. Missing opposite flags default to false, so saved automatic corners retain every
+face and immediately count each as one pane. No unloaded-chunk scan or migration block entity is
+needed. Edge neighbour updates do not change occupancy. This intentional migration grants the
+previously free corner faces as recoverable panes; test on a backup and do not downgrade a world
+containing opposite-face assemblies.
+
+The six faces support 63 non-empty geometric sets. Generated models use 32 relative masks for
+each primary facing, including parallel planes. Transparent sheets are trimmed only at
+perpendicular intersections, each pair receives one shared frame line, and triple intersections
+receive one 2x2x2 corner block. Rendering and native fluid clipping consume the same geometry.
+
+TemperedPaneItem tries an insertion in the clicked cell, then the ordinary adjacent placement
+cell. The cursor-nearest face rule is reused; Shift uses the clicked face for same-cell insertion
+and its opposite for adjacent-cell insertion. Occupied or mismatched faces fall through to normal
+placement. Only matching glass material and exact wood IDs combine, including equivalent legacy
+static-wood and smart dynamic-wood variants. Successful server-side insertion checks permissions
+and entity collision, preserves the block entity and water, and consumes one survival item.
+Multi-pane edge assemblies rotate as a whole and reject centred toggling. Edge loot counts all
+installed faces under the existing intact-drop/Silk Touch rules; diamond tool collection is part
+of that same loot path, not an additional after-break drop.
 
 Centred blocks retain `AXIS` as their primary saved plane. `connect_first` and `connect_second`
 remain compatibility-sensitive summaries of which perpendicular axes have direct sources. The
@@ -185,14 +204,15 @@ material.
 
 ## World compatibility
 
-Version 0.2.2 is transitional. Existing 0.1/0.2.1 and fixed beta.4 block/item IDs remain registered
+Versions 0.2.2 and 0.2.3 retain transitional compatibility. Existing 0.1/0.2.1 and fixed beta.4 block/item IDs remain registered
 and loadable but are hidden from Creative and are no longer recipe or drop outputs. All newly made,
 picked, or harvested supported glass uses the six smart item families. Players should replace old
-fixed-frame windows during 0.2.2. A later release must run an explicit migration or retain aliases;
+fixed-frame windows with the current smart items. A later release must run an explicit migration or retain aliases;
 simply unregistering a missing block ID is not a safe vanilla-glass conversion.
 
 ## Release sequence
 
 Version 0.2.1 is the stable manual-seam and dedicated-Creative-tab release. Version 0.2.2
 completes the ordinary/Tempered pane and full-block families after the 0.2.2a–0.2.2c test
-cycle. Mosaics and their Glazier's Table remain a later feature cycle.
+cycle. Version 0.2.3 promotes the 0.2.3a manual edge-pane experiment, including independent
+parallel-pane chisel targeting. Mosaics and their Glazier's Table remain a later feature cycle.

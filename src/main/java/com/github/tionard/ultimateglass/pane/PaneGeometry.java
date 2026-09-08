@@ -8,7 +8,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /** Geometry-independent description of every physical sheet in one pane block cell. */
 public final class PaneGeometry {
-    private static final int EDGE_CONNECTION_COMBINATIONS = 16;
+    private static final int EDGE_CONNECTION_COMBINATIONS = 32;
     private static final PaneGeometry[][] EDGE_GEOMETRIES = createEdgeGeometries();
     private static final PaneGeometry[] CENTERED_GEOMETRIES = createCenteredGeometries();
 
@@ -51,10 +51,22 @@ public final class PaneGeometry {
             boolean connectLeft,
             boolean connectRight
     ) {
+        return edge(facing, connectTop, connectBottom, connectLeft, connectRight, false);
+    }
+
+    public static PaneGeometry edge(
+            Direction facing,
+            boolean connectTop,
+            boolean connectBottom,
+            boolean connectLeft,
+            boolean connectRight,
+            boolean connectOpposite
+    ) {
         int connectionMask = (connectTop ? 1 : 0)
                 | (connectBottom ? 2 : 0)
                 | (connectLeft ? 4 : 0)
-                | (connectRight ? 8 : 0);
+                | (connectRight ? 8 : 0)
+                | (connectOpposite ? 16 : 0);
         return EDGE_GEOMETRIES[facing.ordinal()][connectionMask];
     }
 
@@ -182,6 +194,9 @@ public final class PaneGeometry {
         }
         if ((connectionMask & 8) != 0) {
             planes = planes.plus(PanePlane.edge(left.getOpposite()));
+        }
+        if ((connectionMask & 16) != 0) {
+            planes = planes.plus(PanePlane.edge(facing.getOpposite()));
         }
         return new PaneGeometry(planes);
     }

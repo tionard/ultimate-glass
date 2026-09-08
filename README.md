@@ -8,6 +8,14 @@ and slabs.
 
 It stays close to the vanilla look — just with glass that is much less annoying to build with.
 
+> **New in 0.2.3:** edge-pane corners are now built explicitly. Add matching panes
+> to free faces of an existing pane cell (up to six); each added face costs one pane. Glass and
+> frame wood must match. Neighbours no longer create or remove edge faces. Multi-pane assemblies
+> rotate together and cannot switch to centred mode. Back up worlds before updating; existing
+> saved corners keep their faces, which become fully recoverable panes.
+
+See the [0.2.3 update notes](docs/RELEASE-0.2.3.md) for controls and compatibility details.
+
 
 <details>
 <summary>Tempered Glass</summary>
@@ -102,10 +110,14 @@ Menu.
 <summary>Important note for existing worlds</summary>
 
 Version 0.2.2 changes framed glass to a new component-based item system. Glass placed by older
-versions still loads in 0.2.2, but those old blocks are now considered legacy.
+versions still loads in 0.2.3, but those old blocks are now considered legacy.
 
-If you plan to keep updating the mod, replace old framed glass during 0.2.2. A future release may
+If you plan to keep updating the mod, replace old framed glass with the current items. A future release may
 remove the legacy block IDs.
+
+Version 0.2.3 preserves the saved faces of existing automatic edge corners and counts each face
+as a recoverable pane. Do not downgrade a world after adding multi-pane assemblies: older versions
+cannot represent opposite-face panes and will resume automatically changing corner geometry.
 
 </details>
 

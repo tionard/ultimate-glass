@@ -70,12 +70,13 @@ tasks.register("generatePaneResources") {
                 down : [axis: 1, minimum: true, opposite: "up"],
                 up   : [axis: 1, minimum: false, opposite: "down"]
         ]
-        def connectionSides = ["top", "bottom", "left", "right"]
+        def connectionSides = ["top", "bottom", "left", "right", "opposite"]
         def localWingDirections = [
                 top: "up",
                 bottom: "down",
                 left: "west",
-                right: "east"
+                right: "east",
+                opposite: "south"
         ]
 
         def setThinSide = { List<Integer> from, List<Integer> to, String direction ->
@@ -217,7 +218,7 @@ tasks.register("generatePaneResources") {
                 def to = [16, 16, 16]
                 setThinSide(from, to, plane)
 
-                planes.findAll { other -> other != plane }.each { other ->
+                planes.findAll { other -> directions[other].axis != directions[plane].axis }.each { other ->
                     trimAtSide(from, to, other)
                 }
 
@@ -358,7 +359,7 @@ tasks.register("generatePaneResources") {
             ]
         }
 
-        for (int mask = 0; mask < 16; mask++) {
+        for (int mask = 0; mask < 32; mask++) {
             writeJson(
                     "assets/ultimateglass/models/block/edge_pane_shape_${mask}_base.json",
                     createMergedShape(mask, "none")
@@ -946,7 +947,7 @@ tasks.register("generatePaneResources") {
                     [variants: centeredVariants]
             )
 
-            for (int mask = 0; mask < 16; mask++) {
+            for (int mask = 0; mask < 32; mask++) {
                 writeJson(
                         "assets/ultimateglass/models/block/${blockName}_shape_${mask}.json",
                         [
@@ -958,7 +959,7 @@ tasks.register("generatePaneResources") {
 
             def multipart = []
             orientations.each { orientation ->
-                for (int mask = 0; mask < 16; mask++) {
+                for (int mask = 0; mask < 32; mask++) {
                     def condition = [facing: orientation.facing]
                     connectionSides.eachWithIndex { side, index ->
                         condition["connect_${side}"] = ((mask & (1 << index)) != 0).toString()
@@ -1058,7 +1059,7 @@ tasks.register("generatePaneResources") {
                         [variants: frameCenteredVariants]
                 )
 
-                for (int mask = 0; mask < 16; mask++) {
+                for (int mask = 0; mask < 32; mask++) {
                     writeJson(
                             "assets/ultimateglass/models/block/${frameBlockName}_shape_${mask}.json",
                             [
@@ -1070,7 +1071,7 @@ tasks.register("generatePaneResources") {
 
                 def frameMultipart = []
                 orientations.each { orientation ->
-                    for (int mask = 0; mask < 16; mask++) {
+                    for (int mask = 0; mask < 32; mask++) {
                         def condition = [facing: orientation.facing]
                         connectionSides.eachWithIndex { side, index ->
                             condition["connect_${side}"] = ((mask & (1 << index)) != 0).toString()
