@@ -135,12 +135,13 @@ multiplayer.
 
 ## Development
 
-- Minecraft Java 26.2
-- Fabric Loader 0.19.3
-- Fabric API 0.156.0+26.2
+- Minecraft Java 26.3
+- Fabric Loader 0.19.5
+- Fabric API 0.162.0+26.3
 - Java 25
 - Fabric Loom 1.17.19
-- Mod Menu 20.0.1 (optional at runtime)
+- Gradle 9.6.0
+- Mod Menu 21.0.0 (optional at runtime)
 
 Build with:
 

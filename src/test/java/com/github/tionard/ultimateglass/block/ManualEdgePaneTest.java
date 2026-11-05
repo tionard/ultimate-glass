@@ -6,6 +6,7 @@ import com.github.tionard.ultimateglass.pane.PaneAppearance;
 import com.github.tionard.ultimateglass.pane.PaneFrame;
 import com.github.tionard.ultimateglass.pane.PaneMaterial;
 import com.mojang.serialization.Lifecycle;
+import com.mojang.serialization.Dynamic;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Direction;
 import net.minecraft.core.MappedRegistry;
@@ -13,10 +14,13 @@ import net.minecraft.core.RegistrationInfo;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import org.junit.jupiter.api.BeforeAll;
@@ -83,16 +87,9 @@ final class ManualEdgePaneTest {
                 assertEquals(state, rotated);
             }
             assertSame(state, pane.withConnections(state, null, null));
-            CompoundTag saved = new CompoundTag();
-            saved.putString("Name", ID.toString());
-            CompoundTag properties = new CompoundTag();
-            properties.putString("facing", state.getValue(EdgePaneBlock.FACING).getSerializedName());
-            for (var property : java.util.List.of(EdgePaneBlock.WATERLOGGED, EdgePaneBlock.CONNECT_TOP,
-                    EdgePaneBlock.CONNECT_BOTTOM, EdgePaneBlock.CONNECT_LEFT, EdgePaneBlock.CONNECT_RIGHT,
-                    EdgePaneBlock.CONNECT_OPPOSITE)) {
-                properties.putString(property.getName(), state.getValue(property).toString());
-            }
-            saved.put("Properties", properties);
+            var saved = NbtUtils.writeBlockState(state);
+            // The test pane lives in the fixture registry, not the built-in registry.
+            saved.putString("id", ID.toString());
             assertSame(state, NbtUtils.readBlockState(registry, saved));
         }
     }
@@ -111,7 +108,11 @@ final class ManualEdgePaneTest {
                 CompoundTag saved = new CompoundTag();
                 saved.putString("Name", ID.toString());
                 saved.put("Properties", properties);
-                var loaded = NbtUtils.readBlockState(registry, saved);
+                // Feed the actual 26.2 palette format through the vanilla world upgrader.
+                var upgraded = DataFixers.getDataFixer().update(References.BLOCK_STATE,
+                        new Dynamic<>(NbtOps.INSTANCE, saved), 4903,
+                        SharedConstants.getCurrentVersion().dataVersion().version());
+                var loaded = NbtUtils.readBlockState(registry, (CompoundTag) upgraded.getValue());
                 assertSame(pane, loaded.getBlock());
                 assertEquals(1 + Integer.bitCount(mask), EdgePaneBlock.paneCount(loaded));
                 assertFalse(loaded.getValue(EdgePaneBlock.CONNECT_OPPOSITE));

@@ -64,7 +64,8 @@ final class Beta022cRegressionTest {
         ));
         assertTrue(renderer.contains("Sheets.translucentBlockItemSheet()"));
         assertTrue(renderer.contains("Sheets.cutoutBlockItemSheet()"));
-        assertTrue(renderer.contains("RenderTypes.glintTranslucent()"));
+        assertTrue(renderer.contains("Sheets.translucentBlockItemGlintSheet()"));
+        assertTrue(renderer.contains("Sheets.cutoutBlockItemGlintSheet()"));
         assertFalse(renderer.contains("RenderTypes.itemTranslucent("));
     }
 

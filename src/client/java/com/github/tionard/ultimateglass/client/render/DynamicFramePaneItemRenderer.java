@@ -15,7 +15,6 @@ import net.minecraft.client.renderer.item.CuboidItemModelWrapper;
 import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.ModelRenderProperties;
 import net.minecraft.client.renderer.item.SpecialModelWrapper;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.ResolvedModel;
@@ -108,7 +107,7 @@ final class DynamicFramePaneItemRenderer
         TextureAtlasSprite paneSprite = materials.glass().sprite();
         collector.order(0).submitCustomGeometry(
                 poseStack,
-                Sheets.translucentBlockItemSheet(),
+                foil ? Sheets.translucentBlockItemGlintSheet() : Sheets.translucentBlockItemSheet(),
                 (pose, vertices) -> {
                     renderGlassGeometry(pose, vertices, paneSprite, light, overlay);
                 }
@@ -119,30 +118,12 @@ final class DynamicFramePaneItemRenderer
         if (framed && frameSprite != null) {
             collector.order(1).submitCustomGeometry(
                     poseStack,
-                    Sheets.cutoutBlockItemSheet(),
+                    foil ? Sheets.cutoutBlockItemGlintSheet() : Sheets.cutoutBlockItemSheet(),
                     (pose, vertices) -> {
                         if (fullBlock) {
                             renderBlockFrame(pose, vertices, frameSprite, light, overlay);
                         } else {
                             renderFrame(pose, vertices, frameSprite, light, overlay);
-                        }
-                    }
-            );
-        }
-        if (foil) {
-            collector.order(2).submitCustomGeometry(
-                    poseStack,
-                    RenderTypes.glintTranslucent(),
-                    (pose, vertices) -> {
-                        renderGlassGeometry(pose, vertices, paneSprite, light, overlay);
-                        if (fullBlock) {
-                            if (framed && frameSprite != null) {
-                                renderBlockFrame(pose, vertices, frameSprite, light, overlay);
-                            }
-                        } else {
-                            if (framed && frameSprite != null) {
-                                renderFrame(pose, vertices, frameSprite, light, overlay);
-                            }
                         }
                     }
             );

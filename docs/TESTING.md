@@ -11,10 +11,17 @@ component-backed inventory model, seam editing, composites, and tools from prior
 ## Automated gate
 
 1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.3.jar` is produced.
-3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
+2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.3+mc26.3.jar` is produced.
+3. Start a dedicated 26.3 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 and fixed-frame block/item IDs still load but new outputs use only the six
    smart item IDs.
+
+## Minecraft 26.3 rendering check
+
+Compare a 2×2 pool made from waterlogged L-shaped edge panes with ordinary source water
+surrounded by glass. Check first with Fabric alone, then with Sodium, then with Iris shaders
+enabled. The surfaces should use the same water material, but the corner water should stop
+at both inner pane edges. A waterlogged centred sheet should still use normal fluid rendering.
 
 ## Tempered full blocks
 

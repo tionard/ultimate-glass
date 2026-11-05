@@ -1,7 +1,6 @@
 package com.github.tionard.ultimateglass.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -40,8 +39,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
     private static final KeyMapping CHANGE_ROTATION_AXIS = KeyMappingHelper.registerKeyMapping(
             new KeyMapping(
                     "key.ultimateglass.change_rotation_axis",
-                    InputConstants.Type.KEYSYM,
-                    GLFW.GLFW_KEY_V,
+                    InputConstants.KEY_V,
                     CATEGORY
             )
     );
@@ -49,8 +47,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
     private static final KeyMapping TOGGLE_GLASS_CHISEL_MODE = KeyMappingHelper.registerKeyMapping(
             new KeyMapping(
                     "key.ultimateglass.toggle_glass_chisel_mode",
-                    InputConstants.Type.KEYSYM,
-                    GLFW.GLFW_KEY_V,
+                    InputConstants.KEY_V,
                     CATEGORY
             )
     );
