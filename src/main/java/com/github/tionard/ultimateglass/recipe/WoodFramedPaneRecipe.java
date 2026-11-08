@@ -14,13 +14,17 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 
 /** Frames one supported ordinary/Tempered pane or full block with any tagged plank. */
 public final class WoodFramedPaneRecipe extends CustomRecipe {
+    public WoodFramedPaneRecipe() {
+        super(net.minecraft.world.item.crafting.CraftingBookCategory.BUILDING);
+    }
+
     @Override
     public boolean matches(CraftingInput input, Level level) {
         return ingredients(input) != null;
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input) {
+    public ItemStack assemble(CraftingInput input, net.minecraft.core.HolderLookup.Provider registries) {
         Ingredients ingredients = ingredients(input);
         if (ingredients == null) {
             return ItemStack.EMPTY;

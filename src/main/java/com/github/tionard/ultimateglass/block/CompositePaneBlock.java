@@ -125,8 +125,8 @@ public final class CompositePaneBlock extends Block implements EntityBlock, Simp
     }
 
     @Override
-    protected int getLightDampening(BlockState state) {
-        return state.getValue(TINTED) ? 15 : super.getLightDampening(state);
+    protected int getLightBlock(BlockState state) {
+        return state.getValue(TINTED) ? 15 : super.getLightBlock(state);
     }
 
     @Override

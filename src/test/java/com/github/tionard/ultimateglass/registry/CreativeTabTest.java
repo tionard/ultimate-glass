@@ -15,7 +15,7 @@ final class CreativeTabTest {
                 "src/main/java/com/github/tionard/ultimateglass/registry/UltimateGlassItems.java"
         ));
 
-        assertTrue(source.contains("FabricCreativeModeTab.builder()"));
+        assertTrue(source.contains("FabricItemGroup.builder()"));
         assertTrue(source.contains("creativeTab.ultimateglass"));
         assertTrue(source.contains("output.accept(GLASS_CHISEL)"));
         assertTrue(source.contains("UltimateGlassSmartItems.creativeStacks()"));

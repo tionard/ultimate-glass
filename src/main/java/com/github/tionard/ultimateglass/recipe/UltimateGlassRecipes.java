@@ -60,22 +60,21 @@ public final class UltimateGlassRecipes {
             GlaziersToolTier tier
     ) {
         GlaziersToolRecipe recipe = new GlaziersToolRecipe(tier);
-        RecipeSerializer<GlaziersToolRecipe> serializer = new RecipeSerializer<>(
-                MapCodec.unit(recipe),
-                StreamCodec.unit(recipe)
-        );
-        return Registry.register(
-                BuiltInRegistries.RECIPE_SERIALIZER,
-                Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, name),
-                serializer
-        );
+        return registerUnit(name, recipe);
     }
 
     private static <T extends CustomRecipe> RecipeSerializer<T> registerUnit(String name, T recipe) {
-        RecipeSerializer<T> serializer = new RecipeSerializer<>(
-                MapCodec.unit(recipe),
-                StreamCodec.unit(recipe)
-        );
+        RecipeSerializer<T> serializer = new RecipeSerializer<>() {
+            @Override
+            public MapCodec<T> codec() {
+                return MapCodec.unit(recipe);
+            }
+
+            @Override
+            public StreamCodec<RegistryFriendlyByteBuf, T> streamCodec() {
+                return StreamCodec.unit(recipe);
+            }
+        };
         return Registry.register(
                 BuiltInRegistries.RECIPE_SERIALIZER,
                 Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, name),

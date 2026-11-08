@@ -158,10 +158,10 @@ public class CenteredPaneBlock extends Block implements EntityBlock, SimpleWater
     }
 
     @Override
-    protected int getLightDampening(BlockState state) {
+    protected int getLightBlock(BlockState state) {
         return appearance.material() == PaneMaterial.TINTED
                 ? 15
-                : super.getLightDampening(state);
+                : super.getLightBlock(state);
     }
 
     @Override

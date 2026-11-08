@@ -10,9 +10,9 @@ component-backed inventory model, seam editing, composites, and tools from prior
 
 ## Automated gate
 
-1. Run `gradle test` with Java 25 and confirm all pane/model tests pass.
-2. Run `gradle build` and confirm `build/libs/ultimate-glass-0.2.3.jar` is produced.
-3. Start a dedicated 26.2 Fabric server and confirm all recipes load and the ready message appears.
+1. Run `gradle test` with Java 21 and confirm all pane/model tests pass.
+2. Run `gradle build` and confirm the remapped `build/libs/ultimate-glass-0.2.3+mc1.21.11.jar` is produced.
+3. Start a dedicated 1.21.11 Fabric server and confirm all recipes load and the ready message appears.
 4. Confirm pre-beta.4 and fixed-frame block/item IDs still load but new outputs use only the six
    smart item IDs.
 

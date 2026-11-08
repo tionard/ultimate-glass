@@ -11,6 +11,10 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassFamilyItems;
 
 /** Optional one-to-one recovery of an unframed Tempered pane into its vanilla-style source. */
 public final class TemperedToVanillaRecipe extends CustomRecipe {
+    public TemperedToVanillaRecipe() {
+        super(net.minecraft.world.item.crafting.CraftingBookCategory.BUILDING);
+    }
+
     @Override
     public boolean matches(CraftingInput input, Level level) {
         return UltimateGlassServerConfig.temperedToVanillaRecipeEnabled()
@@ -18,7 +22,7 @@ public final class TemperedToVanillaRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input) {
+    public ItemStack assemble(CraftingInput input, net.minecraft.core.HolderLookup.Provider registries) {
         return result(input);
     }
 

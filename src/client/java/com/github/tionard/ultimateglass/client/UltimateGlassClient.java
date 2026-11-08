@@ -5,6 +5,7 @@ import org.lwjgl.glfw.GLFW;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -12,10 +13,11 @@ import net.minecraft.world.entity.player.Player;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockRenderLayerMap;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.config.UltimateGlassServerConfig;
@@ -29,6 +31,7 @@ import com.github.tionard.ultimateglass.seam.PaneSeamOverride;
 import com.github.tionard.ultimateglass.network.RotationAxisPayload;
 import com.github.tionard.ultimateglass.network.ToolCraftingConfigPayload;
 import com.github.tionard.ultimateglass.registry.UltimateGlassBlocks;
+import com.github.tionard.ultimateglass.registry.UltimateGlassFamilies;
 import com.github.tionard.ultimateglass.registry.UltimateGlassItems;
 import com.github.tionard.ultimateglass.rotation.RotationAxisState;
 
@@ -37,7 +40,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
             Identifier.fromNamespaceAndPath(UltimateGlass.MOD_ID, "general")
     );
 
-    private static final KeyMapping CHANGE_ROTATION_AXIS = KeyMappingHelper.registerKeyMapping(
+    private static final KeyMapping CHANGE_ROTATION_AXIS = KeyBindingHelper.registerKeyBinding(
             new KeyMapping(
                     "key.ultimateglass.change_rotation_axis",
                     InputConstants.Type.KEYSYM,
@@ -46,7 +49,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
             )
     );
 
-    private static final KeyMapping TOGGLE_GLASS_CHISEL_MODE = KeyMappingHelper.registerKeyMapping(
+    private static final KeyMapping TOGGLE_GLASS_CHISEL_MODE = KeyBindingHelper.registerKeyBinding(
             new KeyMapping(
                     "key.ultimateglass.toggle_glass_chisel_mode",
                     InputConstants.Type.KEYSYM,
@@ -89,12 +92,21 @@ public final class UltimateGlassClient implements ClientModInitializer {
             ));
         });
         SeamlessPaneModels.initialize();
+        // 1.21.11 does not read the newer model JSON render_type property.
         UltimateGlassBlocks.edgePanes().forEach(block ->
-                FluidRenderingRegistry.setBlockTransparency(block, true));
+                BlockRenderLayerMap.putBlock(block, ChunkSectionLayer.TRANSLUCENT));
         UltimateGlassBlocks.centeredPanes().forEach(block ->
-                FluidRenderingRegistry.setBlockTransparency(block, true));
-        FluidRenderingRegistry.setBlockTransparency(UltimateGlassBlocks.TINTED_GLASS_PANE, true);
-        FluidRenderingRegistry.setBlockTransparency(UltimateGlassBlocks.COMPOSITE_PANE, true);
+                BlockRenderLayerMap.putBlock(block, ChunkSectionLayer.TRANSLUCENT));
+        UltimateGlassFamilies.registeredBlocks().forEach(block ->
+                BlockRenderLayerMap.putBlock(block, ChunkSectionLayer.TRANSLUCENT));
+        BlockRenderLayerMap.putBlock(UltimateGlassBlocks.TINTED_GLASS_PANE, ChunkSectionLayer.TRANSLUCENT);
+        BlockRenderLayerMap.putBlock(UltimateGlassBlocks.COMPOSITE_PANE, ChunkSectionLayer.TRANSLUCENT);
+        UltimateGlassBlocks.edgePanes().forEach(block ->
+                FluidRenderHandlerRegistry.INSTANCE.setBlockTransparency(block, true));
+        UltimateGlassBlocks.centeredPanes().forEach(block ->
+                FluidRenderHandlerRegistry.INSTANCE.setBlockTransparency(block, true));
+        FluidRenderHandlerRegistry.INSTANCE.setBlockTransparency(UltimateGlassBlocks.TINTED_GLASS_PANE, true);
+        FluidRenderHandlerRegistry.INSTANCE.setBlockTransparency(UltimateGlassBlocks.COMPOSITE_PANE, true);
 
         ClientPlayNetworking.registerGlobalReceiver(
                 ToolCraftingConfigPayload.TYPE,
@@ -140,7 +152,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
 
                 selectedAxis = RotationAxisState.next(selectedAxis);
                 ClientPlayNetworking.send(new RotationAxisPayload(RotationAxisState.ordinal(selectedAxis)));
-                client.player.sendSystemMessage(Component.translatable(axisMessageKey(selectedAxis)));
+                client.player.displayClientMessage(Component.translatable(axisMessageKey(selectedAxis)), false);
             }
 
         });
@@ -239,12 +251,7 @@ public final class UltimateGlassClient implements ClientModInitializer {
 
         Minecraft client = Minecraft.getInstance();
         if (client.level != null) {
-            client.levelRenderer.invalidateCompiledGeometry(
-                    client.level,
-                    client.options,
-                    client.gameRenderer.mainCamera(),
-                    client.getBlockColors()
-            );
+            client.levelRenderer.allChanged();
         }
     }
 

@@ -3,7 +3,7 @@ package com.github.tionard.ultimateglass.client;
 import java.util.EnumMap;
 import java.util.Map;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -123,9 +123,9 @@ public final class UltimateGlassConfigScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
-        super.extractRenderState(graphics, mouseX, mouseY, delta);
-        graphics.centeredText(this.font, this.title, this.width / 2, 20, 0xFFFFFFFF);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.render(graphics, mouseX, mouseY, delta);
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, 20, 0xFFFFFFFF);
     }
 
     private void addCraftingButton(int left, int top, int width, GlaziersToolTier tier) {
@@ -188,7 +188,7 @@ public final class UltimateGlassConfigScreen extends Screen {
 
     private void returnToParent() {
         if (this.minecraft != null) {
-            this.minecraft.gui.setScreen(parent);
+            this.minecraft.setScreen(parent);
         }
     }
 }

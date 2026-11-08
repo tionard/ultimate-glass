@@ -34,8 +34,8 @@ public class FramedVanillaPaneBlock extends IronBarsBlock implements GlassFamily
     }
 
     @Override
-    protected int getLightDampening(BlockState state) {
-        return variant.material() == PaneMaterial.TINTED ? 15 : super.getLightDampening(state);
+    protected int getLightBlock(BlockState state) {
+        return variant.material() == PaneMaterial.TINTED ? 15 : super.getLightBlock(state);
     }
 
     @Override

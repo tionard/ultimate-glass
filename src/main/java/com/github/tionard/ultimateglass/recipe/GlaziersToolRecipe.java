@@ -16,6 +16,7 @@ public final class GlaziersToolRecipe extends CustomRecipe {
     private final GlaziersToolTier tier;
 
     public GlaziersToolRecipe(GlaziersToolTier tier) {
+        super(net.minecraft.world.item.crafting.CraftingBookCategory.MISC);
         this.tier = tier;
     }
 
@@ -40,7 +41,7 @@ public final class GlaziersToolRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input) {
+    public ItemStack assemble(CraftingInput input, net.minecraft.core.HolderLookup.Provider registries) {
         return new ItemStack(resultItem());
     }
 

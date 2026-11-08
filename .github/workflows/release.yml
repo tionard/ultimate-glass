@@ -17,17 +17,18 @@ permissions:
   statuses: write
 
 concurrency:
-  group: publish-version-release
+  group: publish-version-release-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   release:
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
 
     steps:
-      - name: Checkout main without marketplace actions
+      - name: Checkout selected revision without marketplace actions
         shell: bash
         run: |
           git init .
@@ -65,7 +66,7 @@ jobs:
             echo "complete=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Prepare Java 25
+      - name: Prepare Java 21
         if: steps.version.outputs.complete != 'true'
         shell: bash
         run: |
@@ -74,19 +75,19 @@ jobs:
 
           if [ -d "$JAVA_CACHE_ROOT" ]; then
             JAVA_HOME="$(find "$JAVA_CACHE_ROOT" \
-              -mindepth 2 -maxdepth 2 -type d -path '*/25*/x64' \
+              -mindepth 2 -maxdepth 2 -type d -path '*/21*/x64' \
               2>/dev/null | sort -V | tail -n 1 || true)"
           fi
 
           if [ -z "$JAVA_HOME" ] || [ ! -x "$JAVA_HOME/bin/java" ]; then
-            echo 'Java 25 is not preinstalled; downloading Temurin 25.'
-            rm -rf /tmp/jdk25 /tmp/jdk25.tar.gz
-            mkdir -p /tmp/jdk25
+            echo 'Java 21 is not preinstalled; downloading Temurin 21.'
+            rm -rf /tmp/jdk21 /tmp/jdk21.tar.gz
+            mkdir -p /tmp/jdk21
             curl --fail --location --retry 4 --retry-all-errors \
-              'https://api.adoptium.net/v3/binary/latest/25/ga/linux/x64/jdk/hotspot/normal/eclipse' \
-              --output /tmp/jdk25.tar.gz
-            tar -xzf /tmp/jdk25.tar.gz --strip-components=1 -C /tmp/jdk25
-            JAVA_HOME=/tmp/jdk25
+              'https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jdk/hotspot/normal/eclipse' \
+              --output /tmp/jdk21.tar.gz
+            tar -xzf /tmp/jdk21.tar.gz --strip-components=1 -C /tmp/jdk21
+            JAVA_HOME=/tmp/jdk21
           fi
 
           test -x "$JAVA_HOME/bin/java"
@@ -94,19 +95,19 @@ jobs:
           echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
           "$JAVA_HOME/bin/java" -version
 
-      - name: Prepare Gradle 9.5.1
+      - name: Prepare Gradle 9.6.0
         if: steps.version.outputs.complete != 'true'
         shell: bash
         run: |
           curl --fail --location --retry 4 --retry-all-errors \
-            https://downloads.gradle.org/distributions/gradle-9.5.1-bin.zip \
+            https://downloads.gradle.org/distributions/gradle-9.6.0-bin.zip \
             --output /tmp/gradle.zip
           unzip -q /tmp/gradle.zip -d /tmp
-          echo "/tmp/gradle-9.5.1/bin" >> "$GITHUB_PATH"
+          echo "/tmp/gradle-9.6.0/bin" >> "$GITHUB_PATH"
 
       - name: Build mod
         if: steps.version.outputs.complete != 'true'
-        run: /tmp/gradle-9.5.1/bin/gradle build --stacktrace
+        run: /tmp/gradle-9.6.0/bin/gradle build --stacktrace
 
       - name: Smoke-test dedicated server startup
         if: steps.version.outputs.complete != 'true'
@@ -116,7 +117,7 @@ jobs:
           printf 'eula=true\n' > run/eula.txt
 
           set +e
-          timeout 120s /tmp/gradle-9.5.1/bin/gradle runServer --args nogui > server-smoke.log 2>&1
+          timeout 120s /tmp/gradle-9.6.0/bin/gradle runServer --args nogui > server-smoke.log 2>&1
           status=$?
           set -e
 
@@ -208,7 +209,7 @@ jobs:
             -f context="release/${RELEASE_TAG}" \
             -f description="Published ${RELEASE_ASSET}"
 
-      - name: Record verified release in main
+      - name: Record verified release in the selected branch
         shell: bash
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
@@ -230,5 +231,5 @@ jobs:
             echo 'Release verification file is already current.'
           else
             git commit -m "Record verified ${RELEASE_TAG} release"
-            git push origin HEAD:main
+            git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
           fi

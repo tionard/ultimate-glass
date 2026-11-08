@@ -30,10 +30,10 @@ public final class UltimateGlassNetworking {
     }
 
     public static void initialize() {
-        PayloadTypeRegistry.serverboundPlay().register(RotationAxisPayload.TYPE, RotationAxisPayload.CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(ToolCraftingConfigPayload.TYPE, ToolCraftingConfigPayload.CODEC);
-        PayloadTypeRegistry.serverboundPlay().register(PaneSeamEditPayload.TYPE, PaneSeamEditPayload.CODEC);
-        PayloadTypeRegistry.clientboundPlay().register(ToolCraftingConfigPayload.TYPE, ToolCraftingConfigPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(RotationAxisPayload.TYPE, RotationAxisPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(ToolCraftingConfigPayload.TYPE, ToolCraftingConfigPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(PaneSeamEditPayload.TYPE, PaneSeamEditPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(ToolCraftingConfigPayload.TYPE, ToolCraftingConfigPayload.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(
                 RotationAxisPayload.TYPE,

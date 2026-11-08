@@ -54,8 +54,8 @@ public final class TemperedGlassBlock extends Block implements GlassFamilyBlock 
     }
 
     @Override
-    protected int getLightDampening(BlockState state) {
-        return variant.material() == PaneMaterial.TINTED ? 15 : super.getLightDampening(state);
+    protected int getLightBlock(BlockState state) {
+        return variant.material() == PaneMaterial.TINTED ? 15 : super.getLightBlock(state);
     }
 
     @Override

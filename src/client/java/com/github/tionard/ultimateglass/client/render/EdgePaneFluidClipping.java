@@ -2,7 +2,6 @@ package com.github.tionard.ultimateglass.client.render;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.renderer.block.FluidRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
@@ -18,13 +17,13 @@ public final class EdgePaneFluidClipping {
     private EdgePaneFluidClipping() {
     }
 
-    public static FluidRenderer.Output wrap(
-            FluidRenderer.Output output,
+    public static VertexConsumer wrap(
+            VertexConsumer output,
             BlockPos pos,
             BlockState state
     ) {
         ClipBounds bounds = ClipBounds.forState(pos, state);
-        return layer -> new ClippingVertexConsumer(output.getBuilder(layer), bounds);
+        return new ClippingVertexConsumer(output, bounds);
     }
 
     public static ClipBounds localBounds(BlockState state) {

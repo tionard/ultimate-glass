@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import net.minecraft.client.renderer.block.BlockAndTintGetter;
-import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.model.sprite.Material;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -17,8 +17,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
-import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableQuadView;
-import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
+import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
+import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 
 import com.github.tionard.ultimateglass.block.CenteredPaneBlock;
 import com.github.tionard.ultimateglass.block.CompositePaneBlock;
@@ -101,7 +101,7 @@ public final class SeamlessPaneModels {
                 RandomSource random,
                 Predicate<Direction> cullTest
         ) {
-            Material.Baked frameMaterial = dynamicFrameMaterial(level, pos, state);
+            TextureAtlasSprite frameMaterial = dynamicFrameMaterial(level, pos, state);
             emitter.pushTransform(quad -> {
                 int marker = quad.tintIndex();
                 boolean dynamic = marker == DYNAMIC_FRAME_TINT_INDEX;
@@ -109,7 +109,7 @@ public final class SeamlessPaneModels {
                     quad.tintIndex(-1);
                 }
                 if (dynamic && frameMaterial != null) {
-                    quad.materialBake(frameMaterial, MutableQuadView.BAKE_LOCK_UV);
+                    DynamicFrameTexture.bake(quad, frameMaterial);
                 }
                 return true;
             });
@@ -149,7 +149,7 @@ public final class SeamlessPaneModels {
                 RandomSource random,
                 Predicate<Direction> cullTest
         ) {
-            Material.Baked frameMaterial = dynamicFrameMaterial(level, pos, state);
+            TextureAtlasSprite frameMaterial = dynamicFrameMaterial(level, pos, state);
             emitter.pushTransform(quad -> transformFramedGlassQuad(
                     quad, level, pos, state, frameMaterial
             ));
@@ -181,7 +181,7 @@ public final class SeamlessPaneModels {
             BlockAndTintGetter level,
             BlockPos pos,
             BlockState state,
-            Material.Baked frameMaterial
+            TextureAtlasSprite frameMaterial
     ) {
         Direction face = quad.lightFace();
         if (matchingFramedGlassNeighbour(level, pos, state, face)) {
@@ -215,7 +215,7 @@ public final class SeamlessPaneModels {
             return false;
         }
         if (dynamicFrame && frameMaterial != null) {
-            quad.materialBake(frameMaterial, MutableQuadView.BAKE_LOCK_UV);
+            DynamicFrameTexture.bake(quad, frameMaterial);
         }
         return true;
     }
@@ -306,16 +306,29 @@ public final class SeamlessPaneModels {
             }
 
             BlockState paneState = paneState(composite, state);
-            var models = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
-            models.get(composite.hostState()).emitQuads(
-                    emitter, level, pos, composite.hostState(), random, cullTest
-            );
+            var models = Minecraft.getInstance().getModelManager().getBlockModelShaper();
+            // Default quads inherit the composite block's translucent layer. Retain
+            // the host's own layer for stone/wood/cutout geometry inside that block.
+            emitter.pushTransform(quad -> {
+                if (quad.renderLayer() == null) {
+                    quad.renderLayer(net.minecraft.client.renderer.ItemBlockRenderTypes
+                            .getChunkRenderType(composite.hostState()));
+                }
+                return true;
+            });
+            try {
+                models.getBlockModel(composite.hostState()).emitQuads(
+                        emitter, level, pos, composite.hostState(), random, cullTest
+                );
+            } finally {
+                emitter.popTransform();
+            }
             VoxelShape hostShape = composite.hostState().getShape(level, pos);
             emitter.pushTransform(quad -> compositePaneQuadVisible(
                     quad, hostShape, composite.paneFacing(), composite.centered()
             ));
             try {
-                models.get(paneState).emitQuads(
+                models.getBlockModel(paneState).emitQuads(
                         emitter, level, pos, paneState, random, cullTest
                 );
             } finally {
@@ -422,7 +435,7 @@ public final class SeamlessPaneModels {
                 Predicate<Direction> cullTest
         ) {
             boolean seamless = UltimateGlassClientConfig.seamlessConnectedPanes();
-            Material.Baked frameMaterial = dynamicFrameMaterial(level, pos, state);
+            TextureAtlasSprite frameMaterial = dynamicFrameMaterial(level, pos, state);
             emitter.pushTransform(quad -> transformQuad(
                     quad, level, pos, state, seamless, frameMaterial
             ));
@@ -463,7 +476,7 @@ public final class SeamlessPaneModels {
             BlockPos pos,
             BlockState state,
             boolean seamless,
-            Material.Baked frameMaterial
+            TextureAtlasSprite frameMaterial
     ) {
         int marker = quad.tintIndex();
         boolean dynamicFrame = marker == DYNAMIC_FRAME_TINT_INDEX
@@ -486,7 +499,7 @@ public final class SeamlessPaneModels {
         );
         if (keep && dynamicFrame) {
             if (frameMaterial != null) {
-                quad.materialBake(frameMaterial, MutableQuadView.BAKE_LOCK_UV);
+                DynamicFrameTexture.bake(quad, frameMaterial);
             }
         }
         return keep;
@@ -783,7 +796,7 @@ public final class SeamlessPaneModels {
                 : minimum >= CENTER_MIN - EPSILON;
     }
 
-    private static Material.Baked dynamicFrameMaterial(
+    private static TextureAtlasSprite dynamicFrameMaterial(
             BlockAndTintGetter level,
             BlockPos pos,
             BlockState state
@@ -794,8 +807,8 @@ public final class SeamlessPaneModels {
         }
         return Minecraft.getInstance()
                 .getModelManager()
-                .getBlockStateModelSet()
-                .getParticleMaterial(frame.frameBlock().defaultBlockState());
+                .getBlockModelShaper()
+                .getParticleIcon(frame.frameBlock().defaultBlockState());
     }
 
     private static Object dynamicFrameId(

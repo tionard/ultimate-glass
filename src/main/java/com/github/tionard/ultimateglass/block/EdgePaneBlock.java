@@ -169,17 +169,17 @@ public class EdgePaneBlock extends Block implements EntityBlock, SimpleWaterlogg
     }
 
     @Override
-    protected int getLightDampening(BlockState state) {
+    protected int getLightBlock(BlockState state) {
         return appearance.material() == PaneMaterial.TINTED
                 ? 15
-                : super.getLightDampening(state);
+                : super.getLightBlock(state);
     }
 
     @Override
     protected java.util.List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
         java.util.List<ItemStack> drops;
         var tool = builder.getOptionalParameter(LootContextParams.TOOL);
-        boolean diamondTool = tool != null && tool.typeHolder().value() instanceof GlaziersToolItem glazier
+        boolean diamondTool = tool != null && tool.getItem() instanceof GlaziersToolItem glazier
                 && glazier.tier().silkTouchesGlass();
         if (!UltimateGlassServerConfig.temperedPanesAlwaysDrop() && !diamondTool) {
             drops = super.getDrops(state, builder);

@@ -18,8 +18,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.network.chat.Component;
 
-import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
-import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 
 import com.github.tionard.ultimateglass.UltimateGlass;
 import com.github.tionard.ultimateglass.item.DynamicFramedPaneItem;
@@ -76,7 +76,7 @@ public final class UltimateGlassItems {
         Registry.register(
                 BuiltInRegistries.CREATIVE_MODE_TAB,
                 CREATIVE_TAB_KEY,
-                FabricCreativeModeTab.builder()
+                FabricItemGroup.builder()
                         .icon(() -> UltimateGlassSmartItems.stack(
                                 com.github.tionard.ultimateglass.glass.SmartGlassKind.TEMPERED_PANE,
                                 PaneMaterial.CLEAR,
@@ -94,13 +94,13 @@ public final class UltimateGlassItems {
                         .build()
         );
 
-        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.BUILDING_BLOCKS)
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.BUILDING_BLOCKS)
                 .register(output -> {
                     output.accept(TINTED_GLASS_PANE);
                     UltimateGlassSmartItems.creativeStacks().forEach(output::accept);
                 });
 
-        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
                 .register(output -> {
                     output.accept(COPPER_GLAZIERS_TOOL);
                     output.accept(IRON_GLAZIERS_TOOL);

@@ -11,7 +11,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.item.CuboidItemModelWrapper;
+import net.minecraft.client.renderer.item.BlockModelWrapper;
 import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.ModelRenderProperties;
 import net.minecraft.client.renderer.item.SpecialModelWrapper;
@@ -19,7 +19,6 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.special.SpecialModelRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.ResolvedModel;
-import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
@@ -69,13 +68,13 @@ final class DynamicFramePaneItemRenderer
         if (legacyPaneMaterial == null && completeVariant == null && smartKind == null) {
             return original;
         }
-        if (!(context.sourceModel() instanceof CuboidItemModelWrapper.Unbaked source)) {
+        if (!(context.sourceModel() instanceof BlockModelWrapper.Unbaked source)) {
             return original;
         }
 
-        ResolvedModel resolved = context.bakingContext().blockModelBaker().getModel(source.model());
+        ResolvedModel resolved = context.bakeContext().blockModelBaker().getModel(source.model());
         ModelRenderProperties properties = ModelRenderProperties.fromResolvedModel(
-                context.bakingContext().blockModelBaker(),
+                context.bakeContext().blockModelBaker(),
                 resolved,
                 resolved.getTopTextureSlots()
         );
@@ -90,14 +89,14 @@ final class DynamicFramePaneItemRenderer
                                         && completeVariant.form() == GlassForm.BLOCK,
                         smartKind == null || smartKind.framed()
                 ),
-                properties,
-                context.transformation()
+                properties
         );
     }
 
     @Override
     public void submit(
             RenderMaterials materials,
+            net.minecraft.world.item.ItemDisplayContext displayContext,
             PoseStack poseStack,
             SubmitNodeCollector collector,
             int light,
@@ -105,7 +104,7 @@ final class DynamicFramePaneItemRenderer
             boolean foil,
             int outline
     ) {
-        TextureAtlasSprite paneSprite = materials.glass().sprite();
+        TextureAtlasSprite paneSprite = materials.glass();
         collector.order(0).submitCustomGeometry(
                 poseStack,
                 Sheets.translucentBlockItemSheet(),
@@ -115,11 +114,11 @@ final class DynamicFramePaneItemRenderer
         );
         TextureAtlasSprite frameSprite = materials.frame() == null
                 ? null
-                : materials.frame().sprite();
+                : materials.frame();
         if (framed && frameSprite != null) {
             collector.order(1).submitCustomGeometry(
                     poseStack,
-                    Sheets.cutoutBlockItemSheet(),
+                    Sheets.cutoutBlockSheet(),
                     (pose, vertices) -> {
                         if (fullBlock) {
                             renderBlockFrame(pose, vertices, frameSprite, light, overlay);
@@ -168,10 +167,10 @@ final class DynamicFramePaneItemRenderer
         Block glass = fullBlock
                 ? UltimateGlassFamilies.vanillaBlock(material)
                 : UltimateGlassFamilies.vanillaPane(material);
-        Material.Baked glassMaterial = Minecraft.getInstance()
+        TextureAtlasSprite glassMaterial = Minecraft.getInstance()
                 .getModelManager()
-                .getBlockStateModelSet()
-                .getParticleMaterial(glass.defaultBlockState());
+                .getBlockModelShaper()
+                .getParticleIcon(glass.defaultBlockState());
         if (!framed) {
             return new RenderMaterials(glassMaterial, null);
         }
@@ -181,14 +180,14 @@ final class DynamicFramePaneItemRenderer
                 DynamicFrameBlockEntity.DEFAULT_FRAME
         );
         Block frame = BuiltInRegistries.BLOCK.getOptional(frameId).orElse(Blocks.OAK_PLANKS);
-        Material.Baked frameMaterial = Minecraft.getInstance()
+        TextureAtlasSprite frameMaterial = Minecraft.getInstance()
                 .getModelManager()
-                .getBlockStateModelSet()
-                .getParticleMaterial(frame.defaultBlockState());
+                .getBlockModelShaper()
+                .getParticleIcon(frame.defaultBlockState());
         return new RenderMaterials(glassMaterial, frameMaterial);
     }
 
-    record RenderMaterials(Material.Baked glass, Material.Baked frame) {
+    record RenderMaterials(TextureAtlasSprite glass, TextureAtlasSprite frame) {
     }
 
     private void renderGlassGeometry(

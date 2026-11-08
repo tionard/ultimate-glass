@@ -63,7 +63,7 @@ final class Beta022cRegressionTest {
                         + "DynamicFramePaneItemRenderer.java"
         ));
         assertTrue(renderer.contains("Sheets.translucentBlockItemSheet()"));
-        assertTrue(renderer.contains("Sheets.cutoutBlockItemSheet()"));
+        assertTrue(renderer.contains("Sheets.cutoutBlockSheet()"));
         assertTrue(renderer.contains("RenderTypes.glintTranslucent()"));
         assertFalse(renderer.contains("RenderTypes.itemTranslucent("));
     }

@@ -5,8 +5,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import net.minecraft.client.renderer.block.BlockAndTintGetter;
-import net.minecraft.client.renderer.block.FluidRenderer;
+import net.minecraft.world.level.BlockAndTintGetter;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.block.state.BlockState;
@@ -19,15 +19,14 @@ import com.github.tionard.ultimateglass.block.EdgePaneBlock;
 import com.github.tionard.ultimateglass.client.render.EdgePaneFluidClipping;
 
 /** Routes edge-pane water through the normal fluid tessellator with block-local clipping. */
-@Mixin(FluidRenderingImpl.class)
+@Mixin(value = FluidRenderingImpl.class, remap = false)
 public abstract class FluidRenderingImplMixin {
     @Inject(method = "renderDefault", at = @At("HEAD"), cancellable = true)
     private static void ultimateGlass$clipEdgePaneWater(
-            FluidRenderer renderer,
             FluidRenderHandler handler,
             BlockAndTintGetter level,
             BlockPos pos,
-            FluidRenderer.Output output,
+            VertexConsumer output,
             BlockState blockState,
             FluidState fluidState,
             CallbackInfo callback
@@ -37,7 +36,7 @@ public abstract class FluidRenderingImplMixin {
         }
 
         FluidRenderingImpl.renderVanillaDefault(
-                renderer,
+                handler,
                 level,
                 pos,
                 EdgePaneFluidClipping.wrap(output, pos, blockState),

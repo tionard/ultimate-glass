@@ -15,6 +15,10 @@ import com.github.tionard.ultimateglass.registry.UltimateGlassSmartItems;
 
 /** Vanilla-shaped conversion of six matching Tempered blocks into sixteen matching panes. */
 public final class TemperedPaneFromBlocksRecipe extends CustomRecipe {
+    public TemperedPaneFromBlocksRecipe() {
+        super(net.minecraft.world.item.crafting.CraftingBookCategory.BUILDING);
+    }
+
     private static final int RESULT_COUNT = 16;
 
     @Override
@@ -23,7 +27,7 @@ public final class TemperedPaneFromBlocksRecipe extends CustomRecipe {
     }
 
     @Override
-    public ItemStack assemble(CraftingInput input) {
+    public ItemStack assemble(CraftingInput input, net.minecraft.core.HolderLookup.Provider registries) {
         return result(input);
     }
 
